@@ -63,7 +63,8 @@ class BlondieAgent:
 
             # 2. LLM Implementation Plan
             context = self._gather_context(task)
-            plan = await self.llm.plan_task(task.title, context, self.policy.model_dump())
+            plan_response = await self.llm.plan_task(task.title, context, self.policy.model_dump())
+            plan = plan_response.content
             console.print(f"📋 [dim]Plan:[/dim]\n{plan[:500]}...")
 
             # 3. LLM File Edits (STUB - implement file editing)
@@ -102,7 +103,7 @@ class BlondieAgent:
         """Gather repo context for LLM."""
         context = []
         context.append(f"Repo: {self.project.id}")
-        context.append(f"Policy: {self.policy.autonomy.gates}")
+        context.append(f"Policy: {self.policy.model_dump()}")
         context.append(f"Commands: {list(self.policy.commands.keys())}")
         context.append(f"Current branch: {self.git.current_branch()}")
         context.append(f"Git status:\n{self.git.status()}")

@@ -19,7 +19,7 @@ class AutonomyRule(BaseModel):
 class Policy(BaseModel):
     """Parsed POLICY.yaml configuration for repo autonomy and commands."""
 
-    gates: dict[str, str] = {}
+    gates: dict[str, Literal["allow", "prompt", "forbid"]] = {}
     commands: dict[str, str] = {}
     git_strategy: dict[str, str] = {}
     docs: list[str] = []
@@ -40,12 +40,12 @@ class Policy(BaseModel):
         """Check permission for specific action with prefix matching."""
         # Exact match first
         if action in self.gates:
-            return self.gates[action]  # type: ignore
+            return self.gates[action]
 
         # Prefix wildcard matching (deploy-*)
         for pattern, permission in self.gates.items():
             if pattern.endswith("*") and action.startswith(pattern[:-1]):
-                return permission  # type: ignore
+                return permission
 
         # Default: fully autonomous
         return "allow"

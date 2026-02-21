@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel
@@ -19,6 +20,7 @@ class Project(BaseModel):
     policy: str = "POLICY.yaml"
     docs: list[str] = []
     deploy: dict[str, str] = {}
+    mode: Literal["once", "continuous"] = "continuous"
 
     @classmethod
     def from_file(cls, path: Path) -> Project:
