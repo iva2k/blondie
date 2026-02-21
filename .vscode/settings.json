@@ -1,5 +1,15 @@
 {
-    "python.analysis.extraPaths": ["src"],
-    "pylint.args": ["--disable=redefined-outer-name"],
-    // "python.defaultInterpreterPath": "./.venv/bin/python"
+  "pylint.args": ["--disable=redefined-outer-name"],
+  "python.analysis.extraPaths": ["./src"],
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.analysis.typeCheckingMode": "standard",
+  "[markdown]": {
+    //   "editor.defaultFormatter": "yzhang.markdown-all-in-one"
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+  },
 }
