@@ -1,4 +1,5 @@
 {
     "python.analysis.extraPaths": ["src"],
+    "pylint.args": ["--disable=redefined-outer-name"],
     // "python.defaultInterpreterPath": "./.venv/bin/python"
 }

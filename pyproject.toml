@@ -48,3 +48,6 @@ warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
 install_types = true
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["redefined-outer-name"]
