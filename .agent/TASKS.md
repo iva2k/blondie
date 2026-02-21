@@ -1,22 +1,23 @@
-# Blondie Bootstrap Tasks
+# Blondie Tasks
 
-Status: priority | id | title | branch | status
+Status: id | priority | title | depends_on
 
 ## Done
 
-- [x] BLONDIE-000 | Init repo structure | main | completed
-
-## In Progress
-
-- [ ] P0 | BLONDIE-001 | Policy parser + gates | task-BLONDIE-001 | parsing POLICY.yaml
+- [x] 000 | P0 | Init repo structure |
+- [x] 001 | P0 | Policy parser + gates |
+- [x] 002 | P1 | TASKS.md parser + task claim |
+- [x] 003 | P1 | Git CLI wrapper + branch automation |
+- [x] 004 | P2 | LLM router + basic client |
 
 ## Todo
 
-- [ ] P1 | BLONDIE-002 | TASKS.md parser + task claim | task-BLONDIE-002
-- [ ] P1 | BLONDIE-003 | Git CLI wrapper + branch automation | task-BLONDIE-003
-- [ ] P2 | BLONDIE-004 | LLM router + basic client | task-BLONDIE-004
-- [ ] P2 | BLONDIE-005 | Autonomous executor + shell wrapper | task-BLONDIE-005
-- [ ] P2 | BLONDIE-006 | SQLite state + task locking | task-BLONDIE-006
-- [ ] P3 | BLONDIE-007 | Multi-repo scanner + project.yaml | task-BLONDIE-007
-- [ ] P3 | BLONDIE-008 | Vercel/Netlify CLI wrappers | task-BLONDIE-008
-- [ ] P3 | BLONDIE-009 | Docker build + e2e tests | task-BLONDIE-009
+- [ ] 005 | P2 | Autonomous executor + shell wrapper |
+- [ ] 006 | P2 | Git branch based state + task locking | 003
+- [ ] 007 | P3 | Multi-repo scanner + project.yaml |
+- [ ] 008 | P3 | Vercel/Netlify CLI wrappers |
+- [ ] 009 | P3 | Docker build + e2e tests |
+- [ ] 010 | P3 | Deploy! |
+- [ ] 011 | P3 | Allow debugging the agent locally on dev machine |
+- [ ] 012 | P3 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
+- [ ] 013 | P3 | Tasks.py should pick blocking task first | 012

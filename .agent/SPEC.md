@@ -38,15 +38,15 @@ These are standalone test scenarios to verify the full product works. Implement 
 text
 blondie/
 ├── .agent/                   # Self-config
-│   ├── project.yaml          # Self-description
 │   ├── POLICY.yaml           # Autonomy rules  
-│   ├── TASKS.md              # Bootstrap backlog
+│   ├── project.yaml          # Self-description
 │   └── secrets.env.yaml      # LLM keys, tokens
+│   ├── TASKS.md              # Bootstrap backlog
 ├── src/agent/                # Core runtime
 │   ├── __init__.py
-│   ├── policy.py             # POLICY.yaml parser ✓
-│   ├── tasks.py              # TASKS.md parser ✓
 │   ├── loop.py               # Main loop ✓
+│   ├── tasks.py              # TASKS.md parser ✓
+│   ├── policy.py             # POLICY.yaml parser ✓
 │   └── cli/                  # CLI wrappers
 │       ├── __init__.py
 │       └── git.py            # Git automation
@@ -80,15 +80,17 @@ blondie/
 ```text
 # Blondie Tasks
 
+Status: id | priority | title | depends_on
+
 ## Done
-- [x] P0 | BLONDIE-001 | Policy parser | main | completed
+- [x] 001 | P0 | Policy parser |
 
 ## In Progress
-- [ ] P0 | BLONDIE-002 | TASKS.md parser | task-BLONDIE-002 | parsing
+- [ ] 002 | P0 | TASKS.md parser |
 
 ## Todo
-- [ ] P1 | BLONDIE-003 | Git CLI wrapper | task-BLONDIE-003
-- [ ] P1 | BLONDIE-004 | LLM router | task-BLONDIE-004
+- [ ] 003 | P1 | Git CLI wrapper |
+- [ ] 004 | P1 | LLM router |
 ```
 
 .agent/POLICY.yaml

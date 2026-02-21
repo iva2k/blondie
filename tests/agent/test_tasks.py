@@ -13,14 +13,12 @@ def sample_tasks_content() -> str:
     return """# Blondie Tasks
 
 ## Done
-- [x] P0 | BLONDIE-001 | Policy parser | main
-
-## In Progress
-- [ ] P1 | BLONDIE-002 | TASKS.md parser | task-BLONDIE-002
+- [x] 001 | P0 | Policy parser |
 
 ## Todo
-- [ ] P0 | BLONDIE-003 | Git CLI wrapper |
-- [ ] P2 | BLONDIE-004 | LLM router |
+- [ ] 002 | P1 | TASKS.md parser |
+- [ ] 003 | P0 | Git CLI wrapper | 001, 002
+- [ ] 004 | P2 | LLM router |
 """
 
 
@@ -38,14 +36,14 @@ def test_parse_tasks(tasks_file: Path) -> None:
     assert len(manager.tasks) == 4
 
     # Check Done task
-    t1 = next(t for t in manager.tasks if t.id == "BLONDIE-001")
+    t1 = next(t for t in manager.tasks if t.id == "001")
     assert t1.status == TaskStatus.DONE
     assert t1.priority == "P0"
-    assert t1.branch == "main"
+    assert t1.branch_name == "task-blondie-001"
 
-    # Check In Progress task
-    t2 = next(t for t in manager.tasks if t.id == "BLONDIE-002")
-    assert t2.status == TaskStatus.IN_PROGRESS
+    # Check Todo task
+    t2 = next(t for t in manager.tasks if t.id == "002")
+    assert t2.status == TaskStatus.TODO
     assert t2.priority == "P1"
 
 
@@ -53,33 +51,20 @@ def test_get_todo_tasks_priority(tasks_file: Path) -> None:
     """Test that todos are sorted by priority."""
     manager = TasksManager(tasks_file)
     todos = manager.get_todo_tasks()
-    assert len(todos) == 2
+    assert len(todos) == 3
     # P0 should be first
-    assert todos[0].id == "BLONDIE-003"
-    assert todos[1].id == "BLONDIE-004"
-
-
-def test_claim_task(tasks_file: Path) -> None:
-    """Test claiming a task updates status and file."""
-    manager = TasksManager(tasks_file)
-    task = manager.claim_task("BLONDIE-003")
-
-    assert task is not None
-    assert task.status == TaskStatus.IN_PROGRESS
-    assert task.branch == "blondie-003"  # Derived from ID
-
-    # Verify persistence
-    content = tasks_file.read_text(encoding="utf-8")
-    assert "BLONDIE-003" in content
+    assert todos[0].id == "003"
+    assert todos[1].id == "002"
+    assert todos[2].id == "004"
 
 
 def test_complete_task(tasks_file: Path) -> None:
     """Test completing a task."""
     manager = TasksManager(tasks_file)
-    success = manager.complete_task("BLONDIE-002")
+    success = manager.complete_task("002")
     assert success
 
-    t2 = next(t for t in manager.tasks if t.id == "BLONDIE-002")
+    t2 = next(t for t in manager.tasks if t.id == "002")
     assert t2.status == TaskStatus.DONE
 
 

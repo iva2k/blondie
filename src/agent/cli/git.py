@@ -5,7 +5,7 @@ from pathlib import Path
 
 from rich.console import Console
 
-from ..policy import Policy
+from agent.policy import Policy
 
 console = Console()
 
