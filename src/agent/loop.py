@@ -70,9 +70,9 @@ class BlondieAgent:
             test_result = self.exec.run_tests()
             if test_result.returncode != 0:
                 console.print("❌ Tests failed - triggering LLM debug")
-                debug_fix = await self.llm.debug_fix(test_result.stderr, context)
+                debug_response = await self.llm.debug_error(test_result.stderr, context)
                 console.print(
-                    f"🔧 [dim]LLM debug suggestion:[/dim]\n{debug_fix[:300]}...")
+                    f"🔧 [dim]LLM debug suggestion:[/dim]\n{debug_response.content[:300]}...")
                 # For v1: leave In Progress for manual fix
                 return False
 
