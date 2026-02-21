@@ -1,10 +1,18 @@
-"""Blondie main agent loop (bootstrap version)."""
+"""Blondie main agent loop."""
 
 import asyncio
 from pathlib import Path
 
-from .policy import Policy
-from .project import Project
+from rich.console import Console
+
+from agent.cli.executor import Executor
+from agent.cli.git import GitCLI
+from agent.policy import Policy
+from agent.project import Project  # Added per your edits
+from agent.tasks import Task, TasksManager
+from llm import LLMRouter
+
+console = Console()
 
 
 class BlondieAgent:
@@ -16,31 +24,134 @@ class BlondieAgent:
         self.project = Project.from_file(self.agent_dir / "project.yaml")
         self.policy_path = self.agent_dir / self.project.policy
         self.policy = Policy.from_file(self.policy_path)
+        self.tasks_path = self.agent_dir / "TASKS.md"
+        self.secrets_path = self.agent_dir / "secrets.env.yaml"
+
+        self.tasks = TasksManager(
+            self.tasks_path, project_id=self.project.id.upper())
+        self.git = GitCLI(self.repo_path, self.policy)
+        self.exec = Executor(self.repo_path, self.policy)
+        self.llm = LLMRouter(self.secrets_path, self.policy)
+
+    async def run_once(self) -> bool:
+        """Execute one full task cycle. Returns True if task completed."""
+        task = self.tasks.get_next_task()
+        if not task:
+            console.print("✅ No tasks left, exiting.")
+            return False
+
+        console.print(f"\n🚀 Processing [bold cyan]{task.id}[/] {task.title}")
+
+        # Claim task (checks remote branch, creates local, pushes)
+        if not self.tasks.claim_task(task.id, self.git):
+            console.print(
+                f"⚠️  Task {task.id} already claimed (remote branch \"{task.branch_name}\" exists)")
+            return False
+
+        branch_name = task.branch_name
+
+        try:
+            # 1. Create/Checkout branch
+            self.git.checkout_branch(branch_name)
+            console.print(f"✅ Branched to [green]{branch_name}[/]")
+
+            # 2. LLM Implementation Plan
+            context = self._gather_context(task)
+            plan = await self.llm.plan_task(task, context, self.policy.model_dump())
+            console.print(f"📋 [dim]Plan:[/dim]\n{plan[:500]}...")
+
+            # 3. LLM File Edits (STUB - implement file editing)
+            edit_result = await self._apply_llm_edits(task, plan)
+            if not edit_result:
+                console.print("❌ LLM edits failed")
+                return False
+
+            # 4. Test Loop (with retries)
+            test_result = self.exec.run_tests()
+            if test_result.returncode != 0:
+                console.print("❌ Tests failed - triggering LLM debug")
+                debug_fix = await self.llm.debug_fix(test_result.stderr, context)
+                console.print(
+                    f"🔧 [dim]LLM debug suggestion:[/dim]\n{debug_fix[:300]}...")
+                # For v1: leave In Progress for manual fix
+                return False
+
+            # 5. Commit & Push
+            self.git.add_all()
+            self.git.commit(task.title)
+            self.git.push(branch_name)
+            console.print(f"✅ Pushed [green]{branch_name}[/] 🎉")
+
+            # 6. Complete task
+            self.tasks.complete_task(task.id)
+            console.print(f"✅ Completed [bold green]{task.id}[/]!")
+            return True
+
+        except Exception as e:
+            console.print(f"💥 Task failed: {e}")
+            console.print("Leaving task In Progress for review...")
+            return False
+
+    def _gather_context(self, _task: Task) -> str:
+        """Gather repo context for LLM."""
+        context = []
+        context.append(f"Repo: {self.project.id}")
+        context.append(f"Policy: {self.policy.autonomy.gates}")
+        context.append(f"Commands: {list(self.policy.commands.keys())}")
+        context.append(f"Current branch: {self.git.current_branch()}")
+        context.append(f"Git status:\n{self.git.status()}")
+        return "\n".join(context)
+
+    async def _apply_llm_edits(self, task: Task, plan: str) -> bool:
+        """Apply LLM-generated file edits (STUB for v1)."""
+        console.print("✨ [dim]LLM would edit files here (STUB)[/dim]")
+        console.print(f"[dim]Simulating implementation of: {task.title}[/dim]")
+
+        # v1 STUB: Create placeholder files or skip
+        # TODO: BLONDIE-010 - Real file editing via LLM
+        (self.repo_path / f"{task.id}.md").write_text(
+            f"# Task {task.id}\n\nPlan:\n{plan}\n\nTODO: LLM implementation"
+        )
+        return True
+
+    async def run_forever(self) -> None:
+        """Run continuous task loop."""
+        console.print("🔄 Blondie agent loop started")
+        completed = 0
+
+        while True:
+            try:
+                success = await self.run_once()
+                if success:
+                    completed += 1
+
+                # Brief pause between tasks
+                await asyncio.sleep(2)
+
+                # Exit if no tasks remain
+                if not self.tasks.get_todo_tasks():
+                    console.print(f"🎉 All {completed} tasks completed!")
+                    break
+
+            except KeyboardInterrupt:
+                console.print("\n⏹️  Interrupted by user")
+                break
+            except Exception as e:
+                console.print(f"💥 Unexpected error: {e}")
+                await asyncio.sleep(5)  # Brief pause on error
 
     async def run(self) -> None:
-        """Main agent loop - claim tasks and execute."""
-        print("🚀 Blondie bootstrap mode - policy loaded")
-        print(f"   git-merge policy: {self.policy.check_permission('git-merge')}")
-
-        # Simulate task loop
-        for task_id in ["BLONDIE-001", "BLONDIE-002"]:
-            print(f"Processing task {task_id}...")
-            if self.policy.check_permission("git-checkout") == "allow":
-                print(f"  ✓ Would checkout task-{task_id}")
-            await asyncio.sleep(0.1)
-
-    async def select_next_task(self) -> str | None:
-        """Find next available task from TASKS.md."""
-        tasks_md = self.agent_dir / self.project.task_source
-        if not tasks_md.exists():
-            return None
-        # TODO: BLONDIE-002 use tasks.py
-        return "BLONDIE-001"
+        """Run one cycle or forever based on config."""
+        if self.project.mode == "once":
+            await self.run_once()
+        else:
+            await self.run_forever()
 
 
 async def main() -> None:
-    """Entry point for bootstrap testing."""
-    agent = BlondieAgent(".")
+    """CLI entry point."""
+    repo_path = "."
+    agent = BlondieAgent(repo_path)
     await agent.run()
 
 

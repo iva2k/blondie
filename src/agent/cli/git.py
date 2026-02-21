@@ -52,6 +52,21 @@ class GitCLI:
         self.run("checkout", "-b", branch)
         console.print(f"✅ Switched to [green]{branch}[/]")
 
+    def checkout(self, branch: str) -> None:
+        """Checkout existing branch."""
+        self.run("checkout", branch)
+        console.print(f"✅ Switched to [green]{branch}[/]")
+
+    def branch_exists(self, branch: str) -> bool:
+        """Check if branch exists."""
+        result = self.run("branch", "--list", branch, capture_output=True)
+        return bool(result.stdout.strip())
+
+    def remote_branch_exists(self, branch: str) -> bool:
+        """Check if remote branch exists."""
+        result = self.run("ls-remote", "--heads", "origin", branch, capture_output=True)
+        return bool(result.stdout.strip())
+
     def current_branch(self) -> str:
         """Get current branch name."""
         result = self.run("branch", "--show-current",

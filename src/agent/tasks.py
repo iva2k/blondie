@@ -10,6 +10,8 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
+from agent.cli.git import GitCLI
+
 console = Console()
 
 
@@ -115,6 +117,27 @@ class TasksManager:
         # P0 > P1 > P2 > unprioritized
         todos.sort(key=lambda t: t.priority or "ZZ")
         return todos
+
+    def claim_task(self, task_id: str, git: GitCLI) -> bool:
+        """Claim task by creating remote branch. Returns True if claimed."""
+        # Handle both "003" and "BLONDIE-003"
+        clean_id = task_id.replace(f"{self.project_id}-", "")
+        task = next((t for t in self.tasks if t.id == clean_id), None)
+        if not task:
+            return False
+
+        branch = task.branch_name
+
+        if git.remote_branch_exists(branch):
+            return False
+
+        if git.branch_exists(branch):
+            git.checkout(branch)
+        else:
+            git.checkout_branch(branch)
+
+        git.push(branch)
+        return True
 
     def complete_task(self, task_id: str) -> bool:
         """Mark task complete."""
