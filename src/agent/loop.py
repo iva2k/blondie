@@ -4,6 +4,7 @@ import asyncio
 from pathlib import Path
 
 from .policy import Policy
+from .project import Project
 
 
 class BlondieAgent:
@@ -11,7 +12,9 @@ class BlondieAgent:
 
     def __init__(self, repo_path: str):
         self.repo_path = Path(repo_path)
-        self.policy_path = self.repo_path / ".agent" / "POLICY.yaml"
+        self.agent_dir = self.repo_path / ".agent"
+        self.project = Project.from_file(self.agent_dir / "project.yaml")
+        self.policy_path = self.agent_dir / self.project.policy
         self.policy = Policy.from_file(self.policy_path)
 
     async def run(self) -> None:
@@ -28,10 +31,10 @@ class BlondieAgent:
 
     async def select_next_task(self) -> str | None:
         """Find next available task from TASKS.md."""
-        tasks_md = self.repo_path / ".agent" / "TASKS.md"
+        tasks_md = self.agent_dir / self.project.task_source
         if not tasks_md.exists():
             return None
-        # TODO: BLONDIE-002 implement real parser
+        # TODO: BLONDIE-002 use tasks.py
         return "BLONDIE-001"
 
 

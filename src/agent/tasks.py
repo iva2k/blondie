@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-import yaml
 from rich.console import Console
 from rich.table import Table
 
@@ -175,13 +174,12 @@ class TasksManager:
 
 def main():
     """Simple unit test: Try to read project.yaml for ID."""
-    project_id = "BLONDIE" # TODO: (now) read it from .agent/project.yaml
+    from agent.project import Project
+
+    project_id = "BLONDIE"
     try:
-        project_yaml = Path(".agent/project.yaml")
-        if project_yaml.exists():
-            data = yaml.safe_load(project_yaml.read_text(encoding="utf-8"))
-            if "id" in data:
-                project_id = data["id"].upper()
+        project = Project.from_file(Path(".agent/project.yaml"))
+        project_id = project.id.upper()
     except Exception:
         pass
 
