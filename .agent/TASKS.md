@@ -8,7 +8,7 @@ Status: priority | id | title | branch | status
 
 ## In Progress
 
-- [ ] P0 | BLONDIE-001 | Policy parser + gates | task-BLONDIE-001 | parsing POLICY.md
+- [ ] P0 | BLONDIE-001 | Policy parser + gates | task-BLONDIE-001 | parsing POLICY.yaml
 
 ## Todo
 

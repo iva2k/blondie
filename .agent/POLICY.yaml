@@ -1,0 +1,25 @@
+# Blondie Self-Policy
+autonomy:
+  gates:
+    git-merge: allow
+    deploy-docker: allow     # Self-deploy OK
+    install-binary: prompt   # apt installs need review
+    add-package: allow       # pip requirements OK
+  test_retries: 3
+  coordination: git  # git | filelock | none
+
+commands:
+  install: poetry install
+  test: pytest tests/
+  build: python -m build
+  lint: ruff check .
+
+git:
+  branch-prefix: "task-"
+  merge-strategy: rebase
+  test-gate: "test && lint"
+
+docs:
+  always-update:
+    - README.md
+    - docs/CHANGELOG.md

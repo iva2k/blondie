@@ -1,0 +1,62 @@
+# Agent Policy Template
+# Copy to .agent/POLICY.yaml and customize per repo
+
+autonomy:
+  gates:
+    # Format: action: [allow|prompt|forbid] | Default: allow
+    git-merge: prompt
+    git-checkout: allow
+    git-push: allow
+    deploy-prod: prompt
+    deploy-preview: allow
+    install-binary: forbid      # apt/yum/npm -g
+    add-package: allow          # npm/pip project deps
+    file-delete: prompt
+    terraform-apply: prompt
+    deploy-*: prompt            # All deploy-* actions
+    
+  test_retries: 3
+  coordination: git            # git | filelock | none
+  
+approval:
+  timeout: 30m                 # Timeout → skip
+  channels:                    # Human response methods
+    - stdin
+    - slack
+    - email
+    - webui
+
+commands:
+  # Customize per language/framework
+  install: "npm ci"            # or poetry install, pip install -r, etc.
+  test: "npm test"
+  lint: "npm run lint"
+  build: "npm run build"
+  e2e: "npm run e2e"
+  deploy-preview: "vercel --prebuilt"
+  deploy-prod: "vercel --prod"
+
+git:
+  branch-prefix: "task-"
+  merge-strategy: "rebase"
+  test-gate: "test && lint && build"
+  commit-message: "BLONDIE: {task.id} - {task.title}"
+
+docs:
+  always-update:
+    - README.md
+    - CHANGELOG.md
+    - docs/
+  regenerate:
+    - "openapi.yaml"           # API docs
+    - "package.json"           # Dependency updates
+
+cloud:
+  vercel:
+    token: "{{secret:vercel_token}}"
+  netlify:
+    token: "{{secret:netlify_token}}"
+
+limits:
+  max_daily_cost_usd: 10.0
+  max_concurrent_tasks: 5

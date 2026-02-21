@@ -11,7 +11,7 @@ class BlondieAgent:
 
     def __init__(self, repo_path: str):
         self.repo_path = Path(repo_path)
-        self.policy_path = self.repo_path / ".agent" / "POLICY.md"
+        self.policy_path = self.repo_path / ".agent" / "POLICY.yaml"
         self.policy = Policy.from_file(self.policy_path)
 
     async def run(self) -> None:

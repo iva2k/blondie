@@ -10,14 +10,14 @@ Helpful AI coding agent
 blondie/
 ├── .agent/                    # Blondie's own config (git-ignored secrets)
 │   ├── project.yaml           # Self-description as a project
-│   ├── POLICY.md             # Blondie's autonomy rules
+│   ├── POLICY.yaml             # Blondie's autonomy rules
 │   ├── TASKS.md              # Blondie's bootstrap backlog
 │   └── secrets.env.yaml      # LLM keys, Vercel tokens (mounted externally)
 ├── src/                       # Core agent modules
 │   ├── agent/                # Main runtime
 │   │   ├── loop.py           # Main task loop
 │   │   ├── executor.py       # Shell/git/cli wrapper
-│   │   └── policy.py         # POLICY.md parser
+│   │   └── policy.py         # POLICY.yaml parser
 │   ├── llm/                  # Model routing
 │   │   ├── router.py         # OpenAI/Anthropic/generic
 │   │   └── client.py         # HTTP abstraction
@@ -33,7 +33,7 @@ blondie/
 │       └── models.py         # Task, Lock schemas
 ├── templates/                 # Repo bootstrap templates
 │   ├── project.yaml.template
-│   ├── POLICY.md.template    # Default gates
+│   ├── POLICY.yaml.template    # Default gates
 │   └── TASKS.md.template
 ├── tests/                     # E2E user journeys
 │   ├── single_repo.test.sh   # Standalone test scripts

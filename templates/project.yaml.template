@@ -7,7 +7,7 @@ commands:
   test: "{{test|default('npm test')}}"
   build: "{{build|default('npm run build')}}"
   deploy-preview: "{{deploy_preview|default('vercel --prebuilt')}}"
-policy: POLICY.md
+policy: POLICY.yaml
 docs:
   - README.md
   - docs/

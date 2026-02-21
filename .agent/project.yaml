@@ -3,12 +3,12 @@ name: "Blondie Autonomous Coding Agent"
 languages: [python]
 task_source: TASKS.md
 commands:
-  install: pip install -e .
+  install: poetry install
   test: pytest tests/
   build: python -m build
+policy: POLICY.yaml
+docs: 
+  - README.md
+  - docs/
 deploy:
   docker: docker build -t blondie:v1 .
-policy: POLICY.md
-docs:
-  - README.md
-  - docs/ARCHITECTURE.md

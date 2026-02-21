@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 from typing import Literal
 
@@ -18,7 +17,7 @@ class AutonomyRule(BaseModel):
 
 
 class Policy(BaseModel):
-    """Parsed POLICY.md configuration for repo autonomy and commands."""
+    """Parsed POLICY.yaml configuration for repo autonomy and commands."""
 
     gates: dict[str, str] = {}
     commands: dict[str, str] = {}
@@ -27,37 +26,15 @@ class Policy(BaseModel):
 
     @classmethod
     def from_file(cls, path: Path) -> Policy:
-        """Parse POLICY.md using YAML frontmatter or markdown sections."""
+        """Parse POLICY.yaml."""
         content = path.read_text(encoding="utf-8")
+        data = yaml.safe_load(content) or {}
 
-        # Extract YAML frontmatter
-        yaml_match = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
-        if yaml_match:
-            data = yaml.safe_load(yaml_match.group(1) or "{}")
-        else:
-            data = cls._parse_markdown_sections(content)
+        # Flatten autonomy.gates -> gates
+        if "autonomy" in data and isinstance(data["autonomy"], dict):
+            data["gates"] = data["autonomy"].get("gates", {})
 
         return cls(**data)
-
-    @staticmethod
-    def _parse_markdown_sections(content: str) -> dict:
-        """Fallback parser for plain markdown POLICY.md files."""
-        gates: dict[str, str] = {}
-        commands: dict[str, str] = {}
-
-        for line in content.splitlines():
-            if ": " in line and not line.strip().startswith("#"):
-                key, value = line.split(": ", 1)
-                key = key.strip().lower().replace("-", "_")
-                value = value.strip()
-
-                if any(gate_word in content.lower() for gate_word in ["gates", "autonomy"]):
-                    if key in ["git_merge", "deploy_prod", "action"]:
-                        gates[key] = value.lower()
-                elif key in ["install", "test", "build", "deploy", "lint"]:
-                    commands[key] = value
-
-        return {"gates": gates, "commands": commands}
 
     def check_permission(self, action: str) -> Literal["allow", "prompt", "forbid"]:
         """Check permission for specific action with prefix matching."""
@@ -79,6 +56,6 @@ class Policy(BaseModel):
 
 
 if __name__ == "__main__":
-    policy = Policy.from_file(Path(".agent/POLICY.md"))
+    policy = Policy.from_file(Path(".agent/POLICY.yaml"))
     print(f"git-merge: {policy.check_permission('git-merge')}")
     print(f"deploy-prod: {policy.check_permission('deploy-prod')}")
