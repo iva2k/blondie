@@ -118,6 +118,13 @@ class TasksManager:
         todos.sort(key=lambda t: t.priority or "ZZ")
         return todos
 
+    def recover_active_task(self, git: GitCLI) -> Task | None:
+        """Find a task that is already in progress locally."""
+        for task in self.get_todo_tasks():
+            if git.branch_exists(task.branch_name):
+                return task
+        return None
+
     def claim_task(self, task_id: str, git: GitCLI) -> bool:
         """Claim task by creating remote branch. Returns True if claimed."""
         # Handle both "003" and "BLONDIE-003"
@@ -128,14 +135,19 @@ class TasksManager:
 
         branch = task.branch_name
 
+        # 1. Check local ownership (Recovery/Idempotency)
+        if git.branch_exists(branch):
+            git.checkout_branch(branch)  # Safe switch
+            if not git.remote_branch_exists(branch):
+                git.push(branch)
+            return True
+
+        # 2. Check remote lock
         if git.remote_branch_exists(branch):
             return False
 
-        if git.branch_exists(branch):
-            git.checkout(branch)
-        else:
-            git.checkout_branch(branch)
-
+        # 3. New Claim
+        git.checkout_branch(branch)
         git.push(branch)
         return True
 

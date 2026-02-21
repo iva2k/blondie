@@ -48,9 +48,12 @@ class GitCLI:
         return result
 
     def checkout_branch(self, branch: str) -> None:
-        """Safe branch checkout."""
-        self.run("checkout", "-b", branch)
-        console.print(f"✅ Switched to [green]{branch}[/]")
+        """Safe branch checkout (creates if needed)."""
+        if self.branch_exists(branch):
+            self.checkout(branch)
+        else:
+            self.run("checkout", "-b", branch)
+            console.print(f"✅ Created [green]{branch}[/]")
 
     def checkout(self, branch: str) -> None:
         """Checkout existing branch."""

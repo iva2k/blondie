@@ -35,29 +35,35 @@ class BlondieAgent:
 
     async def run_once(self) -> bool:
         """Execute one full task cycle. Returns True if task completed."""
-        task = self.tasks.get_next_task()
-        if not task:
-            console.print("✅ No tasks left, exiting.")
-            return False
+        # 1. Try to recover existing work
+        task = self.tasks.recover_active_task(self.git)
 
-        console.print(f"\n🚀 Processing [bold cyan]{task.id}[/] {task.title}")
+        if task:
+            console.print(f"🔄 Recovered active task [bold cyan]{task.id}[/] {task.title}")
+        else:
+            # 2. Pick next task
+            task = self.tasks.get_next_task()
+            if not task:
+                console.print("✅ No tasks left, exiting.")
+                return False
 
-        # Claim task (checks remote branch, creates local, pushes)
-        if not self.tasks.claim_task(task.id, self.git):
-            console.print(
-                f"⚠️  Task {task.id} already claimed (remote branch \"{task.branch_name}\" exists)")
-            return False
+            console.print(f"\n🚀 Processing [bold cyan]{task.id}[/] {task.title}")
+
+            # 3. Claim task
+            if not self.tasks.claim_task(task.id, self.git):
+                console.print(
+                    f"⚠️  Task {task.id} already claimed (remote branch \"{task.branch_name}\" exists)")
+                return False
 
         branch_name = task.branch_name
 
         try:
-            # 1. Create/Checkout branch
+            # 1. Ensure we are on the branch (idempotent)
             self.git.checkout_branch(branch_name)
-            console.print(f"✅ Branched to [green]{branch_name}[/]")
 
             # 2. LLM Implementation Plan
             context = self._gather_context(task)
-            plan = await self.llm.plan_task(task, context, self.policy.model_dump())
+            plan = await self.llm.plan_task(task.title, context, self.policy.model_dump())
             console.print(f"📋 [dim]Plan:[/dim]\n{plan[:500]}...")
 
             # 3. LLM File Edits (STUB - implement file editing)
