@@ -32,6 +32,19 @@ These are standalone test scenarios to verify the full product works. Implement 
    - Run with --full-autonomy=false: Agent proposes shell commands for approval.
    - Verify: No destructive actions taken without confirm.
 
+5. Agent crashes
+
+   - Run on 1 repo.
+   - Agent crashes (for any reason, even external, like when the host instance dies).
+   - The local state could be in task progress (both remote and local branches exist for git-branch based coordination method).
+   - Verify: Agent picks up the same task without creating new branch and continues work.
+
+6. Agent loops
+
+   - Run on 1 repo.
+   - Task is too complicated, Agent cannot solve and keeps going in a loop.
+   - Verify: Agent detects the loop and marks task as too complicated for breaking it up.
+
 ## Directory Structure
 
 ```text
