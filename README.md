@@ -2,7 +2,9 @@
 
 Helpful AI coding agent
 
-- Fully autonomous
+- Fully autonomous coder driven by `TASKS.md`, `POLICY.yaml` files
+- Easy to deploy - run docker instance or install binary on Linux instance
+- Easy to configure - create `secrets.env.yaml` file
 
 ## Project Structure
 
@@ -47,6 +49,21 @@ blondie/
 │   ├── README.md            # Deploy instructions
 │   └── ARCHITECTURE.md       # Module diagram
 └── pyproject.toml            # Python packaging
+```
+
+## Development and Debugging
+
+Until this project can bootstrap and self-improve, it is necessary to code MVP and debug it locally.
+
+### Debugging
+
+TODO: TBD
+
+### Unit tests
+
+```bash
+# Run unit tests
+poetry install && poetry run pytest -v
 ```
 
 ## First Deploy Command
