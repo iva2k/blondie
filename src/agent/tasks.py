@@ -174,6 +174,7 @@ class TasksManager:
 
 def main():
     """Simple unit test: Try to read project.yaml for ID."""
+    # pylint: disable-next=import-outside-toplevel
     from agent.project import Project
 
     project_id = "BLONDIE"
