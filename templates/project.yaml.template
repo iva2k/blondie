@@ -1,0 +1,18 @@
+id: {{repo_name}}
+name: "{{repo_description}}"
+languages: [{{languages|default("typescript, svelte")}}]
+task_source: TASKS.md
+commands:
+  install: "{{install|default('npm ci')}}"
+  test: "{{test|default('npm test')}}"
+  build: "{{build|default('npm run build')}}"
+  deploy-preview: "{{deploy_preview|default('vercel --prebuilt')}}"
+policy: POLICY.md
+docs:
+  - README.md
+  - docs/
+cloud:
+  vercel:
+    token: "{{secret:vercel_token}}"
+  netlify:
+    token: "{{secret:netlify_token}}"

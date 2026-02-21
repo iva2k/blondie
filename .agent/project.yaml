@@ -1,0 +1,14 @@
+id: blondie
+name: "Blondie Autonomous Coding Agent"
+languages: [python]
+task_source: TASKS.md
+commands:
+  install: pip install -e .
+  test: pytest tests/
+  build: python -m build
+deploy:
+  docker: docker build -t blondie:v1 .
+policy: POLICY.md
+docs:
+  - README.md
+  - docs/ARCHITECTURE.md

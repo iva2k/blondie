@@ -1,0 +1,2 @@
+.agent/secrets.env.yaml
+*.pyc
