@@ -10,45 +10,51 @@ Helpful AI coding agent
 
 ```text
 blondie/
-├── .agent/                    # Blondie's own config (git-ignored secrets)
-│   ├── project.yaml           # Self-description as a project
-│   ├── POLICY.yaml             # Blondie's autonomy rules
-│   ├── TASKS.md              # Blondie's bootstrap backlog
-│   └── secrets.env.yaml      # LLM keys, Vercel tokens (mounted externally)
-├── src/                       # Core agent modules
+├── .agent/                   # Blondie's own config (git-ignored secrets)
+│   ├── POLICY.yaml           # Autonomy rules  
+│   ├── project.yaml          # Self-description
+│   ├── secrets.env.yaml      # LLM keys, tokens (mounted externally)
+│   └── TASKS.md              # Bootstrap backlog
+├── src/                      # Core runtime
 │   ├── agent/                # Main runtime
-│   │   ├── loop.py           # Main task loop
 │   │   ├── executor.py       # Shell/git/cli wrapper
-│   │   └── policy.py         # POLICY.yaml parser
+│   │   ├── loop.py           # Main task loop
+│   │   ├── policy.py         # POLICY.yaml parser
+│   │   ├── project.py        # project.yaml parser
+│   │   └── tasks.py          # TASKS.md parser
 │   ├── llm/                  # Model routing
 │   │   ├── router.py         # OpenAI/Anthropic/generic
 │   │   └── client.py         # HTTP abstraction
 │   ├── repo/                 # Multi-repo management
 │   │   ├── scanner.py        # Discover projects
 │   │   └── adapter.py        # project.yaml parser
-│   ├── cli/                  # Wrappers (no MCP servers)
-│   │   ├── vercel.py         # vercel --prod wrapper
-│   │   ├── netlify.py        # netlify deploy wrapper
-│   │   └── git.py            # Branch/merge automation
-│   └── state/                # SQLite models
-│       ├── db.py             # Task locks, logs
-│       └── models.py         # Task, Lock schemas
-├── templates/                 # Repo bootstrap templates
-│   ├── project.yaml.template
-│   ├── POLICY.yaml.template    # Default gates
+│   └── cli/                  # CLI Wrappers (no MCP servers)
+│       ├── vercel.py         # vercel --prod wrapper
+│       ├── netlify.py        # netlify deploy wrapper
+│       └── git.py            # Git automation
+├── templates/                # Repo bootstrap templates
+│   ├── POLICY.yaml.template  # Default POLICY
+│   ├── project.yaml.template # Default project
 │   └── TASKS.md.template
-├── tests/                     # E2E user journeys
-│   ├── single_repo.test.sh   # Standalone test scripts
-│   ├── swarm.test.sh
-│   └── autonomy.test.sh
-├── docker/
-│   ├── Dockerfile
-│   ├── docker-entrypoint.sh  # Main runner
-│   └── systemd-install.sh    # Binary deploy helper
-├── docs/                      # Blondie self-docs
-│   ├── README.md            # Deploy instructions
+├── tests/                    # Tests
+│   ├── agent/                # Unit tests
+│   │   ├── test_policy.py    #
+│   │   ├── test_project.py   #
+│   │   ├── test_tasks.py     #
+│   ├── cli/                  # Unit tests
+│   │   ├── test_git.py       #
+│   ├── llm/                  # Unit tests
+│   │   ├── test_llm.py       #
+├── docs/                     # Blondie self-docs
+│   ├── DEPLOY.md             # Deploy instructions
 │   └── ARCHITECTURE.md       # Module diagram
-└── pyproject.toml            # Python packaging
+├── docker/
+│   ├── Dockerfile            # Python 3.12-slim
+│   ├── docker-entrypoint.sh  # Main runner `blondie run`
+│   └── systemd-install.sh    # Binary deploy helper
+├── pyproject.toml            # Poetry 2.0+
+├── pytest.ini                # pythonpath=src
+└── README.md
 ```
 
 ## Development and Debugging

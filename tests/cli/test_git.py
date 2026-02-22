@@ -1,11 +1,13 @@
+# tests/cli/test_git.py
+
 """Unit tests for Git CLI wrapper."""
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agent.cli.git import GitCLI
 from agent.policy import Policy
+from cli.git import GitCLI
 
 
 @pytest.fixture
@@ -48,7 +50,7 @@ def test_run_prompt_approve(git_cli, mock_policy):
 
     with patch("subprocess.run") as mock_run:
         # Patch the console object instance in the module
-        with patch("agent.cli.git.console.input", return_value="y"):
+        with patch("cli.git.console.input", return_value="y"):
             git_cli.run("merge")
             mock_run.assert_called_once()
 
@@ -58,7 +60,7 @@ def test_run_prompt_deny(git_cli, mock_policy):
     mock_policy.check_permission.return_value = "prompt"
 
     with patch("subprocess.run") as mock_run:
-        with patch("agent.cli.git.console.input", return_value="n"):
+        with patch("cli.git.console.input", return_value="n"):
             with pytest.raises(PermissionError, match="User denied"):
                 git_cli.run("merge")
             mock_run.assert_not_called()

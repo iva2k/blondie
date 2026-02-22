@@ -1,3 +1,5 @@
+# src/agent/project.py
+
 """Project configuration parser."""
 
 from __future__ import annotations

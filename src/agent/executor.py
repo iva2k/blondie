@@ -1,4 +1,4 @@
-# src/agent/cli/executor.py
+# src/agent/executor.py
 
 """Commands executor."""
 

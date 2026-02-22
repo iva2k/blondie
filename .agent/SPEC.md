@@ -48,20 +48,25 @@ These are standalone test scenarios to verify the full product works. Implement 
 ## Directory Structure
 
 ```text
-text
 blondie/
 ├── .agent/                   # Self-config
 │   ├── POLICY.yaml           # Autonomy rules  
 │   ├── project.yaml          # Self-description
-│   └── secrets.env.yaml      # LLM keys, tokens
-│   ├── TASKS.md              # Bootstrap backlog
-├── src/agent/                # Core runtime
-│   ├── __init__.py
-│   ├── loop.py               # Main loop ✓
-│   ├── tasks.py              # TASKS.md parser ✓
-│   ├── policy.py             # POLICY.yaml parser ✓
+│   ├── secrets.env.yaml      # LLM keys, tokens
+│   └── TASKS.md              # Bootstrap backlog
+├── src/                      # Core runtime
+│   ├── agent/                # Main runtime
+│   │   ├── loop.py           # Main task loop
+│   │   ├── executor.py       # Shell/git/cli wrapper
+│   │   ├── policy.py         # POLICY.yaml parser
+│   │   ├── project.py        # project.yaml parser
+│   │   └── tasks.py          # TASKS.md parser
+│   ├── loop.py               # Main loop
+│   ├── tasks.py              # TASKS.md parser
+│   ├── policy.py             # POLICY.yaml parser
 │   └── cli/                  # CLI wrappers
-│       ├── __init__.py
+│       ├── vercel.py         # vercel --prod wrapper
+│       ├── netlify.py        # netlify deploy wrapper
 │       └── git.py            # Git automation
 ├── src/repo/                 # Repo management
 │   ├── scanner.py            # Multi-repo discovery
@@ -69,15 +74,19 @@ blondie/
 ├── src/llm/                  # Model routing
 │   ├── router.py             # OpenAI/Anthropic/generic
 │   └── client.py             # HTTP abstraction
-├── src/state/                # SQLite models
-│   ├── db.py                 # Task locks/logs
-│   └── models.py             # Schemas
 ├── templates/                # Repo bootstrap
-│   ├── project.yaml.template
-│   ├── POLICY.yaml.template
+│   ├── POLICY.yaml.template  # Default POLICY
+│   ├── project.yaml.template # Default project
 │   └── TASKS.md.template
-├── tests/agent/              # Unit tests ✓
-│   └── test_policy.py        # 100% pass
+├── tests/                    # Tests
+│   ├── agent/                # Unit tests
+│   │   ├── test_policy.py    #
+│   │   ├── test_project.py   #
+│   │   ├── test_tasks.py     #
+│   ├── cli/                  # Unit tests
+│   │   ├── test_git.py       #
+│   ├── llm/                  # Unit tests
+│   │   ├── test_llm.py       #
 ├── docker/
 │   ├── Dockerfile            # Python 3.12-slim
 │   └── docker-entrypoint.sh  # blondie run

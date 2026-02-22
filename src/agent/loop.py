@@ -1,3 +1,5 @@
+# src/agent/loop.py
+
 """Blondie main agent loop."""
 
 import asyncio
@@ -6,11 +8,11 @@ from pathlib import Path
 import click
 from rich.console import Console
 
-from agent.cli.executor import Executor
-from agent.cli.git import GitCLI
+from agent.executor import Executor
 from agent.policy import Policy
 from agent.project import Project  # Added per your edits
 from agent.tasks import Task, TasksManager
+from cli import GitCLI
 from llm import LLMRouter
 
 console = Console()

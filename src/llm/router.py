@@ -1,3 +1,5 @@
+# src/llm/router.py
+
 """LLM Router - selects provider/model per task type."""
 
 from pathlib import Path

@@ -1,3 +1,5 @@
+# src/agent/tasks.py
+
 """TASKS.md parser and manager for Blondie."""
 
 from __future__ import annotations
@@ -10,7 +12,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-from agent.cli.git import GitCLI
+from cli.git import GitCLI
 
 console = Console()
 

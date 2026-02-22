@@ -12,6 +12,7 @@
 .tox/
 .venv/
 __pycache__/
+/_import/
 build/
 dist/
 env/

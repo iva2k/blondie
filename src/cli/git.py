@@ -1,3 +1,5 @@
+# src/cli/git.py
+
 """Git CLI wrapper for Blondie agent."""
 
 import subprocess

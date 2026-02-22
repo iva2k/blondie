@@ -1,3 +1,5 @@
+# src/agent/policy.py
+
 """Policy parser for Blondie agent."""
 
 from __future__ import annotations

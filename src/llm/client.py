@@ -1,3 +1,5 @@
+# src/llm/client.py
+
 """LLM HTTP clients for Blondie."""
 
 from dataclasses import dataclass
