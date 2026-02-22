@@ -92,7 +92,9 @@ class Executor:
             console.print("ℹ️  No 'test' command configured, skipping.")
             return CommandResult("test (skipped)", 0, "", "")
 
-        max_retries = retries if retries is not None else self.policy.autonomy.test_retries
+        max_retries = (
+            retries if retries is not None else self.policy.autonomy.get("test_retries", 1)
+        )
         last_result: CommandResult | None = None
 
         for attempt in range(1, max_retries + 1):

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel
@@ -22,6 +22,8 @@ class Policy(BaseModel):
     """Parsed POLICY.yaml configuration for repo autonomy and commands."""
 
     gates: dict[str, Literal["allow", "prompt", "forbid"]] = {}
+    autonomy: dict[str, Any] = {}
+    limits: dict[str, Any] = {}
     commands: dict[str, str] = {}
     git_strategy: dict[str, str] = {}
     docs: list[str] = []

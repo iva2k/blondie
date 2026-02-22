@@ -105,6 +105,9 @@ Format as clean Markdown."""
         provider = self.select_model("coding")
         client = self.clients.get(provider)
 
+        if not client:
+            raise ValueError(f"No client for provider '{provider}'")
+
         system_prompt = """You are expert code editor. Return ONLY full file content.
 
 Rules:
@@ -135,6 +138,9 @@ Rules:
         provider = self.select_model("debugging")
         client = self.clients.get(provider)
 
+        if not client:
+            raise ValueError(f"No client for provider '{provider}'")
+
         messages = [
             {
                 "role": "user",
@@ -150,7 +156,7 @@ Rules:
 
     def check_daily_limit(self) -> bool:
         """Check cost limit from policy."""
-        limit = getattr(self.policy.limits, "max_daily_cost_usd", float("inf"))
+        limit = self.policy.limits.get("max_daily_cost_usd", float("inf"))
         if self.daily_cost > limit:
             console.print(f"💰 Daily limit exceeded: ${self.daily_cost:.2f}")
             return False
