@@ -7,7 +7,7 @@ commands:
   test: pytest tests/
   build: python -m build
 policy: POLICY.yaml
-docs: 
+docs:
   - README.md
   - docs/
 deploy:
