@@ -87,6 +87,10 @@ blondie/
 │   │   ├── test_git.py       #
 │   ├── llm/                  # Unit tests
 │   │   ├── test_llm.py       #
+├── docs/                     # Blondie self-docs
+│   ├── DEPLOY.md             # Deployment instructions
+│   ├── DEVELOP.md            # Development instructions
+│   └── ARCHITECTURE.md       # Module diagram
 ├── docker/
 │   ├── Dockerfile            # Python 3.12-slim
 │   └── docker-entrypoint.sh  # blondie run
