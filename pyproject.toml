@@ -5,7 +5,11 @@ description = "Autonomous coding agent"
 authors = ["iva2k <iva2k@yahoo.com>"]
 readme = "README.md"
 maintainers = ["iva2k <iva2k@yahoo.com>"]
-packages = [{include = "agent", from = "src"}]
+packages = [
+    {include = "agent", from = "src"},
+    {include = "llm", from = "src"},
+    # {include = "repo", from = "src"},
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -33,6 +37,9 @@ pylint = "^3.2.7"
 [build-system]
 requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+blondie = "agent.loop:entry_point"
 
 [tool.ruff]
 line-length = 100

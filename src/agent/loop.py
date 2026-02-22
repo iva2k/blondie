@@ -3,6 +3,7 @@
 import asyncio
 from pathlib import Path
 
+import click
 from rich.console import Console
 
 from agent.cli.executor import Executor
@@ -155,12 +156,18 @@ class BlondieAgent:
             await self.run_forever()
 
 
-async def main() -> None:
+async def main(repo_path: str) -> None:
     """CLI entry point."""
-    repo_path = "."
     agent = BlondieAgent(repo_path)
     await agent.run()
 
 
+@click.command()
+@click.argument("repo_path", default=".", type=click.Path(exists=True, file_okay=False, dir_okay=True))
+def entry_point(repo_path: str = ".") -> None:
+    """Blondie Agent CLI."""
+    asyncio.run(main(repo_path))
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    entry_point()
