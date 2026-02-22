@@ -32,10 +32,12 @@ blondie/
 │       ├── vercel.py         # vercel --prod wrapper
 │       ├── netlify.py        # netlify deploy wrapper
 │       └── git.py            # Git automation
-├── templates/                # Repo bootstrap templates
-│   ├── POLICY.yaml.template  # Default POLICY
-│   ├── project.yaml.template # Default project
-│   └── TASKS.md.template
+├── templates/                # Repo bootstrap templates {{Handlebars}}
+│   ├── llm_config.yaml       # Default llm_config
+│   ├── POLICY.yaml           # Default POLICY
+│   ├── project.yaml          # Default project
+│   ├── SPEC.md               # Default SPEC.md
+│   └── TASKS.md              # Default TASKS.md
 ├── tests/                    # Tests
 │   ├── agent/                # Unit tests
 │   │   ├── test_policy.py    #

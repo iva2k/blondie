@@ -44,7 +44,7 @@ class OpenAIClient(LLMClient):
 
     async def chat(self, messages: list[dict[str, str]], **kwargs: Any) -> LLMResponse:
         payload = {
-            "model": self.model,
+            "model": kwargs.get("model") or self.model,
             "messages": messages,
             "temperature": kwargs.get("temperature", 0.1),
             "max_tokens": kwargs.get("max_tokens", 4096),
@@ -88,7 +88,7 @@ class AnthropicClient(LLMClient):
                 user_content += msg["content"] + "\n"
 
         payload = {
-            "model": self.model,
+            "model": kwargs.get("model") or self.model,
             "max_tokens": kwargs.get("max_tokens", 4096),
             "messages": [{"role": "user", "content": user_content}],
             "system": system.strip(),

@@ -7,6 +7,7 @@ from pathlib import Path
 import yaml
 from rich.console import Console
 
+from agent.llm_config import LLMConfig
 from agent.policy import Policy
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
 
@@ -16,9 +17,10 @@ console = Console()
 class LLMRouter:
     """Smart LLM router with cost tracking and policy gating."""
 
-    def __init__(self, secrets_path: Path, policy: Policy):
+    def __init__(self, secrets_path: Path, config_path: Path, policy: Policy | None = None):
         self.policy = policy
         self.secrets = self._load_secrets(secrets_path)
+        self.config = LLMConfig.from_file(config_path)
         self.clients: dict[str, LLMClient] = {}
         self.daily_cost = 0.0
         self._init_clients()
@@ -35,41 +37,49 @@ class LLMRouter:
         """Initialize available LLM providers."""
         llm_secrets = self.secrets.get("llm", {})
 
-        # OpenAI-compatible
-        if "openai" in llm_secrets:
-            cfg = llm_secrets["openai"]
-            self.clients["openai"] = OpenAIClient(
-                api_key=cfg["api_key"],
-                base_url=cfg.get("api_base", "https://api.openai.com"),
-                model=cfg.get("model", "gpt-4o-mini"),
-            )
+        for name, provider_cfg in self.config.providers.items():
+            secret = llm_secrets.get(name)
+            if not secret:
+                continue
 
-        # Anthropic Claude
-        if "anthropic" in llm_secrets:
-            cfg = llm_secrets["anthropic"]
-            self.clients["anthropic"] = AnthropicClient(
-                api_key=cfg["api_key"],
-                base_url=cfg.get("api_base", "https://api.anthropic.com"),
-                model=cfg.get("model", "claude-3-5-sonnet-20240620"),
-            )
+            api_key = secret.get("api_key")
+            if not api_key:
+                continue
+
+            if provider_cfg.api_type == "openai":
+                self.clients[name] = OpenAIClient(
+                    api_key=api_key,
+                    base_url=provider_cfg.base_url or "https://api.openai.com",
+                    model=provider_cfg.default_model or "gpt-4o-mini",
+                )
+            elif provider_cfg.api_type == "anthropic":
+                self.clients[name] = AnthropicClient(
+                    api_key=api_key,
+                    base_url=provider_cfg.base_url or "https://api.anthropic.com",
+                    model=provider_cfg.default_model or "claude-3-5-sonnet-20240620",
+                )
 
         console.print(f"🧠 LLM providers: {list(self.clients.keys())}")
 
-    def select_model(self, operation: str) -> str:
-        """Select best provider/model for operation."""
-        model_map = {
-            "planning": "anthropic",  # Reasoning
-            "coding": "openai",  # Speed
-            "debugging": "anthropic",  # Analysis
-            "review": "anthropic",  # Quality
-        }
-        return model_map.get(operation, "openai")
+    def select_model(self, operation: str) -> tuple[str, str | None]:
+        """Select best provider/model for operation based on config priority."""
+        selections = self.config.operations.get(operation, [])
+
+        for selection in selections:
+            if selection.provider in self.clients:
+                return selection.provider, selection.model
+
+        # Fallback: return first available client
+        if self.clients:
+            return list(self.clients.keys())[0], None
+
+        raise ValueError(f"No active LLM provider found for operation '{operation}'")
 
     async def plan_task(
         self, task_title: str, repo_context: str, policy_summary: dict, **_kwargs
     ) -> LLMResponse:
         """Generate detailed implementation plan."""
-        provider = self.select_model("planning")
+        provider, model = self.select_model("planning")
         client = self.clients.get(provider)
 
         if not client:
@@ -92,7 +102,7 @@ Format as clean Markdown."""
 
         messages = [{"role": "system", "content": system_prompt}]
 
-        response = await client.chat(messages, temperature=0.1, max_tokens=2000)
+        response = await client.chat(messages, temperature=0.1, max_tokens=2000, model=model)
         self.daily_cost += response.cost_usd
 
         console.print(f"📋 [{provider.upper()}] Plan: {response.tokens_used}t")
@@ -102,7 +112,7 @@ Format as clean Markdown."""
         self, filename: str, existing_content: str, instruction: str, **_kwargs
     ) -> LLMResponse:
         """Generate/edit single file."""
-        provider = self.select_model("coding")
+        provider, model = self.select_model("coding")
         client = self.clients.get(provider)
 
         if not client:
@@ -127,7 +137,7 @@ Rules:
             },
         ]
 
-        response = await client.chat(messages, temperature=0.05, max_tokens=8000)
+        response = await client.chat(messages, temperature=0.05, max_tokens=8000, model=model)
         self.daily_cost += response.cost_usd
 
         console.print(f"💾 [{provider.upper()}] {filename}: {response.tokens_used}t")
@@ -135,7 +145,7 @@ Rules:
 
     async def debug_error(self, error_log: str, code_context: str, **_kwargs) -> LLMResponse:
         """Suggest fix for test failures."""
-        provider = self.select_model("debugging")
+        provider, model = self.select_model("debugging")
         client = self.clients.get(provider)
 
         if not client:
@@ -150,12 +160,14 @@ Rules:
             }
         ]
 
-        response = await client.chat(messages, temperature=0.2, max_tokens=1500)
+        response = await client.chat(messages, temperature=0.2, max_tokens=1500, model=model)
         self.daily_cost += response.cost_usd
         return response
 
     def check_daily_limit(self) -> bool:
         """Check cost limit from policy."""
+        if not self.policy:
+            return True
         limit = self.policy.limits.get("max_daily_cost_usd", float("inf"))
         if self.daily_cost > limit:
             console.print(f"💰 Daily limit exceeded: ${self.daily_cost:.2f}")

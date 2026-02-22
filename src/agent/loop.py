@@ -29,11 +29,12 @@ class BlondieAgent:
         self.policy = Policy.from_file(self.policy_path)
         self.tasks_path = self.agent_dir / "TASKS.md"
         self.secrets_path = self.agent_dir / "secrets.env.yaml"
+        self.llm_config_path = self.agent_dir / "llm_config.yaml"
 
         self.tasks = TasksManager(self.tasks_path, project_id=self.project.id.upper())
         self.git = GitCLI(self.repo_path, self.policy)
         self.exec = Executor(self.repo_path, self.policy)
-        self.llm = LLMRouter(self.secrets_path, self.policy)
+        self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy)
 
     async def run_once(self) -> bool:
         """Execute one full task cycle. Returns True if task completed."""
