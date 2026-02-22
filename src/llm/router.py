@@ -111,7 +111,7 @@ Format as clean Markdown."""
         system_prompt = """You are expert code editor. Return ONLY full file content.
 
 Rules:
-• Preserve imports, structure, formatting
+• Preserve imports, structure, formatting, comments, docstrings
 • Make minimal targeted changes  
 • Include tests if new feature
 • Follow existing code style

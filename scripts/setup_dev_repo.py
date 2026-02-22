@@ -30,8 +30,7 @@ def handle_remove_readonly(func, path, _):
 def run_command(args: list[str], cwd: Path) -> None:
     """Run a shell command."""
     try:
-        subprocess.run(args, cwd=cwd, check=True,
-                       capture_output=True, text=True)
+        subprocess.run(args, cwd=cwd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         print(f"Error running {' '.join(args)} in {cwd}:")
         print(e.stderr)
