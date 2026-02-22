@@ -26,7 +26,7 @@ class Policy(BaseModel):
     limits: dict[str, Any] = {}
     commands: dict[str, str] = {}
     git_strategy: dict[str, str] = {}
-    docs: list[str] = []
+    docs: dict[str, list[str]] = {}
 
     @classmethod
     def from_file(cls, path: Path) -> Policy:
