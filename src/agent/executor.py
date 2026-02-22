@@ -18,6 +18,7 @@ console = Console()
 @dataclass
 class CommandResult:
     """Command result dataclass."""
+
     command: str
     returncode: int
     stdout: str
@@ -51,10 +52,7 @@ class Executor:
         """Run a shell command in repo, optionally gated by autonomy policy."""
         if gate and not self._check_gate(gate):
             return CommandResult(
-                command=command,
-                returncode=0,
-                stdout="",
-                stderr="SKIPPED_BY_POLICY"
+                command=command, returncode=0, stdout="", stderr="SKIPPED_BY_POLICY"
             )
 
         console.print(f"💻 [dim]{command}[/dim]")

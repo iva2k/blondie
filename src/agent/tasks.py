@@ -19,6 +19,7 @@ console = Console()
 
 class TaskStatus(Enum):
     """Task status."""
+
     DONE = "Done"
     TODO = "Todo"
 
@@ -26,6 +27,7 @@ class TaskStatus(Enum):
 @dataclass
 class Task:
     """Task."""
+
     id: str
     priority: str | None  # P0, P1, P2
     title: str
@@ -70,8 +72,7 @@ class TasksManager:
             line_stripped = line.strip()
 
             # Section headers
-            section_match = re.match(
-                r"##\s*(Done|Todo)", line_stripped, re.I)
+            section_match = re.match(r"##\s*(Done|Todo)", line_stripped, re.I)
             if section_match:
                 current_section = TaskStatus(section_match.group(1).title())
                 continue
@@ -103,15 +104,17 @@ class TasksManager:
                 if depends_str and depends_str.strip():
                     depends_on = [d.strip() for d in depends_str.split(",") if d.strip()]
 
-                self.tasks.append(Task(
-                    id=task_id.strip(),
-                    priority=priority.strip() if priority else None,
-                    title=title.strip(),
-                    depends_on=depends_on,
-                    status=status,
-                    raw_line=line,
-                    project_id=self.project_id
-                ))
+                self.tasks.append(
+                    Task(
+                        id=task_id.strip(),
+                        priority=priority.strip() if priority else None,
+                        title=title.strip(),
+                        depends_on=depends_on,
+                        status=status,
+                        raw_line=line,
+                        project_id=self.project_id,
+                    )
+                )
 
     def get_todo_tasks(self) -> list[Task]:
         """Get available tasks, sorted by priority."""
@@ -161,8 +164,7 @@ class TasksManager:
             if task.id == clean_id:
                 task.status = TaskStatus.DONE
                 self._save()
-                console.print(
-                    f"✅ Completed [bold green]{task.full_id}[/]: {task.title}")
+                console.print(f"✅ Completed [bold green]{task.full_id}[/]: {task.title}")
                 return True
         return False
 
@@ -184,7 +186,8 @@ class TasksManager:
                     priority = task.priority or ""
                     depends = ", ".join(task.depends_on)
                     content.append(
-                        f"- [{checked}] {task.id} | {priority} | {task.title} | {depends}\n")
+                        f"- [{checked}] {task.id} | {priority} | {task.title} | {depends}\n"
+                    )
 
         self.tasks_path.write_text("".join(content), encoding="utf-8")
 
@@ -203,7 +206,7 @@ class TasksManager:
                 task.priority or "",
                 task.title[:50],
                 task.status.value,
-                ", ".join(task.depends_on)
+                ", ".join(task.depends_on),
             )
 
         console.print(table)
@@ -227,6 +230,7 @@ def main():
     next_task = manager.get_next_task()
     if next_task:
         print(f"\nNext task: {next_task.full_id} - {next_task.title}")
+
 
 if __name__ == "__main__":
     main()

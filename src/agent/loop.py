@@ -30,8 +30,7 @@ class BlondieAgent:
         self.tasks_path = self.agent_dir / "TASKS.md"
         self.secrets_path = self.agent_dir / "secrets.env.yaml"
 
-        self.tasks = TasksManager(
-            self.tasks_path, project_id=self.project.id.upper())
+        self.tasks = TasksManager(self.tasks_path, project_id=self.project.id.upper())
         self.git = GitCLI(self.repo_path, self.policy)
         self.exec = Executor(self.repo_path, self.policy)
         self.llm = LLMRouter(self.secrets_path, self.policy)
@@ -55,7 +54,8 @@ class BlondieAgent:
             # 3. Claim task
             if not self.tasks.claim_task(task.id, self.git):
                 console.print(
-                    f"⚠️  Task {task.id} already claimed (remote branch \"{task.branch_name}\" exists)")
+                    f'⚠️  Task {task.id} already claimed (remote branch "{task.branch_name}" exists)'
+                )
                 return False
 
         branch_name = task.branch_name
@@ -82,7 +82,8 @@ class BlondieAgent:
                 console.print("❌ Tests failed - triggering LLM debug")
                 debug_response = await self.llm.debug_error(test_result.stderr, context)
                 console.print(
-                    f"🔧 [dim]LLM debug suggestion:[/dim]\n{debug_response.content[:300]}...")
+                    f"🔧 [dim]LLM debug suggestion:[/dim]\n{debug_response.content[:300]}..."
+                )
                 # For v1: leave In Progress for manual fix
                 return False
 
@@ -165,7 +166,9 @@ async def main(repo_path: str) -> None:
 
 
 @click.command()
-@click.argument("repo_path", default=".", type=click.Path(exists=True, file_okay=False, dir_okay=True))
+@click.argument(
+    "repo_path", default=".", type=click.Path(exists=True, file_okay=False, dir_okay=True)
+)
 def entry_point(repo_path: str = ".") -> None:
     """Blondie Agent CLI."""
     asyncio.run(main(repo_path))

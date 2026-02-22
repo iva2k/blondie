@@ -33,6 +33,7 @@ black = "^24.8.0"
 ruff = "^0.6.9"
 mypy = "^1.11.2"
 pylint = "^3.2.7"
+poethepoet = "^0.29.0"
 
 [build-system]
 requires = ["poetry-core>=1.8.0"]
@@ -40,6 +41,13 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 blondie = "agent.loop:entry_point"
+
+[tool.poe.tasks]
+test = "pytest"
+lint = "ruff check ."
+format = "ruff format ."
+typecheck = "mypy ."
+check = ["format", "lint", "typecheck", "test"]
 
 [tool.ruff]
 line-length = 100

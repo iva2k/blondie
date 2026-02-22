@@ -93,13 +93,14 @@ def test_is_clean(git_cli):
 
 def test_create_pr_branch_switch(git_cli):
     """Test creating PR branch when we need to switch and commit."""
-    with patch.object(git_cli, "current_branch", return_value="main"), \
-         patch.object(git_cli, "checkout_branch") as mock_checkout, \
-         patch.object(git_cli, "status", return_value=" M file.txt"), \
-         patch.object(git_cli, "add_all") as mock_add, \
-         patch.object(git_cli, "commit") as mock_commit, \
-         patch.object(git_cli, "push") as mock_push:
-
+    with (
+        patch.object(git_cli, "current_branch", return_value="main"),
+        patch.object(git_cli, "checkout_branch") as mock_checkout,
+        patch.object(git_cli, "status", return_value=" M file.txt"),
+        patch.object(git_cli, "add_all") as mock_add,
+        patch.object(git_cli, "commit") as mock_commit,
+        patch.object(git_cli, "push") as mock_push,
+    ):
         git_cli.create_pr_branch("123")
 
         mock_checkout.assert_called_with("task-123")
@@ -110,10 +111,11 @@ def test_create_pr_branch_switch(git_cli):
 
 def test_create_pr_branch_already_on_branch_clean(git_cli):
     """Test creating PR branch when already on branch and clean."""
-    with patch.object(git_cli, "current_branch", return_value="task-123"), \
-         patch.object(git_cli, "checkout_branch") as mock_checkout, \
-         patch.object(git_cli, "status", return_value=""):
-
+    with (
+        patch.object(git_cli, "current_branch", return_value="task-123"),
+        patch.object(git_cli, "checkout_branch") as mock_checkout,
+        patch.object(git_cli, "status", return_value=""),
+    ):
         git_cli.create_pr_branch("123")
 
         mock_checkout.assert_not_called()

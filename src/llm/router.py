@@ -41,7 +41,7 @@ class LLMRouter:
             self.clients["openai"] = OpenAIClient(
                 api_key=cfg["api_key"],
                 base_url=cfg.get("api_base", "https://api.openai.com"),
-                model=cfg.get("model", "gpt-4o-mini")
+                model=cfg.get("model", "gpt-4o-mini"),
             )
 
         # Anthropic Claude
@@ -50,7 +50,7 @@ class LLMRouter:
             self.clients["anthropic"] = AnthropicClient(
                 api_key=cfg["api_key"],
                 base_url=cfg.get("api_base", "https://api.anthropic.com"),
-                model=cfg.get("model", "claude-3-5-sonnet-20240620")
+                model=cfg.get("model", "claude-3-5-sonnet-20240620"),
             )
 
         console.print(f"🧠 LLM providers: {list(self.clients.keys())}")
@@ -58,19 +58,15 @@ class LLMRouter:
     def select_model(self, operation: str) -> str:
         """Select best provider/model for operation."""
         model_map = {
-            "planning": "anthropic",     # Reasoning
-            "coding": "openai",          # Speed
-            "debugging": "anthropic",    # Analysis
-            "review": "anthropic",       # Quality
+            "planning": "anthropic",  # Reasoning
+            "coding": "openai",  # Speed
+            "debugging": "anthropic",  # Analysis
+            "review": "anthropic",  # Quality
         }
         return model_map.get(operation, "openai")
 
     async def plan_task(
-        self,
-        task_title: str,
-        repo_context: str,
-        policy_summary: dict,
-        **_kwargs
+        self, task_title: str, repo_context: str, policy_summary: dict, **_kwargs
     ) -> LLMResponse:
         """Generate detailed implementation plan."""
         provider = self.select_model("planning")
@@ -103,11 +99,7 @@ Format as clean Markdown."""
         return response
 
     async def generate_code(
-        self,
-        filename: str,
-        existing_content: str,
-        instruction: str,
-        **_kwargs
+        self, filename: str, existing_content: str, instruction: str, **_kwargs
     ) -> LLMResponse:
         """Generate/edit single file."""
         provider = self.select_model("coding")
@@ -126,26 +118,19 @@ Rules:
             {"role": "system", "content": system_prompt},
             {
                 "role": "user",
-                "content":
-                        f"FILENAME: {filename}\n"
-                        f"EXISTING: {existing_content}\n"
-                        f"INSTRUCT: {instruction}"
-            }
+                "content": f"FILENAME: {filename}\n"
+                f"EXISTING: {existing_content}\n"
+                f"INSTRUCT: {instruction}",
+            },
         ]
 
         response = await client.chat(messages, temperature=0.05, max_tokens=8000)
         self.daily_cost += response.cost_usd
 
-        console.print(
-            f"💾 [{provider.upper()}] {filename}: {response.tokens_used}t")
+        console.print(f"💾 [{provider.upper()}] {filename}: {response.tokens_used}t")
         return response
 
-    async def debug_error(
-        self,
-        error_log: str,
-        code_context: str,
-        **_kwargs
-    ) -> LLMResponse:
+    async def debug_error(self, error_log: str, code_context: str, **_kwargs) -> LLMResponse:
         """Suggest fix for test failures."""
         provider = self.select_model("debugging")
         client = self.clients.get(provider)
@@ -153,10 +138,9 @@ Rules:
         messages = [
             {
                 "role": "user",
-                "content": 
-                        f"TEST ERROR:\n{error_log}\n\n"
-                        f"CODE:\n{code_context}\n\n"
-                        "Suggest targeted fix:"
+                "content": f"TEST ERROR:\n{error_log}\n\n"
+                f"CODE:\n{code_context}\n\n"
+                "Suggest targeted fix:",
             }
         ]
 

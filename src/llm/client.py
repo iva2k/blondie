@@ -14,6 +14,7 @@ console = Console()
 @dataclass
 class LLMResponse:
     """LLM Response dataclass."""
+
     content: str
     model: str
     tokens_used: int
@@ -56,9 +57,7 @@ class OpenAIClient(LLMClient):
         }
 
         resp = await self.client.post(
-            f"{self.base_url}/v1/chat/completions",
-            json=payload,
-            headers=headers
+            f"{self.base_url}/v1/chat/completions", json=payload, headers=headers
         )
         resp.raise_for_status()
         data = resp.json()
@@ -70,7 +69,7 @@ class OpenAIClient(LLMClient):
             content=choice["content"],
             model=self.model,
             tokens_used=usage["total_tokens"],
-            cost_usd=usage["total_tokens"] * 0.00002  # GPT-4o-mini pricing
+            cost_usd=usage["total_tokens"] * 0.00002,  # GPT-4o-mini pricing
         )
 
 
@@ -113,5 +112,5 @@ class AnthropicClient(LLMClient):
             content=content,
             model=self.model,
             tokens_used=tokens,
-            cost_usd=tokens * 0.000075  # Claude 3.5 Sonnet pricing
+            cost_usd=tokens * 0.000075,  # Claude 3.5 Sonnet pricing
         )

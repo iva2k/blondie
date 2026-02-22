@@ -21,31 +21,22 @@ class GitCLI:
         self._cwd = repo_path
 
     def run(
-        self,
-        *args: str,
-        check: bool = True,
-        capture_output: bool = False
+        self, *args: str, check: bool = True, capture_output: bool = False
     ) -> subprocess.CompletedProcess:
         """Run git command with policy check."""
 
         # Policy gate
         permission = self.policy.check_permission(f"git-{args[0]}")
         if permission == "forbid":
-            raise PermissionError(
-                f"Git action '{args[0]}' forbidden by POLICY.yaml")
+            raise PermissionError(f"Git action '{args[0]}' forbidden by POLICY.yaml")
         if permission == "prompt":
-            console.print(
-                f"❓ [yellow]Git {args[0]}[/yellow] requires approval")
-            if not console.input("[? Approve? (y/N)] ").lower().startswith('y'):
+            console.print(f"❓ [yellow]Git {args[0]}[/yellow] requires approval")
+            if not console.input("[? Approve? (y/N)] ").lower().startswith("y"):
                 raise PermissionError("User denied git operation")
 
         console.print(f"🐙 git {args}")
         result = subprocess.run(
-            ["git", *args],
-            cwd=self._cwd,
-            capture_output=capture_output,
-            text=True,
-            check=check
+            ["git", *args], cwd=self._cwd, capture_output=capture_output, text=True, check=check
         )
         return result
 
@@ -74,8 +65,7 @@ class GitCLI:
 
     def current_branch(self) -> str:
         """Get current branch name."""
-        result = self.run("branch", "--show-current",
-                          capture_output=True, check=True)
+        result = self.run("branch", "--show-current", capture_output=True, check=True)
         return result.stdout.strip()
 
     def add_all(self) -> None:
@@ -145,6 +135,7 @@ def main():
     policy = Policy()
     git = GitCLI(Path("."), policy)
     print(f"Current branch: {git.current_branch()}")
+
 
 if __name__ == "__main__":
     main()

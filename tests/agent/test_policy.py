@@ -38,6 +38,7 @@ def test_policy_yaml_parsing(sample_policy_file: Path) -> None:
     assert policy.check_permission("install-binary") == "forbid"
     assert policy.get_command("test") == "npm test"
 
+
 def test_default_allow() -> None:
     """Test default allow behavior."""
     policy = Policy()

@@ -14,14 +14,7 @@ from llm.router import LLMResponse, LLMRouter
 @pytest.fixture
 def mock_secrets():
     """Mock secrets for testing."""
-    return {
-        "llm": {
-            "openai": {
-                "api_key": "sk-test",
-                "model": "gpt-4o-mini"
-            }
-        }
-    }
+    return {"llm": {"openai": {"api_key": "sk-test", "model": "gpt-4o-mini"}}}
 
 
 @pytest.fixture
@@ -60,7 +53,7 @@ async def test_plan_task(mock_policy, tmp_path: Path):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "choices": [{"message": {"content": "Plan: step 1"}}],
-            "usage": {"total_tokens": 100}
+            "usage": {"total_tokens": 100},
         }
         mock_post.return_value = mock_response
 
