@@ -16,7 +16,9 @@
             "type": "debugpy",
             "request": "launch",
             "module": "src.agent.loop",
-            "args": ["${workspaceFolder}"],
+            "args": [
+                "${workspaceFolder}/_tmp/repo"
+            ],
             "cwd": "${workspaceFolder}",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
