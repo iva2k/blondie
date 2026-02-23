@@ -17,16 +17,18 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
-- [ ] 010 | P3 | Implement agent shell commands, such as adding & installing packages |
-- [ ] 011 | P3 | Vercel/Netlify CLI wrappers |
-- [ ] 012 | P3 | Docker build + e2e tests |
-- [ ] 013 | P3 | Deploy! Start self-editing |
-- [ ] 014 | P4 | Multi-repo scanner + project.yaml |
-- [ ] 015 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
-- [ ] 016 | P4 | Tasks.py should pick blocking task first | 012
-- [ ] 017 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
-- [ ] 018 | P5 | Option to log all chats to a trace dir/files (per task) |
-- [ ] 019 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
-- [ ] 020 | P5 | in loop.py:BlondieAgent._get_file_tree() use current .gitignore instead of hard-coded list |
-- [ ] 021 | P5 | in loop.py:BlondieAgent._apply_llm_edits() implement dict for continuous action verbs, i.e. fix "Create-ing" |
-- [ ] 022 | P5 | in router.py:LLMRouter._init_clients() raise error for not configured API endpoint |
+- [ ] 010 | P3 | Failing test should trigger debugging loop and fix code (and possibly tests), retries should be for the test-debug-fix loop |
+- [ ] 011 | P3 | After failing test agent leaves uncommited files and stumbles trying to restart the task |
+- [ ] 012 | P3 | Implement agent shell commands, such as adding & installing packages |
+- [ ] 013 | P3 | Vercel/Netlify CLI wrappers |
+- [ ] 014 | P3 | Docker build + e2e tests |
+- [ ] 015 | P3 | Deploy! Start self-editing |
+- [ ] 016 | P4 | Multi-repo scanner + project.yaml |
+- [ ] 017 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
+- [ ] 018 | P4 | Tasks.py should pick blocking task first | 012
+- [ ] 019 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
+- [ ] 020 | P5 | Option to log all chats to a trace dir/files (per task) |
+- [ ] 021 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
+- [ ] 022 | P5 | in loop.py:BlondieAgent._get_file_tree() use current .gitignore instead of hard-coded list |
+- [ ] 023 | P5 | in loop.py:BlondieAgent._apply_llm_edits() implement dict for continuous action verbs, i.e. fix "Create-ing" |
+- [ ] 024 | P5 | in router.py:LLMRouter._init_clients() raise error for not configured API endpoint |
