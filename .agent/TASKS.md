@@ -17,10 +17,10 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
-- [ ] 010 | P3 | Implement agent shell commands |
+- [ ] 010 | P3 | Implement agent shell commands, such as adding & installing packages |
 - [ ] 011 | P3 | Vercel/Netlify CLI wrappers |
 - [ ] 012 | P3 | Docker build + e2e tests |
-- [ ] 013 | P3 | Deploy! |
+- [ ] 013 | P3 | Deploy! Start self-editing |
 - [ ] 014 | P4 | Multi-repo scanner + project.yaml |
 - [ ] 015 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
 - [ ] 016 | P4 | Tasks.py should pick blocking task first | 012
