@@ -1,0 +1,15 @@
+id: Calculator
+name: "Calculator project"
+languages: [python]
+main_branch: main
+task_source: TASKS.md
+commands:
+  install: poetry install
+  test: pytest tests/
+  build: python -m build
+policy: POLICY.yaml
+docs:
+  - README.md
+  - docs/
+deploy:
+  docker: docker build -t blondie:v1 .

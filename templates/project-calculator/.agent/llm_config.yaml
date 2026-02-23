@@ -1,0 +1,38 @@
+# LLM Configuration
+
+providers:
+  # Key matches 'llm' section in secrets.env.yaml
+  openai:
+    api_type: openai
+    base_url: https://api.openai.com/v1  # or your proxy/ollama endpoint
+    default_model: gpt-4o-mini
+  
+  anthropic:
+    api_type: anthropic
+    base_url: https://api.anthropic.com/v1
+    default_model: claude-3-5-sonnet-20240620
+  
+  # Example: Groq (OpenAI-compatible)
+  groq:
+    api_type: openai
+    base_url: https://api.groq.com/openai/v1
+    default_model: llama3-70b-8192
+
+operations:
+  # Priority order: First provider with available secret is used
+  planning:
+    - provider: anthropic
+    - provider: openai
+      model: gpt-4o  # Override default_model
+  
+  coding:
+    - provider: openai
+    - provider: anthropic
+  
+  debugging:
+    - provider: anthropic
+    - provider: openai
+  
+  review:
+    - provider: anthropic
+    - provider: openai

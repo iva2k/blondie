@@ -19,4 +19,5 @@ dist/
 env/
 htmlcov/
 log.*
+secrets.env.yaml
 venv/

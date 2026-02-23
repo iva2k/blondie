@@ -52,7 +52,7 @@ lint = "ruff check ."
 format = "ruff format ."
 typecheck = "mypy ."
 check = ["format", "lint", "typecheck", "test"]
-setup-dev = "python scripts/setup_dev_repo.py --repo _tmp/repo --agent-config _tmp/.agent"
+setup-dev = "python scripts/setup_dev_repo.py --repo _tmp/repo --agent-config templates/project-calculator/.agent"
 
 [tool.ruff]
 line-length = 120
