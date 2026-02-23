@@ -7,6 +7,7 @@ readme = "README.md"
 maintainers = ["iva2k <iva2k@yahoo.com>"]
 packages = [
     {include = "agent", from = "src"},
+    {include = "lib", from = "src"},
     {include = "llm", from = "src"},
     # {include = "repo", from = "src"},
 ]

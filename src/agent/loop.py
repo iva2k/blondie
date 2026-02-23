@@ -15,6 +15,7 @@ from agent.policy import Policy
 from agent.project import Project  # Added per your edits
 from agent.tasks import Task, TasksManager
 from cli import GitCLI
+from lib.gitignore import GitIgnore
 from llm import LLMRouter
 
 console = Console()
@@ -36,6 +37,7 @@ class BlondieAgent:
         self.tasks = TasksManager(self.tasks_path, project_id=self.project.id.upper())
         self.git = GitCLI(self.repo_path, self.policy)
         self.exec = Executor(self.repo_path, self.policy)
+        self.gitignore = GitIgnore(self.repo_path)
         self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy)
 
     async def run_once(self) -> bool:
@@ -183,19 +185,6 @@ class BlondieAgent:
     def _get_file_tree(self) -> str:
         """Generate list of repo files (excluding ignored)."""
         files = []
-        ignore_dirs = {
-            ".git",
-            "__pycache__",
-            "node_modules",
-            "dist",
-            "build",
-            ".mypy_cache",
-            ".pytest_cache",
-            ".venv",
-            "venv",
-            "coverage",
-        }
-        # TODO: (now) Use .gitignore instead of hard-coded list.
 
         for path in sorted(self.repo_path.rglob("*")):
             if not path.is_file():
@@ -206,7 +195,7 @@ class BlondieAgent:
             except ValueError:
                 continue
 
-            if any(part in ignore_dirs for part in rel_path.parts):
+            if self.gitignore.is_ignored(path):
                 continue
 
             if any(
