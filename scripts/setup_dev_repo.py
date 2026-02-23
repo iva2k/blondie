@@ -39,9 +39,7 @@ def run_command(args: list[str], cwd: Path) -> None:
 
 def parse_args() -> argparse.Namespace:
     """Parse command args."""
-    parser = argparse.ArgumentParser(
-        description="Setup a temporary development environment with a local remote."
-    )
+    parser = argparse.ArgumentParser(description="Setup a temporary development environment with a local remote.")
     parser.add_argument(
         "--repo",
         type=Path,
@@ -106,9 +104,7 @@ def main() -> None:
             print(f"Copying .agent config from {args.agent_config}...")
             shutil.copytree(args.agent_config, repo_dir / ".agent")
         else:
-            print(
-                f"Warning: Config path {args.agent_config} not found. Repo will lack .agent config."
-            )
+            print(f"Warning: Config path {args.agent_config} not found. Repo will lack .agent config.")
 
     # 6. Initial Commit & Push
     run_command(["git", "checkout", "-b", "main"], cwd=repo_dir)

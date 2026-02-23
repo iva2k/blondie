@@ -20,9 +20,7 @@ class GitCLI:
         self.policy = policy
         self._cwd = repo_path
 
-    def run(
-        self, *args: str, check: bool = True, capture_output: bool = False
-    ) -> subprocess.CompletedProcess:
+    def run(self, *args: str, check: bool = True, capture_output: bool = False) -> subprocess.CompletedProcess:
         """Run git command with policy check."""
 
         # Policy gate
@@ -35,9 +33,7 @@ class GitCLI:
                 raise PermissionError("User denied git operation")
 
         console.print(f"🐙 git {args}")
-        result = subprocess.run(
-            ["git", *args], cwd=self._cwd, capture_output=capture_output, text=True, check=check
-        )
+        result = subprocess.run(["git", *args], cwd=self._cwd, capture_output=capture_output, text=True, check=check)
         return result
 
     def checkout_branch(self, branch: str) -> None:

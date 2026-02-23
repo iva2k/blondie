@@ -76,9 +76,7 @@ class BlondieAgent:
 
             # 4. Claim task
             if not self.tasks.claim_task(task.id, self.git):
-                console.print(
-                    f'⚠️  Task {task.id} already claimed (remote branch "{task.branch_name}" exists)'
-                )
+                console.print(f'⚠️  Task {task.id} already claimed (remote branch "{task.branch_name}" exists)')
                 return False
 
         branch_name = task.branch_name
@@ -126,9 +124,7 @@ class BlondieAgent:
                     return False
 
             if not tests_passed:
-                console.print(
-                    f"❌ Tests failed after {max_retries} retries - leaving task for manual review"
-                )
+                console.print(f"❌ Tests failed after {max_retries} retries - leaving task for manual review")
                 self._save_wip(branch_name, f"WIP: {task.title} (Tests Failed)")
                 return False
 
@@ -199,8 +195,7 @@ class BlondieAgent:
                 continue
 
             if any(
-                part.startswith(".")
-                and part not in [".agent", ".github", ".gitignore", ".dockerignore"]
+                part.startswith(".") and part not in [".agent", ".github", ".gitignore", ".dockerignore"]
                 for part in rel_path.parts
             ):
                 continue
@@ -248,9 +243,7 @@ class BlondieAgent:
 
                 # Heuristic: map install commands to 'add-package' gate
                 gate = (
-                    "add-package"
-                    if any(x in command for x in ["install", "add", "npm", "pip", "poetry"])
-                    else "shell"
+                    "add-package" if any(x in command for x in ["install", "add", "npm", "pip", "poetry"]) else "shell"
                 )
 
                 max_retries = self.policy.limits.get("max_shell_retries", 3)
@@ -327,9 +320,7 @@ class BlondieAgent:
             while p != self.repo_path:
                 if p.exists():
                     if not p.is_dir():
-                        console.print(
-                            f"⚠️  Removing file {p.relative_to(self.repo_path)} to create directory."
-                        )
+                        console.print(f"⚠️  Removing file {p.relative_to(self.repo_path)} to create directory.")
                         p.unlink()
                         p.mkdir()
                     break
@@ -341,9 +332,7 @@ class BlondieAgent:
                     full_path.rmdir()
                     console.print(f"⚠️  Removed empty directory {path_str} to create file.")
                 except OSError:
-                    console.print(
-                        f"❌ Directory {path_str} exists and is not empty. Cannot overwrite with file."
-                    )
+                    console.print(f"❌ Directory {path_str} exists and is not empty. Cannot overwrite with file.")
                     continue
 
             existing_content = ""
@@ -412,9 +401,7 @@ async def main(repo_path: str) -> None:
 
 
 @click.command()
-@click.argument(
-    "repo_path", default=".", type=click.Path(exists=True, file_okay=False, dir_okay=True)
-)
+@click.argument("repo_path", default=".", type=click.Path(exists=True, file_okay=False, dir_okay=True))
 def entry_point(repo_path: str = ".") -> None:
     """Blondie Agent CLI."""
     asyncio.run(main(repo_path))

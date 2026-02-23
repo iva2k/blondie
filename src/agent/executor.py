@@ -51,9 +51,7 @@ class Executor:
     def run(self, command: str, *, gate: str | None = None, timeout: int = 120) -> CommandResult:
         """Run a shell command in repo, optionally gated by autonomy policy."""
         if gate and not self._check_gate(gate):
-            return CommandResult(
-                command=command, returncode=0, stdout="", stderr="SKIPPED_BY_POLICY"
-            )
+            return CommandResult(command=command, returncode=0, stdout="", stderr="SKIPPED_BY_POLICY")
 
         console.print(f"💻 [dim]{command}[/dim] (timeout: {timeout}s)")
         try:

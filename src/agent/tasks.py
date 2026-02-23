@@ -185,9 +185,7 @@ class TasksManager:
                     checked = "x" if status == TaskStatus.DONE else " "
                     priority = task.priority or ""
                     depends = ", ".join(task.depends_on)
-                    content.append(
-                        f"- [{checked}] {task.id} | {priority} | {task.title} | {depends}\n"
-                    )
+                    content.append(f"- [{checked}] {task.id} | {priority} | {task.title} | {depends}\n")
 
         self.tasks_path.write_text("".join(content), encoding="utf-8")
 

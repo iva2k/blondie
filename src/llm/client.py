@@ -56,9 +56,7 @@ class OpenAIClient(LLMClient):
             "Content-Type": "application/json",
         }
 
-        resp = await self.client.post(
-            f"{self.base_url}/chat/completions", json=payload, headers=headers
-        )
+        resp = await self.client.post(f"{self.base_url}/chat/completions", json=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()
 

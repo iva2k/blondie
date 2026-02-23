@@ -75,9 +75,7 @@ class LLMRouter:
 
         raise ValueError(f"No active LLM provider found for operation '{operation}'")
 
-    async def plan_task(
-        self, task_title: str, repo_context: str, policy_summary: dict, **_kwargs
-    ) -> LLMResponse:
+    async def plan_task(self, task_title: str, repo_context: str, policy_summary: dict, **_kwargs) -> LLMResponse:
         """Generate detailed implementation plan."""
         provider, model = self.select_model("planning")
         client = self.clients.get(provider)
@@ -147,9 +145,7 @@ Do not include markdown formatting (like ```yaml), just the raw YAML text.
         self.daily_cost += response.cost_usd
         return response
 
-    async def generate_code(
-        self, filename: str, existing_content: str, instruction: str, **_kwargs
-    ) -> LLMResponse:
+    async def generate_code(self, filename: str, existing_content: str, instruction: str, **_kwargs) -> LLMResponse:
         """Generate/edit single file."""
         provider, model = self.select_model("coding")
         client = self.clients.get(provider)
@@ -171,9 +167,7 @@ Rules:
             {"role": "system", "content": system_prompt},
             {
                 "role": "user",
-                "content": f"FILENAME: {filename}\n"
-                f"EXISTING: {existing_content}\n"
-                f"INSTRUCT: {instruction}",
+                "content": f"FILENAME: {filename}\nEXISTING: {existing_content}\nINSTRUCT: {instruction}",
             },
         ]
 

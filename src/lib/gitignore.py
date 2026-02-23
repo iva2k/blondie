@@ -58,11 +58,10 @@ class GitIgnore:
             if pattern.endswith("/"):
                 prefix = pattern.rstrip("/")
                 # Check if path starts with this dir
-                if path_str == prefix or path_str.startswith(prefix + "/"):
-                    match = True
                 # Check if any parent component matches (e.g. build/ matches src/build/out)
-                # We check parts[:-1] because the pattern is a directory, so it shouldn't match the file itself if it has that name
-                elif prefix in parts[:-1]:
+                # We check parts[:-1] because the pattern is a directory,
+                # so it shouldn't match the file itself if it has that name
+                if path_str == prefix or path_str.startswith(prefix + "/") or prefix in parts[:-1]:
                     match = True
 
             # Pattern with slash (path match)
