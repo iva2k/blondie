@@ -8,7 +8,6 @@ from pathlib import Path
 
 import click
 import yaml
-from rich.console import Console
 
 from agent.executor import Executor
 from agent.policy import Policy
@@ -16,18 +15,17 @@ from agent.project import Project  # Added per your edits
 from agent.tasks import Task, TasksManager
 from cli import GitCLI
 from lib.gitignore import GitIgnore
-from llm import LLMRouter
-
-console = Console()
+from llm import Journal, LLMRouter
 
 
 class BlondieAgent:
     """Main autonomous coding agent."""
 
-    def __init__(self, repo_path: str):
+    def __init__(self, repo_path: str, journal_dir: str | None = None):
         self.repo_path = Path(repo_path)
         self.agent_dir = self.repo_path / ".agent"
         self.project = Project.from_file(self.agent_dir / "project.yaml")
+        self.journal = Journal(journal_dir)
         self.policy_path = self.agent_dir / self.project.policy
         self.policy = Policy.from_file(self.policy_path)
         self.tasks_path = self.agent_dir / "TASKS.md"
@@ -38,21 +36,21 @@ class BlondieAgent:
         self.git = GitCLI(self.repo_path, self.policy)
         self.exec = Executor(self.repo_path, self.policy)
         self.gitignore = GitIgnore(self.repo_path)
-        self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy)
+        self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal)
 
     async def run_once(self) -> bool:
         """Execute one full task cycle. Returns True if task completed."""
         # 0. Handle uncommitted changes from previous run/crash
         status = self.exec.run("git status --porcelain")
         if status.stdout.strip():
-            console.print("⚠️  Found uncommitted changes from previous session.")
+            self.journal.print("⚠️  Found uncommitted changes from previous session.")
             current_branch = self.git.current_branch()
 
             if current_branch == self.project.main_branch:
-                console.print("🧹 Stashing changes on main to allow pull...")
+                self.journal.print("🧹 Stashing changes on main to allow pull...")
                 self.exec.run("git stash -u")
             else:
-                console.print(f"💾 Saving WIP on {current_branch}...")
+                self.journal.print(f"💾 Saving WIP on {current_branch}...")
                 self._save_wip(current_branch, "WIP: Crash recovery")
 
         # 1. Sync with main branch to ensure fresh start
@@ -64,19 +62,21 @@ class BlondieAgent:
         task = self.tasks.recover_active_task(self.git)
 
         if task:
-            console.print(f"🔄 Recovered active task [bold cyan]{task.id}[/] {task.title}")
+            self.journal.print(f"🔄 Recovered active task [bold cyan]{task.id}[/] {task.title}")
+            self.journal.start_task(task.id)
         else:
             # 3. Pick next task
             task = self.tasks.get_next_task()
             if not task:
-                console.print("✅ No tasks left, exiting.")
+                self.journal.print("✅ No tasks left, exiting.")
                 return False
 
-            console.print(f"\n🚀 Processing [bold cyan]{task.id}[/] {task.title}")
+            self.journal.print(f"\n🚀 Processing [bold cyan]{task.id}[/] {task.title}")
+            self.journal.start_task(task.id)
 
             # 4. Claim task
             if not self.tasks.claim_task(task.id, self.git):
-                console.print(f'⚠️  Task {task.id} already claimed (remote branch "{task.branch_name}" exists)')
+                self.journal.print(f'⚠️  Task {task.id} already claimed (remote branch "{task.branch_name}" exists)')
                 return False
 
         branch_name = task.branch_name
@@ -89,12 +89,20 @@ class BlondieAgent:
             context = self._gather_context(task)
             plan_response = await self.llm.plan_task(task.title, context, self.policy.model_dump())
             plan = plan_response.content
-            console.print(f"📋 [dim]Plan:[/dim]\n{plan[:500]}...")
+            self.journal.print(f"📋 [dim]Plan:[/dim]\n{plan[:500]}...")
+            self.journal.log_chat(
+                "plan_task",
+                f"Task: {task.title}\nContext len: {len(context)}",
+                plan_response,
+                context=context,
+                cost=plan_response.cost_usd,
+                tokens={"total": plan_response.tokens_used},
+            )
 
             # 3. LLM File Edits (STUB - implement file editing)
             edit_result = await self._apply_llm_edits(task, plan)
             if not edit_result:
-                console.print("❌ LLM edits failed")
+                self.journal.print("❌ LLM edits failed")
                 self._save_wip(branch_name, f"WIP: {task.title} (Edits Failed)")
                 return False
 
@@ -108,23 +116,31 @@ class BlondieAgent:
                     tests_passed = True
                     break
 
-                console.print(f"❌ Tests failed (Attempt {attempt + 1}/{max_retries})")
+                self.journal.print(f"❌ Tests failed (Attempt {attempt + 1}/{max_retries})")
                 if attempt == max_retries:
                     break
 
-                console.print("🔧 Triggering LLM debug...")
+                self.journal.print("🔧 Triggering LLM debug...")
                 context = self._gather_context(task)  # Refresh context
                 debug_response = await self.llm.debug_error(test_result.stderr, context)
                 fix_plan = debug_response.content
-                console.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan[:500]}...")
+                self.journal.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan[:500]}...")
+                self.journal.log_chat(
+                    "debug_error",
+                    f"Error: {test_result.stderr}",
+                    debug_response,
+                    context=context,
+                    cost=debug_response.cost_usd,
+                    tokens={"total": debug_response.tokens_used},
+                )
 
                 if not await self._apply_llm_edits(task, fix_plan):
-                    console.print("❌ LLM fix edits failed")
+                    self.journal.print("❌ LLM fix edits failed")
                     self._save_wip(branch_name, f"WIP: {task.title} (Fix Edits Failed)")
                     return False
 
             if not tests_passed:
-                console.print(f"❌ Tests failed after {max_retries} retries - leaving task for manual review")
+                self.journal.print(f"❌ Tests failed after {max_retries} retries - leaving task for manual review")
                 self._save_wip(branch_name, f"WIP: {task.title} (Tests Failed)")
                 return False
 
@@ -132,7 +148,7 @@ class BlondieAgent:
             self.git.add_all()
             self.git.commit(task.title)
             self.git.push(branch_name)
-            console.print(f"✅ Pushed [green]{branch_name}[/] 🎉")
+            self.journal.print(f"✅ Pushed [green]{branch_name}[/] 🎉")
 
             # 6. Complete task
             self.tasks.complete_task(task.id)
@@ -143,29 +159,29 @@ class BlondieAgent:
             self.git.push(branch_name)
 
             if not self.git.merge_if_clean(branch_name, main_branch):
-                console.print("⚠️  Merge failed (conflicts?), leaving branch for manual review.")
+                self.journal.print("⚠️  Merge failed (conflicts?), leaving branch for manual review.")
                 return True  # Task is technically done, just not merged
 
-            console.print(f"✅ Completed task [bold green]{task.full_id}[/]: {task.title}")
-            console.print(f"{'='*100}\n")
+            self.journal.print(f"✅ Completed task [bold green]{task.full_id}[/]: {task.title}")
+            self.journal.print(f"{'='*100}\n")
             return True
 
         except Exception as e:
-            console.print(f"💥 Task failed: {e}")
+            self.journal.print(f"💥 Task failed: {e}")
             self._save_wip(branch_name, f"WIP: Crash recovery - {e}")
-            console.print("Leaving task In Progress for review...")
+            self.journal.print("Leaving task In Progress for review...")
             return False
 
     def _save_wip(self, branch_name: str, message: str) -> None:
         """Save current work as WIP commit."""
         try:
             if self.git.current_branch() == branch_name:
-                console.print("💾 Saving WIP state...")
+                self.journal.print("💾 Saving WIP state...")
                 self.git.add_all()
                 self.git.commit(message)
                 self.git.push(branch_name)
         except Exception as e:
-            console.print(f"⚠️ Failed to save WIP: {e}")
+            self.journal.print(f"⚠️ Failed to save WIP: {e}")
 
     def _gather_context(self, _task: Task) -> str:
         """Gather repo context for LLM."""
@@ -206,9 +222,16 @@ class BlondieAgent:
 
     async def _apply_llm_edits(self, task: Task, plan: str) -> bool:
         """Apply LLM-generated file edits."""
-        console.print("🤔 Identifying files to edit...")
+        self.journal.print("🤔 Identifying files to edit...")
 
         response = await self.llm.get_file_edits(task.title, plan)
+        self.journal.log_chat(
+            "get_file_edits",
+            f"Plan: {plan}",
+            response,
+            cost=response.cost_usd,
+            tokens={"total": response.tokens_used},
+        )
 
         # Clean up potential markdown fences
         content = response.content.strip()
@@ -222,13 +245,13 @@ class BlondieAgent:
         try:
             edits = yaml.safe_load(content)
             if not isinstance(edits, list):
-                console.print(f"❌ Expected list of edits, got {type(edits)}")
+                self.journal.print(f"❌ Expected list of edits, got {type(edits)}")
                 return False
         except Exception as e:
-            console.print(f"❌ Failed to parse file edits: {e}")
+            self.journal.print(f"❌ Failed to parse file edits: {e}")
             return False
 
-        console.print(f"📝 Found {len(edits)} file operations.")
+        self.journal.print(f"📝 Found {len(edits)} file operations.")
 
         for edit in edits:
             action = edit.get("action", "edit")
@@ -238,7 +261,7 @@ class BlondieAgent:
                 command = edit.get("command") or instruction
                 timeout = int(edit.get("timeout", 120))
                 if not command:
-                    console.print("⚠️  Missing command for shell action")
+                    self.journal.print("⚠️  Missing command for shell action")
                     continue
 
                 # Heuristic: map install commands to 'add-package' gate
@@ -255,20 +278,28 @@ class BlondieAgent:
                         cmd_success = True
                         break
 
-                    console.print(f"❌ Shell command failed (Attempt {attempt + 1}/{max_retries})")
+                    self.journal.print(f"❌ Shell command failed (Attempt {attempt + 1}/{max_retries})")
                     if attempt == max_retries:
                         break
 
-                    console.print("🔧 Triggering LLM debug for shell command...")
+                    self.journal.print("🔧 Triggering LLM debug for shell command...")
                     context = f"Command: {command}\nCWD: {self.repo_path}"
                     debug_response = await self.llm.debug_error(
                         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}", context
                     )
                     fix_plan = debug_response.content
-                    console.print(f"📋 [dim]Shell Fix Plan:[/dim]\n{fix_plan[:500]}...")
+                    self.journal.print(f"📋 [dim]Shell Fix Plan:[/dim]\n{fix_plan[:500]}...")
+                    self.journal.log_chat(
+                        "debug_shell",
+                        f"Command: {command}\nError: {result.stderr}",
+                        debug_response,
+                        context=context,
+                        cost=debug_response.cost_usd,
+                        tokens={"total": debug_response.tokens_used},
+                    )
 
                     if not await self._apply_llm_edits(task, fix_plan):
-                        console.print("❌ LLM fix edits failed, aborting retries.")
+                        self.journal.print("❌ LLM fix edits failed, aborting retries.")
                         break
 
                 if not cmd_success:
@@ -288,39 +319,39 @@ class BlondieAgent:
                 if full_path.exists():
                     if full_path.is_dir():
                         shutil.rmtree(full_path)
-                        console.print(f"🗑️  Deleted directory {path_str}...")
+                        self.journal.print(f"🗑️  Deleted directory {path_str}...")
                     else:
-                        console.print(f"🗑️  Deleting {path_str}...")
+                        self.journal.print(f"🗑️  Deleting {path_str}...")
                         full_path.unlink()
                 else:
-                    console.print(f"⚠️  File to delete not found: {path_str}")
+                    self.journal.print(f"⚠️  File to delete not found: {path_str}")
                 continue
 
             # Handle directory creation
             if is_dir_op:
                 if action == "create":
                     if full_path.exists() and not full_path.is_dir():
-                        console.print(f"⚠️  Removing file {path_str} to create directory.")
+                        self.journal.print(f"⚠️  Removing file {path_str} to create directory.")
                         full_path.unlink()
 
                     if not full_path.exists():
-                        console.print(f"📂 Creating directory {path_str}...")
+                        self.journal.print(f"📂 Creating directory {path_str}...")
                         full_path.mkdir(parents=True, exist_ok=True)
                 continue
 
             if not instruction:
-                console.print(f"⚠️  Missing instruction for {path_str}")
+                self.journal.print(f"⚠️  Missing instruction for {path_str}")
                 continue
 
             verb = {"create": "Creating", "edit": "Editing"}.get(action, f"{action.title()}ing")
-            console.print(f"✍️  {verb} {path_str}...")
+            self.journal.print(f"✍️  {verb} {path_str}...")
 
             # Ensure parent directory structure is valid (handle file-blocking-directory)
             p = full_path.parent
             while p != self.repo_path:
                 if p.exists():
                     if not p.is_dir():
-                        console.print(f"⚠️  Removing file {p.relative_to(self.repo_path)} to create directory.")
+                        self.journal.print(f"⚠️  Removing file {p.relative_to(self.repo_path)} to create directory.")
                         p.unlink()
                         p.mkdir()
                     break
@@ -330,20 +361,28 @@ class BlondieAgent:
             if full_path.is_dir():
                 try:
                     full_path.rmdir()
-                    console.print(f"⚠️  Removed empty directory {path_str} to create file.")
+                    self.journal.print(f"⚠️  Removed empty directory {path_str} to create file.")
                 except OSError:
-                    console.print(f"❌ Directory {path_str} exists and is not empty. Cannot overwrite with file.")
+                    self.journal.print(f"❌ Directory {path_str} exists and is not empty. Cannot overwrite with file.")
                     continue
 
             existing_content = ""
             if full_path.exists():
                 if action == "create":
-                    console.print(f"⚠️  File {path_str} already exists, treating as edit.")
+                    self.journal.print(f"⚠️  File {path_str} already exists, treating as edit.")
                 existing_content = full_path.read_text(encoding="utf-8")
             elif action == "edit":
-                console.print(f"⚠️  File {path_str} not found for edit, treating as create.")
+                self.journal.print(f"⚠️  File {path_str} not found for edit, treating as create.")
 
             code_resp = await self.llm.generate_code(path_str, existing_content, instruction)
+            self.journal.log_chat(
+                "generate_code",
+                f"File: {path_str}\nInstr: {instruction}",
+                code_resp,
+                context=existing_content,
+                cost=code_resp.cost_usd,
+                tokens={"total": code_resp.tokens_used},
+            )
 
             # Clean up potential markdown fences for code
             code = code_resp.content.strip()
@@ -362,7 +401,7 @@ class BlondieAgent:
 
     async def run_forever(self) -> None:
         """Run continuous task loop."""
-        console.print("🔄 Blondie agent loop started")
+        self.journal.print("🔄 Blondie agent loop started")
         completed = 0
 
         while True:
@@ -376,14 +415,14 @@ class BlondieAgent:
 
                 # Exit if no tasks remain
                 if not self.tasks.get_todo_tasks():
-                    console.print(f"🎉 All {completed} tasks completed!")
+                    self.journal.print(f"🎉 All {completed} tasks completed!")
                     break
 
             except KeyboardInterrupt:
-                console.print("\n⏹️  Interrupted by user")
+                self.journal.print("\n⏹️  Interrupted by user")
                 break
             except Exception as e:
-                console.print(f"💥 Unexpected error: {e}")
+                self.journal.print(f"💥 Unexpected error: {e}")
                 await asyncio.sleep(5)  # Brief pause on error
 
     async def run(self) -> None:
@@ -394,17 +433,23 @@ class BlondieAgent:
             await self.run_forever()
 
 
-async def main(repo_path: str) -> None:
+async def main(repo_path: str, journal_dir: str | None = None) -> None:
     """CLI entry point."""
-    agent = BlondieAgent(repo_path)
+    agent = BlondieAgent(repo_path, journal_dir)
     await agent.run()
 
 
 @click.command()
 @click.argument("repo_path", default=".", type=click.Path(exists=True, file_okay=False, dir_okay=True))
-def entry_point(repo_path: str = ".") -> None:
+@click.option(
+    "--journal-dir",
+    default=None,
+    help="Directory to store journal logs",
+    type=click.Path(file_okay=False, dir_okay=True),
+)
+def entry_point(repo_path: str = ".", journal_dir: str | None = None) -> None:
     """Blondie Agent CLI."""
-    asyncio.run(main(repo_path))
+    asyncio.run(main(repo_path, journal_dir))
 
 
 if __name__ == "__main__":

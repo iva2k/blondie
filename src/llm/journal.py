@@ -1,0 +1,97 @@
+# src/llm/journal.py
+
+"""Journaling module for Blondie."""
+
+import datetime
+import json
+from pathlib import Path
+from typing import Any
+
+from rich.console import Console
+
+
+class Journal:
+    """Logger for agent activities and LLM interactions."""
+
+    def __init__(self, root_dir: Path | str | None = None):
+        self.root_dir = Path(root_dir) if root_dir else None
+        self.console = Console()
+        self.current_log_file: Path | None = None
+
+    def start_task(self, task_id: str) -> None:
+        """Start a new logging session for a task."""
+        if not self.root_dir:
+            return
+
+        # Sanitize task ID for folder name (e.g. BLONDIE-020 -> task020)
+        safe_id = "".join(c for c in task_id if c.isalnum() or c in ("-", "_"))
+        task_dir = self.root_dir / f"task{safe_id}"
+        task_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.datetime.now().strftime("%Y-%m%d-%H%M")
+        self.current_log_file = task_dir / f"{timestamp}.log"
+
+        self.write_raw(f"=== Journal started for task {task_id} at {timestamp} ===\n")
+
+    def print(self, *args: Any, **kwargs: Any) -> None:
+        """Print to console and log to file."""
+        self.console.print(*args, **kwargs)
+
+        if self.current_log_file:
+            # Simple text logging for console output
+            text = " ".join(str(arg) for arg in args)
+            self.write_raw(f"[CONSOLE] {text}\n")
+
+    def log_chat(
+        self,
+        operation: str,
+        prompt: str,
+        response: Any,
+        context: str | None = None,
+        cost: float | None = None,
+        tokens: dict[str, Any] | None = None,
+    ) -> None:
+        """Log LLM interaction details."""
+        if not self.current_log_file:
+            return
+
+        # Extract content/usage from response if available
+        content = str(response)
+        if hasattr(response, "content"):
+            content = response.content
+
+        if tokens is None and hasattr(response, "usage"):
+            try:
+                # Handle Pydantic or dict
+                if hasattr(response.usage, "model_dump"):
+                    tokens = response.usage.model_dump()
+                else:
+                    tokens = dict(response.usage)
+            except (ValueError, TypeError):
+                tokens = {"raw": str(response.usage)}
+
+        entry = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "type": "LLM",
+            "operation": operation,
+            "prompt_summary": prompt[:1000] + "..." if len(prompt) > 1000 else prompt,
+            "context_summary": (context[:500] + "...") if context else None,
+            "response_content": content,
+            "tokens": tokens,
+            "cost": cost,
+            "full_prompt": prompt,
+            "full_context": context,
+        }
+
+        self.write_raw(f"\n=== LLM CHAT ({operation}) ===\n")
+        self.write_raw(json.dumps(entry, indent=2, default=str))
+        self.write_raw("\n==============================\n")
+
+    def write_raw(self, text: str) -> None:
+        """Write raw text to log file."""
+        if self.current_log_file:
+            try:
+                with open(self.current_log_file, "a", encoding="utf-8") as f:
+                    f.write(text)
+            except Exception as e:
+                self.console.print(f"[red]Journal write failed: {e}[/red]")

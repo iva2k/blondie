@@ -10,15 +10,17 @@ from rich.console import Console
 from agent.llm_config import LLMConfig
 from agent.policy import Policy
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
-
-console = Console()
+from llm.journal import Journal
 
 
 class LLMRouter:
     """Smart LLM router with cost tracking and policy gating."""
 
-    def __init__(self, secrets_path: Path, config_path: Path, policy: Policy | None = None):
+    def __init__(
+        self, secrets_path: Path, config_path: Path, policy: Policy | None = None, journal: Journal | None = None
+    ):
         self.policy = policy
+        self.journal = journal or Console()
         self.secrets = self._load_secrets(secrets_path)
         self.config = LLMConfig.from_file(config_path)
         self.clients: dict[str, LLMClient] = {}
@@ -61,7 +63,7 @@ class LLMRouter:
             else:
                 raise ValueError(f"Unknown LLM provider type: {provider_cfg.api_type}")
 
-        console.print(f"🧠 LLM providers: {list(self.clients.keys())}")
+        self.journal.print(f"🧠 LLM providers: {list(self.clients.keys())}")
 
     def select_model(self, operation: str) -> tuple[str, str | None]:
         """Select best provider/model for operation based on config priority."""
@@ -105,7 +107,7 @@ Format as clean Markdown."""
         response = await client.chat(messages, temperature=0.1, max_tokens=2000, model=model)
         self.daily_cost += response.cost_usd
 
-        console.print(f"📋 [{provider.upper()}] Plan: {response.tokens_used}t")
+        self.journal.print(f"📋 [{provider.upper()}] Plan: {response.tokens_used}t")
         return response
 
     async def get_file_edits(self, task_title: str, plan: str, **_kwargs) -> LLMResponse:
@@ -176,7 +178,7 @@ Rules:
         response = await client.chat(messages, temperature=0.05, max_tokens=8000, model=model)
         self.daily_cost += response.cost_usd
 
-        console.print(f"💾 [{provider.upper()}] {filename}: {response.tokens_used}t")
+        self.journal.print(f"💾 [{provider.upper()}] {filename}: {response.tokens_used}t")
         return response
 
     async def debug_error(self, error_log: str, code_context: str, **_kwargs) -> LLMResponse:
@@ -207,7 +209,7 @@ Rules:
             return True
         limit = self.policy.limits.get("max_daily_cost_usd", float("inf"))
         if self.daily_cost > limit:
-            console.print(f"💰 Daily limit exceeded: ${self.daily_cost:.2f}")
+            self.journal.print(f"💰 Daily limit exceeded: ${self.daily_cost:.2f}")
             return False
         return True
 
