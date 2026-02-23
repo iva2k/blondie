@@ -330,9 +330,8 @@ class BlondieAgent:
                 console.print(f"⚠️  Missing instruction for {path_str}")
                 continue
 
-            console.print(
-                f"✍️  {action.title()}ing {path_str}..."
-            )  ## TODO: (now) this logs silly verbs like "Createing" - change to a dict based conversion
+            verb = {"create": "Creating", "edit": "Editing"}.get(action, f"{action.title()}ing")
+            console.print(f"✍️  {verb} {path_str}...")
 
             # Ensure parent directory structure is valid (handle file-blocking-directory)
             p = full_path.parent
