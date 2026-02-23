@@ -13,10 +13,10 @@ Status: id | priority | title | depends_on
 - [x] 006 | P2 | Git branch based state + task locking | 003
 - [x] 007 | P2 | Allow debugging the agent locally on dev machine |
 - [x] 008 | P2 | Add repo files hierarchy to the context used in llm.plan_task()  |
+- [x] 009 | P2 | Implement LLM code edits per the plan |
 
 ## Todo
 
-- [ ] 009 | P2 | Implement LLM code edits per the plan |
 - [ ] 010 | P3 | Vercel/Netlify CLI wrappers |
 - [ ] 011 | P3 | Docker build + e2e tests |
 - [ ] 012 | P3 | Deploy! |

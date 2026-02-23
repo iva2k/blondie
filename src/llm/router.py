@@ -108,6 +108,39 @@ Format as clean Markdown."""
         console.print(f"📋 [{provider.upper()}] Plan: {response.tokens_used}t")
         return response
 
+    async def get_file_edits(self, task_title: str, plan: str, **_kwargs) -> LLMResponse:
+        """Identify files to edit from plan."""
+        provider, model = self.select_model("planning")
+        client = self.clients.get(provider)
+
+        if not client:
+            raise ValueError(f"No client for provider '{provider}'")
+
+        system_prompt = """You are a coding architect.
+Based on the TASK and PLAN, return a list of file operations.
+Return ONLY a YAML list format. Example:
+
+- path: src/main.py
+  action: edit
+  instruction: Add login function
+- path: tests/test_main.py
+  action: create
+  instruction: Add unit tests for login
+- path: old_file.py
+  action: delete
+
+Valid actions: create, edit, delete.
+Do not include markdown formatting (like ```yaml), just the raw YAML text.
+"""
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"TASK: {task_title}\nPLAN:\n{plan}"},
+        ]
+
+        response = await client.chat(messages, temperature=0.1, max_tokens=1000, model=model)
+        self.daily_cost += response.cost_usd
+        return response
+
     async def generate_code(
         self, filename: str, existing_content: str, instruction: str, **_kwargs
     ) -> LLMResponse:
@@ -121,8 +154,9 @@ Format as clean Markdown."""
         system_prompt = """You are expert code editor. Return ONLY full file content.
 
 Rules:
-• Preserve imports, structure, formatting, comments, docstrings
-• Make minimal targeted changes  
+• If creating a new file, provide complete implementation.
+• If editing, preserve imports, structure, formatting, comments, docstrings.
+• Make minimal targeted changes based on INSTRUCT.
 • Include tests if new feature
 • Follow existing code style
 """

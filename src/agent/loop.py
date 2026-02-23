@@ -6,6 +6,7 @@ import asyncio
 from pathlib import Path
 
 import click
+import yaml
 from rich.console import Console
 
 from agent.executor import Executor
@@ -156,15 +157,78 @@ class BlondieAgent:
         return "\n".join(files)
 
     async def _apply_llm_edits(self, task: Task, plan: str) -> bool:
-        """Apply LLM-generated file edits (STUB for v1)."""
-        console.print("✨ [dim]LLM would edit files here (STUB)[/dim]")
-        console.print(f"[dim]Simulating implementation of: {task.title}[/dim]")
+        """Apply LLM-generated file edits."""
+        console.print("🤔 Identifying files to edit...")
 
-        # v1 STUB: Create placeholder files or skip
-        # TODO: BLONDIE-010 - Real file editing via LLM
-        (self.repo_path / f"{task.id}.md").write_text(
-            f"# Task {task.id}\n\nPlan:\n{plan}\n\nTODO: LLM implementation"
-        )
+        response = await self.llm.get_file_edits(task.title, plan)
+
+        # Clean up potential markdown fences
+        content = response.content.strip()
+        if content.startswith("```"):
+            lines = content.splitlines()
+            lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            content = "\n".join(lines)
+
+        try:
+            edits = yaml.safe_load(content)
+            if not isinstance(edits, list):
+                console.print(f"❌ Expected list of edits, got {type(edits)}")
+                return False
+        except Exception as e:
+            console.print(f"❌ Failed to parse file edits: {e}")
+            return False
+
+        console.print(f"📝 Found {len(edits)} file operations.")
+
+        for edit in edits:
+            path_str = edit.get("path")
+            action = edit.get("action", "edit")
+            instruction = edit.get("instruction")
+
+            if not path_str:
+                continue
+
+            full_path = self.repo_path / path_str
+
+            if action == "delete":
+                if full_path.exists():
+                    console.print(f"🗑️  Deleting {path_str}...")
+                    full_path.unlink()
+                else:
+                    console.print(f"⚠️  File to delete not found: {path_str}")
+                continue
+
+            if not instruction:
+                console.print(f"⚠️  Missing instruction for {path_str}")
+                continue
+
+            console.print(f"✍️  {action.title()}ing {path_str}...")  ## TODO: (now) this logs silly verbs like "Createing" - change to a dict based conversion
+
+            existing_content = ""
+            if full_path.exists():
+                if action == "create":
+                    console.print(f"⚠️  File {path_str} already exists, treating as edit.")
+                existing_content = full_path.read_text(encoding="utf-8")
+            elif action == "edit":
+                console.print(f"⚠️  File {path_str} not found for edit, treating as create.")
+
+            code_resp = await self.llm.generate_code(path_str, existing_content, instruction)
+
+            # Clean up potential markdown fences for code
+            code = code_resp.content.strip()
+            if code.startswith("```"):
+                lines = code.splitlines()
+                lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                code = "\n".join(lines)
+
+            # Ensure directory exists
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            full_path.write_text(code, encoding="utf-8")
+
         return True
 
     async def run_forever(self) -> None:
