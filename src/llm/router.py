@@ -126,10 +126,12 @@ Return ONLY a YAML list format. Example:
 - path: tests/test_main.py
   action: create
   instruction: Add unit tests for login
+- action: shell
+  command: npm install axios
 - path: old_file.py
   action: delete
 
-Valid actions: create, edit, delete.
+Valid actions: create, edit, delete, shell.
 Do not include markdown formatting (like ```yaml), just the raw YAML text.
 """
         messages = [

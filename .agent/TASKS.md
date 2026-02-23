@@ -16,10 +16,10 @@ Status: id | priority | title | depends_on
 - [x] 009 | P2 | Implement LLM code edits per the plan |
 - [x] 010 | P3 | Failing test should trigger debugging loop and fix code (and possibly tests), retries should be for the test-debug-fix loop |
 - [x] 011 | P3 | After failing test the agent leaves uncommited files and stumbles trying to restart the task |
+- [x] 012 | P3 | Implement agent shell commands, such as adding & installing packages, use in edit files stages |
 
 ## Todo
 
-- [ ] 012 | P3 | Implement agent shell commands, such as adding & installing packages |
 - [ ] 013 | P3 | Vercel/Netlify CLI wrappers |
 - [ ] 014 | P3 | Docker build + e2e tests |
 - [ ] 015 | P3 | Deploy! Start self-editing |

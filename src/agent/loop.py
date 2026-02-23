@@ -245,10 +245,22 @@ class BlondieAgent:
         console.print(f"📝 Found {len(edits)} file operations.")
 
         for edit in edits:
-            path_str = edit.get("path")
             action = edit.get("action", "edit")
             instruction = edit.get("instruction")
 
+            if action == "shell":
+                command = edit.get("command") or instruction
+                if not command:
+                    console.print("⚠️  Missing command for shell action")
+                    continue
+
+                # Heuristic: map install commands to 'add-package' gate
+                gate = "add-package" if any(x in command for x in ["install", "add", "npm", "pip", "poetry"]) else "shell"
+                if self.exec.run(command, gate=gate).returncode != 0:
+                    return False
+                continue
+
+            path_str = edit.get("path")
             if not path_str:
                 continue
 
