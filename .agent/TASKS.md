@@ -20,6 +20,8 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
+- [ ] 020 | P0 | Implement journal - Option to log all chats to a trace dir/files (per task) |
+- [ ] 027 | P1 | Connect stderr/stdout/stdin of shell commands interactively to LLM, so it could respond to requests |
 - [ ] 012 | P3 | Implement agent shell commands (with retry/debug loop). Flatten the errors up (or break outer edit loop) to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits. | 026, 027
 - [ ] 013 | P3 | Vercel/Netlify CLI wrappers |
 - [ ] 014 | P3 | Docker build + e2e tests |
@@ -28,10 +30,8 @@ Status: id | priority | title | depends_on
 - [ ] 017 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
 - [ ] 018 | P4 | Tasks.py should pick blocking task first | 012
 - [ ] 019 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
-- [ ] 020 | P0 | Implement journal - Option to log all chats to a trace dir/files (per task) |
 - [ ] 021 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
 - [ ] 022 | P5 | in loop.py:BlondieAgent._get_file_tree() use current .gitignore instead of hard-coded list |
 - [ ] 023 | P5 | in loop.py:BlondieAgent._apply_llm_edits() implement dict for continuous action verbs, i.e. fix "Create-ing" |
 - [ ] 024 | P5 | in router.py:LLMRouter._init_clients() raise error for not configured API endpoint |
 - [ ] 025 | P5 | Use router.py:LLMRouter.check_daily_limit() |
-- [ ] 027 | P1 | Connect stderr/stdout/stdin of shell commands interactively to LLM, so it could respond to requests |
