@@ -40,18 +40,31 @@ class BlondieAgent:
 
     async def run_once(self) -> bool:
         """Execute one full task cycle. Returns True if task completed."""
-        # 0. Sync with main branch to ensure fresh start
+        # 0. Handle uncommitted changes from previous run/crash
+        status = self.exec.run("git status --porcelain")
+        if status.stdout.strip():
+            console.print("⚠️  Found uncommitted changes from previous session.")
+            current_branch = self.git.current_branch()
+
+            if current_branch == self.project.main_branch:
+                console.print("🧹 Stashing changes on main to allow pull...")
+                self.exec.run("git stash -u")
+            else:
+                console.print(f"💾 Saving WIP on {current_branch}...")
+                self._save_wip(current_branch, "WIP: Crash recovery")
+
+        # 1. Sync with main branch to ensure fresh start
         main_branch = self.project.main_branch
         self.git.checkout(main_branch)
         self.git.pull(main_branch)
 
-        # 1. Try to recover existing work
+        # 2. Try to recover existing work
         task = self.tasks.recover_active_task(self.git)
 
         if task:
             console.print(f"🔄 Recovered active task [bold cyan]{task.id}[/] {task.title}")
         else:
-            # 2. Pick next task
+            # 3. Pick next task
             task = self.tasks.get_next_task()
             if not task:
                 console.print("✅ No tasks left, exiting.")
@@ -59,7 +72,7 @@ class BlondieAgent:
 
             console.print(f"\n🚀 Processing [bold cyan]{task.id}[/] {task.title}")
 
-            # 3. Claim task
+            # 4. Claim task
             if not self.tasks.claim_task(task.id, self.git):
                 console.print(
                     f'⚠️  Task {task.id} already claimed (remote branch "{task.branch_name}" exists)'
@@ -82,6 +95,7 @@ class BlondieAgent:
             edit_result = await self._apply_llm_edits(task, plan)
             if not edit_result:
                 console.print("❌ LLM edits failed")
+                self._save_wip(branch_name, f"WIP: {task.title} (Edits Failed)")
                 return False
 
             # 4. Test Loop (with retries)
@@ -106,10 +120,12 @@ class BlondieAgent:
 
                 if not await self._apply_llm_edits(task, fix_plan):
                     console.print("❌ LLM fix edits failed")
+                    self._save_wip(branch_name, f"WIP: {task.title} (Fix Edits Failed)")
                     return False
 
             if not tests_passed:
                 console.print(f"❌ Tests failed after {max_retries} retries - leaving task for manual review")
+                self._save_wip(branch_name, f"WIP: {task.title} (Tests Failed)")
                 return False
 
             # 5. Commit & Push
@@ -136,8 +152,20 @@ class BlondieAgent:
 
         except Exception as e:
             console.print(f"💥 Task failed: {e}")
+            self._save_wip(branch_name, f"WIP: Crash recovery - {e}")
             console.print("Leaving task In Progress for review...")
             return False
+
+    def _save_wip(self, branch_name: str, message: str) -> None:
+        """Save current work as WIP commit."""
+        try:
+            if self.git.current_branch() == branch_name:
+                console.print("💾 Saving WIP state...")
+                self.git.add_all()
+                self.git.commit(message)
+                self.git.push(branch_name)
+        except Exception as e:
+            console.print(f"⚠️ Failed to save WIP: {e}")
 
     def _gather_context(self, _task: Task) -> str:
         """Gather repo context for LLM."""

@@ -85,27 +85,15 @@ class Executor:
         # installs may pull binaries / packages
         return self.run(cmd, gate="install-binary")
 
-    def run_tests(self, *, retries: int | None = None) -> CommandResult:
+    def run_tests(self) -> CommandResult:
         """Run tests command."""
         cmd = self.policy.commands.get("test")
         if not cmd:
             console.print("ℹ️  No 'test' command configured, skipping.")
             return CommandResult("test (skipped)", 0, "", "")
 
-        max_retries = (
-            retries if retries is not None else self.policy.autonomy.get("test_retries", 1)
-        )
-        last_result: CommandResult | None = None
-
-        for attempt in range(1, max_retries + 1):
-            console.print(f"🧪 Running tests (attempt {attempt}/{max_retries})")
-            result = self.run(cmd)
-            last_result = result
-            if result.returncode == 0:
-                return result
-            console.print("🔁 Tests failed, will retry if attempts remain.")
-
-        return last_result or CommandResult(cmd, 1, "", "No attempts executed")
+        console.print("🧪 Running tests...")
+        return self.run(cmd)
 
     def run_build(self) -> CommandResult:
         """Run build command."""
