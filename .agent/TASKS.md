@@ -14,10 +14,10 @@ Status: id | priority | title | depends_on
 - [x] 007 | P2 | Allow debugging the agent locally on dev machine |
 - [x] 008 | P2 | Add repo files hierarchy to the context used in llm.plan_task()  |
 - [x] 009 | P2 | Implement LLM code edits per the plan |
+- [x] 010 | P3 | Failing test should trigger debugging loop and fix code (and possibly tests), retries should be for the test-debug-fix loop |
 
 ## Todo
 
-- [ ] 010 | P3 | Failing test should trigger debugging loop and fix code (and possibly tests), retries should be for the test-debug-fix loop |
 - [ ] 011 | P3 | After failing test agent leaves uncommited files and stumbles trying to restart the task |
 - [ ] 012 | P3 | Implement agent shell commands, such as adding & installing packages |
 - [ ] 013 | P3 | Vercel/Netlify CLI wrappers |
@@ -32,3 +32,4 @@ Status: id | priority | title | depends_on
 - [ ] 022 | P5 | in loop.py:BlondieAgent._get_file_tree() use current .gitignore instead of hard-coded list |
 - [ ] 023 | P5 | in loop.py:BlondieAgent._apply_llm_edits() implement dict for continuous action verbs, i.e. fix "Create-ing" |
 - [ ] 024 | P5 | in router.py:LLMRouter._init_clients() raise error for not configured API endpoint |
+- [ ] 025 | P5 | Use router.py:LLMRouter.check_daily_limit() |

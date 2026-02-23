@@ -17,9 +17,14 @@ commands:
 git:
   branch-prefix: "task-"
   merge-strategy: rebase
-  test-gate: "test && lint"
+  test-gate: "test && lint && build"
 
 docs:
   always-update:
     - README.md
     - docs/CHANGELOG.md
+
+limits:
+  max_test_retries: 3       # Max number of test-debug-fix loop
+  max_daily_cost_usd: 10.0
+  max_concurrent_tasks: 5

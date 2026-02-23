@@ -190,7 +190,8 @@ Rules:
                 "role": "user",
                 "content": f"TEST ERROR:\n{error_log}\n\n"
                 f"CODE:\n{code_context}\n\n"
-                "Suggest targeted fix:",
+                "Analyze the error and provide a step-by-step fix plan. "
+                "Focus on the specific files that need changes.",
             }
         ]
 

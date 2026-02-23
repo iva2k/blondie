@@ -85,14 +85,31 @@ class BlondieAgent:
                 return False
 
             # 4. Test Loop (with retries)
-            test_result = self.exec.run_tests()
-            if test_result.returncode != 0:
-                console.print("❌ Tests failed - triggering LLM debug")
+            max_retries = self.policy.limits.get("max_test_retries", 3)
+            tests_passed = False
+
+            for attempt in range(max_retries):
+                test_result = self.exec.run_tests()
+                if test_result.returncode == 0:
+                    tests_passed = True
+                    break
+
+                console.print(f"❌ Tests failed (Attempt {attempt + 1}/{max_retries})")
+                if attempt == max_retries:
+                    break
+
+                console.print("🔧 Triggering LLM debug...")
+                context = self._gather_context(task)  # Refresh context
                 debug_response = await self.llm.debug_error(test_result.stderr, context)
-                console.print(
-                    f"🔧 [dim]LLM debug suggestion:[/dim]\n{debug_response.content[:300]}..."
-                )
-                # For v1: leave In Progress for manual fix
+                fix_plan = debug_response.content
+                console.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan[:500]}...")
+
+                if not await self._apply_llm_edits(task, fix_plan):
+                    console.print("❌ LLM fix edits failed")
+                    return False
+
+            if not tests_passed:
+                console.print(f"❌ Tests failed after {max_retries} retries - leaving task for manual review")
                 return False
 
             # 5. Commit & Push
