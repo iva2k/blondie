@@ -3,8 +3,8 @@
 """Blondie main agent loop."""
 
 import asyncio
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import click
 import yaml
@@ -40,6 +40,11 @@ class BlondieAgent:
 
     async def run_once(self) -> bool:
         """Execute one full task cycle. Returns True if task completed."""
+        # 0. Sync with main branch to ensure fresh start
+        main_branch = self.project.main_branch
+        self.git.checkout(main_branch)
+        self.git.pull(main_branch)
+
         # 1. Try to recover existing work
         task = self.tasks.recover_active_task(self.git)
 
@@ -98,6 +103,16 @@ class BlondieAgent:
 
             # 6. Complete task
             self.tasks.complete_task(task.id)
+
+            # 7. Commit TASKS.md update & Merge
+            self.git.add(self.tasks_path.relative_to(self.repo_path))
+            self.git.commit(f"Complete task {task.id}")
+            self.git.push(branch_name)
+
+            if not self.git.merge_if_clean(branch_name, main_branch):
+                console.print("⚠️  Merge failed (conflicts?), leaving branch for manual review.")
+                return True  # Task is technically done, just not merged
+
             console.print(f"✅ Completed [bold green]{task.id}[/]!")
             return True
 
@@ -224,14 +239,18 @@ class BlondieAgent:
                 console.print(f"⚠️  Missing instruction for {path_str}")
                 continue
 
-            console.print(f"✍️  {action.title()}ing {path_str}...")  ## TODO: (now) this logs silly verbs like "Createing" - change to a dict based conversion
+            console.print(
+                f"✍️  {action.title()}ing {path_str}..."
+            )  ## TODO: (now) this logs silly verbs like "Createing" - change to a dict based conversion
 
             # Ensure parent directory structure is valid (handle file-blocking-directory)
             p = full_path.parent
             while p != self.repo_path:
                 if p.exists():
                     if not p.is_dir():
-                        console.print(f"⚠️  Removing file {p.relative_to(self.repo_path)} to create directory.")
+                        console.print(
+                            f"⚠️  Removing file {p.relative_to(self.repo_path)} to create directory."
+                        )
                         p.unlink()
                         p.mkdir()
                     break
@@ -243,7 +262,9 @@ class BlondieAgent:
                     full_path.rmdir()
                     console.print(f"⚠️  Removed empty directory {path_str} to create file.")
                 except OSError:
-                    console.print(f"❌ Directory {path_str} exists and is not empty. Cannot overwrite with file.")
+                    console.print(
+                        f"❌ Directory {path_str} exists and is not empty. Cannot overwrite with file."
+                    )
                     continue
 
             existing_content = ""

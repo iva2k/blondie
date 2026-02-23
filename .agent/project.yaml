@@ -1,6 +1,7 @@
 id: blondie
 name: "Blondie Autonomous Coding Agent"
 languages: [python]
+main_branch: main
 task_source: TASKS.md
 commands:
   install: poetry install

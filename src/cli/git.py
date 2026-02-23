@@ -68,6 +68,14 @@ class GitCLI:
         result = self.run("branch", "--show-current", capture_output=True, check=True)
         return result.stdout.strip()
 
+    def pull(self, branch: str = "main") -> None:
+        """Pull latest changes."""
+        self.run("pull", "origin", branch)
+
+    def add(self, path: str | Path) -> None:
+        """Stage specific file."""
+        self.run("add", str(path))
+
     def add_all(self) -> None:
         """Stage all changes."""
         self.run("add", ".")
@@ -107,7 +115,7 @@ class GitCLI:
 
         return branch_name
 
-    def merge_if_clean(self, branch: str) -> bool:
+    def merge_if_clean(self, branch: str, target_branch: str = "main") -> bool:
         """Merge branch if tests pass."""
         if not self.is_clean():
             console.print("❌ Cannot merge: dirty working directory")
@@ -119,11 +127,11 @@ class GitCLI:
             return False
 
         try:
-            self.run("checkout", "main")
-            self.run("pull", "origin", "main")
+            self.run("checkout", target_branch)
+            self.run("pull", "origin", target_branch)
             self.run("merge", "--no-ff", branch)
-            self.run("push", "origin", "main")
-            console.print(f"✅ Merged [bold green]{branch}[/] to main")
+            self.run("push", "origin", target_branch)
+            console.print(f"✅ Merged [bold green]{branch}[/] to {target_branch}")
             return True
         except subprocess.CalledProcessError:
             console.print("❌ Merge failed")

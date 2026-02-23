@@ -23,3 +23,4 @@ Status: id | priority | title | depends_on
 - [ ] 013 | P4 | Multi-repo scanner + project.yaml |
 - [ ] 014 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
 - [ ] 015 | P4 | Tasks.py should pick blocking task first | 012
+- [ ] 016 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |

@@ -17,6 +17,7 @@ class Project(BaseModel):
     id: str
     name: str | None = None
     languages: list[str] = []
+    main_branch: str = "main"
     task_source: str = "TASKS.md"
     commands: dict[str, str] = {}
     policy: str = "POLICY.yaml"

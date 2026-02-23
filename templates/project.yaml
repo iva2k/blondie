@@ -1,6 +1,7 @@
 id: {{repo_name}}
 name: "{{repo_description}}"
 languages: [{{languages|default("typescript, svelte")}}]
+main_branch: main
 task_source: TASKS.md
 commands:
   install: "{{install|default('npm ci')}}"
