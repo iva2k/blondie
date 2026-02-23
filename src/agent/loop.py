@@ -124,7 +124,9 @@ class BlondieAgent:
                     return False
 
             if not tests_passed:
-                console.print(f"❌ Tests failed after {max_retries} retries - leaving task for manual review")
+                console.print(
+                    f"❌ Tests failed after {max_retries} retries - leaving task for manual review"
+                )
                 self._save_wip(branch_name, f"WIP: {task.title} (Tests Failed)")
                 return False
 
@@ -255,8 +257,38 @@ class BlondieAgent:
                     continue
 
                 # Heuristic: map install commands to 'add-package' gate
-                gate = "add-package" if any(x in command for x in ["install", "add", "npm", "pip", "poetry"]) else "shell"
-                if self.exec.run(command, gate=gate).returncode != 0:
+                gate = (
+                    "add-package"
+                    if any(x in command for x in ["install", "add", "npm", "pip", "poetry"])
+                    else "shell"
+                )
+
+                max_retries = self.policy.limits.get("max_shell_retries", 3)
+                cmd_success = False
+
+                for attempt in range(max_retries):
+                    result = self.exec.run(command, gate=gate)
+                    if result.returncode == 0:
+                        cmd_success = True
+                        break
+
+                    console.print(f"❌ Shell command failed (Attempt {attempt + 1}/{max_retries})")
+                    if attempt == max_retries:
+                        break
+
+                    console.print("🔧 Triggering LLM debug for shell command...")
+                    context = f"Command: {command}\nCWD: {self.repo_path}"
+                    debug_response = await self.llm.debug_error(
+                        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}", context
+                    )
+                    fix_plan = debug_response.content
+                    console.print(f"📋 [dim]Shell Fix Plan:[/dim]\n{fix_plan[:500]}...")
+
+                    if not await self._apply_llm_edits(task, fix_plan):
+                        console.print("❌ LLM fix edits failed, aborting retries.")
+                        break
+
+                if not cmd_success:
                     return False
                 continue
 

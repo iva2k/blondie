@@ -26,5 +26,6 @@ docs:
 
 limits:
   max_test_retries: 3       # Max number of test-debug-fix loop
+  max_shell_retries: 3      # Max retries for failed shell commands
   max_daily_cost_usd: 10.0
   max_concurrent_tasks: 5
