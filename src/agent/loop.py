@@ -112,7 +112,48 @@ class BlondieAgent:
         context.append(f"Commands: {list(self.policy.commands.keys())}")
         context.append(f"Current branch: {self.git.current_branch()}")
         context.append(f"Git status:\n{self.git.status()}")
+        context.append(f"Files:\n{self._get_file_tree()}")
         return "\n".join(context)
+
+    def _get_file_tree(self) -> str:
+        """Generate list of repo files (excluding ignored)."""
+        files = []
+        ignore_dirs = {
+            ".git",
+            "__pycache__",
+            "node_modules",
+            "dist",
+            "build",
+            ".mypy_cache",
+            ".pytest_cache",
+            ".venv",
+            "venv",
+            "coverage",
+        }
+        # TODO: (now) Use .gitignore instead of hard-coded list.
+
+        for path in sorted(self.repo_path.rglob("*")):
+            if not path.is_file():
+                continue
+
+            try:
+                rel_path = path.relative_to(self.repo_path)
+            except ValueError:
+                continue
+
+            if any(part in ignore_dirs for part in rel_path.parts):
+                continue
+
+            if any(
+                part.startswith(".")
+                and part not in [".agent", ".github", ".gitignore", ".dockerignore"]
+                for part in rel_path.parts
+            ):
+                continue
+
+            files.append(str(rel_path))
+
+        return "\n".join(files)
 
     async def _apply_llm_edits(self, task: Task, plan: str) -> bool:
         """Apply LLM-generated file edits (STUB for v1)."""

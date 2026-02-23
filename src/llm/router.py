@@ -57,7 +57,7 @@ class LLMRouter:
                     api_key=api_key,
                     base_url=provider_cfg.base_url or "https://api.anthropic.com/v1",
                     model=provider_cfg.default_model or "claude-3-5-sonnet-20240620",
-                ) # TODO: (now) else: raise Error(...)
+                )  # TODO: (now) else: raise Error(...)
 
         console.print(f"🧠 LLM providers: {list(self.clients.keys())}")
 
