@@ -164,7 +164,7 @@ class TasksManager:
             if task.id == clean_id:
                 task.status = TaskStatus.DONE
                 self._save()
-                console.print(f"✅ Completed [bold green]{task.full_id}[/]: {task.title}")
+                # console.print(f"✅ Completed task [bold green]{task.full_id}[/]: {task.title}")
                 return True
         return False
 
@@ -180,7 +180,7 @@ class TasksManager:
         for status in [TaskStatus.DONE, TaskStatus.TODO]:
             tasks_in_status = [t for t in self.tasks if t.status == status]
             if tasks_in_status:
-                content.append(f"\n## {status.value}\n")
+                content.append(f"\n## {status.value}\n\n")
                 for task in tasks_in_status:
                     checked = "x" if status == TaskStatus.DONE else " "
                     priority = task.priority or ""

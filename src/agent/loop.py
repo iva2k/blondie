@@ -113,7 +113,8 @@ class BlondieAgent:
                 console.print("⚠️  Merge failed (conflicts?), leaving branch for manual review.")
                 return True  # Task is technically done, just not merged
 
-            console.print(f"✅ Completed [bold green]{task.id}[/]!")
+            console.print(f"✅ Completed task [bold green]{task.full_id}[/]: {task.title}")
+            console.print(f"{'='*100}\n")
             return True
 
         except Exception as e:
