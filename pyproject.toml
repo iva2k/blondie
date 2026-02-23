@@ -56,6 +56,7 @@ setup-dev = "python scripts/setup_dev_repo.py --repo _tmp/repo --agent-config _t
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+exclude = ["_tmp"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
@@ -67,6 +68,10 @@ warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
 install_types = true
+exclude = ["_tmp"]
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = ["redefined-outer-name"]
+
+[tool.pylint.MASTER]
+ignore = ["_tmp"]
