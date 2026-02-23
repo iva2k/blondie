@@ -4,6 +4,7 @@
 
 import asyncio
 from pathlib import Path
+import shutil
 
 import click
 import yaml
@@ -192,12 +193,31 @@ class BlondieAgent:
 
             full_path = self.repo_path / path_str
 
+            # Detect directory operation
+            is_dir_op = path_str.endswith("/") or path_str.endswith("\\")
+
             if action == "delete":
                 if full_path.exists():
-                    console.print(f"🗑️  Deleting {path_str}...")
-                    full_path.unlink()
+                    if full_path.is_dir():
+                        shutil.rmtree(full_path)
+                        console.print(f"🗑️  Deleted directory {path_str}...")
+                    else:
+                        console.print(f"🗑️  Deleting {path_str}...")
+                        full_path.unlink()
                 else:
                     console.print(f"⚠️  File to delete not found: {path_str}")
+                continue
+
+            # Handle directory creation
+            if is_dir_op:
+                if action == "create":
+                    if full_path.exists() and not full_path.is_dir():
+                        console.print(f"⚠️  Removing file {path_str} to create directory.")
+                        full_path.unlink()
+
+                    if not full_path.exists():
+                        console.print(f"📂 Creating directory {path_str}...")
+                        full_path.mkdir(parents=True, exist_ok=True)
                 continue
 
             if not instruction:
@@ -205,6 +225,26 @@ class BlondieAgent:
                 continue
 
             console.print(f"✍️  {action.title()}ing {path_str}...")  ## TODO: (now) this logs silly verbs like "Createing" - change to a dict based conversion
+
+            # Ensure parent directory structure is valid (handle file-blocking-directory)
+            p = full_path.parent
+            while p != self.repo_path:
+                if p.exists():
+                    if not p.is_dir():
+                        console.print(f"⚠️  Removing file {p.relative_to(self.repo_path)} to create directory.")
+                        p.unlink()
+                        p.mkdir()
+                    break
+                p = p.parent
+
+            # Ensure target is not a directory (handle directory-blocking-file)
+            if full_path.is_dir():
+                try:
+                    full_path.rmdir()
+                    console.print(f"⚠️  Removed empty directory {path_str} to create file.")
+                except OSError:
+                    console.print(f"❌ Directory {path_str} exists and is not empty. Cannot overwrite with file.")
+                    continue
 
             existing_content = ""
             if full_path.exists():
