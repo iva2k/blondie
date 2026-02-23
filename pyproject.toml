@@ -54,7 +54,7 @@ check = ["format", "lint", "typecheck", "test"]
 setup-dev = "python scripts/setup_dev_repo.py --repo _tmp/repo --agent-config _tmp/.agent"
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py310"
 exclude = ["_tmp"]
 
@@ -75,3 +75,6 @@ disable = ["redefined-outer-name"]
 
 [tool.pylint.MASTER]
 ignore = ["_tmp"]
+
+[tool.pylint.FORMAT]
+max-line-length = 120
