@@ -49,15 +49,15 @@ class LLMRouter:
             if provider_cfg.api_type == "openai":
                 self.clients[name] = OpenAIClient(
                     api_key=api_key,
-                    base_url=provider_cfg.base_url or "https://api.openai.com",
+                    base_url=provider_cfg.base_url or "https://api.openai.com/v1",
                     model=provider_cfg.default_model or "gpt-4o-mini",
                 )
             elif provider_cfg.api_type == "anthropic":
                 self.clients[name] = AnthropicClient(
                     api_key=api_key,
-                    base_url=provider_cfg.base_url or "https://api.anthropic.com",
+                    base_url=provider_cfg.base_url or "https://api.anthropic.com/v1",
                     model=provider_cfg.default_model or "claude-3-5-sonnet-20240620",
-                )
+                ) # TODO: (now) else: raise Error(...)
 
         console.print(f"🧠 LLM providers: {list(self.clients.keys())}")
 

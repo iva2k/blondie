@@ -57,7 +57,7 @@ class OpenAIClient(LLMClient):
         }
 
         resp = await self.client.post(
-            f"{self.base_url}/v1/chat/completions", json=payload, headers=headers
+            f"{self.base_url}/chat/completions", json=payload, headers=headers
         )
         resp.raise_for_status()
         data = resp.json()
@@ -101,7 +101,7 @@ class AnthropicClient(LLMClient):
             "Content-Type": "application/json",
         }
 
-        resp = await self.client.post(f"{self.base_url}/v1/messages", json=payload, headers=headers)
+        resp = await self.client.post(f"{self.base_url}/messages", json=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()
 

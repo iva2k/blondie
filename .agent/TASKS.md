@@ -11,10 +11,10 @@ Status: id | priority | title | depends_on
 - [x] 004 | P2 | LLM router + basic client |
 - [x] 005 | P2 | Autonomous executor + shell wrapper |
 - [x] 006 | P2 | Git branch based state + task locking | 003
+- [x] 007 | P2 | Allow debugging the agent locally on dev machine |
 
 ## Todo
 
-- [ ] 007 | P2 | Allow debugging the agent locally on dev machine |
 - [ ] 008 | P3 | Vercel/Netlify CLI wrappers |
 - [ ] 009 | P3 | Docker build + e2e tests |
 - [ ] 010 | P3 | Deploy! |
