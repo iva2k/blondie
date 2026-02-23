@@ -17,7 +17,8 @@
             "request": "launch",
             "module": "src.agent.loop",
             "args": [
-                "${workspaceFolder}/_tmp/repo"
+                "${workspaceFolder}/_tmp/repo",
+                "--journal-dir", "${workspaceFolder}/_logs",
             ],
             "cwd": "${workspaceFolder}",
             "env": {
