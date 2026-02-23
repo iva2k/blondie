@@ -17,10 +17,16 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
-- [ ] 010 | P3 | Vercel/Netlify CLI wrappers |
-- [ ] 011 | P3 | Docker build + e2e tests |
-- [ ] 012 | P3 | Deploy! |
-- [ ] 013 | P4 | Multi-repo scanner + project.yaml |
-- [ ] 014 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
-- [ ] 015 | P4 | Tasks.py should pick blocking task first | 012
-- [ ] 016 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
+- [ ] 010 | P3 | Implement agent shell commands |
+- [ ] 011 | P3 | Vercel/Netlify CLI wrappers |
+- [ ] 012 | P3 | Docker build + e2e tests |
+- [ ] 013 | P3 | Deploy! |
+- [ ] 014 | P4 | Multi-repo scanner + project.yaml |
+- [ ] 015 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
+- [ ] 016 | P4 | Tasks.py should pick blocking task first | 012
+- [ ] 017 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
+- [ ] 018 | P5 | Option to log all chats to a trace dir/files (per task) |
+- [ ] 019 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
+- [ ] 020 | P5 | in loop.py:BlondieAgent._get_file_tree() use current .gitignore instead of hard-coded list |
+- [ ] 021 | P5 | in loop.py:BlondieAgent._apply_llm_edits() implement dict for continuous action verbs, i.e. fix "Create-ing" |
+- [ ] 022 | P5 | in router.py:LLMRouter._init_clients() raise error for not configured API endpoint |

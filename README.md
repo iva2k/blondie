@@ -73,6 +73,8 @@ TODO: TBD
 ```bash
 # Run unit tests
 poetry install && poetry run pytest -v
+# or
+poetry install && poe check
 ```
 
 ## First Deploy Command
