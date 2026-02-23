@@ -48,33 +48,43 @@ class Executor:
             return False
         return True
 
-    def run(self, command: str, *, gate: str | None = None) -> CommandResult:
+    def run(self, command: str, *, gate: str | None = None, timeout: int = 120) -> CommandResult:
         """Run a shell command in repo, optionally gated by autonomy policy."""
         if gate and not self._check_gate(gate):
             return CommandResult(
                 command=command, returncode=0, stdout="", stderr="SKIPPED_BY_POLICY"
             )
 
-        console.print(f"💻 [dim]{command}[/dim]")
-        proc = subprocess.run(
-            command,
-            cwd=self.repo_path,
-            shell=True,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if proc.returncode == 0:
-            console.print("✅ command ok")
-        else:
-            console.print(f"❌ command failed (exit {proc.returncode})")
+        console.print(f"💻 [dim]{command}[/dim] (timeout: {timeout}s)")
+        try:
+            proc = subprocess.run(
+                command,
+                cwd=self.repo_path,
+                shell=True,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=timeout,
+            )
+            if proc.returncode == 0:
+                console.print("✅ command ok")
+            else:
+                console.print(f"❌ command failed (exit {proc.returncode})")
 
-        return CommandResult(
-            command=command,
-            returncode=proc.returncode,
-            stdout=proc.stdout,
-            stderr=proc.stderr,
-        )
+            return CommandResult(
+                command=command,
+                returncode=proc.returncode,
+                stdout=proc.stdout,
+                stderr=proc.stderr,
+            )
+        except subprocess.TimeoutExpired as e:
+            console.print(f"⏱️  Command timed out after {timeout}s")
+            return CommandResult(
+                command=command,
+                returncode=124,
+                stdout=str(e.stdout or ""),
+                stderr=str(e.stderr or f"Timeout after {timeout}s"),
+            )
 
     def run_install(self) -> CommandResult:
         """Run install command."""
@@ -83,7 +93,7 @@ class Executor:
             console.print("ℹ️  No 'install' command configured, skipping.")
             return CommandResult("install (skipped)", 0, "", "")
         # installs may pull binaries / packages
-        return self.run(cmd, gate="install-binary")
+        return self.run(cmd, gate="install-binary", timeout=600)
 
     def run_tests(self) -> CommandResult:
         """Run tests command."""
@@ -93,7 +103,7 @@ class Executor:
             return CommandResult("test (skipped)", 0, "", "")
 
         console.print("🧪 Running tests...")
-        return self.run(cmd)
+        return self.run(cmd, timeout=600)
 
     def run_build(self) -> CommandResult:
         """Run build command."""
@@ -101,4 +111,4 @@ class Executor:
         if not cmd:
             console.print("ℹ️  No 'build' command configured, skipping.")
             return CommandResult("build (skipped)", 0, "", "")
-        return self.run(cmd)
+        return self.run(cmd, timeout=300)

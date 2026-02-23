@@ -252,6 +252,7 @@ class BlondieAgent:
 
             if action == "shell":
                 command = edit.get("command") or instruction
+                timeout = int(edit.get("timeout", 120))
                 if not command:
                     console.print("⚠️  Missing command for shell action")
                     continue
@@ -267,7 +268,7 @@ class BlondieAgent:
                 cmd_success = False
 
                 for attempt in range(max_retries):
-                    result = self.exec.run(command, gate=gate)
+                    result = self.exec.run(command, gate=gate, timeout=timeout)
                     if result.returncode == 0:
                         cmd_success = True
                         break

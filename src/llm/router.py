@@ -128,10 +128,14 @@ Return ONLY a YAML list format. Example:
   instruction: Add unit tests for login
 - action: shell
   command: npm install axios
+  timeout: 300
 - path: old_file.py
   action: delete
 
 Valid actions: create, edit, delete, shell.
+For shell actions:
+- Use non-interactive flags (e.g. -y, --no-input) to prevent hanging.
+- Specify a timeout in seconds (default 120) if the command is expected to be slow.
 Do not include markdown formatting (like ```yaml), just the raw YAML text.
 """
         messages = [
