@@ -15,9 +15,11 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
-- [ ] 008 | P3 | Vercel/Netlify CLI wrappers |
-- [ ] 009 | P3 | Docker build + e2e tests |
-- [ ] 010 | P3 | Deploy! |
-- [ ] 011 | P4 | Multi-repo scanner + project.yaml |
-- [ ] 012 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
-- [ ] 013 | P4 | Tasks.py should pick blocking task first | 012
+- [ ] 008 | P2 | Add repo files hierarchy to the context used in llm.plan_task()  |
+- [ ] 009 | P2 | Implement LLM code edits per the plan |
+- [ ] 010 | P3 | Vercel/Netlify CLI wrappers |
+- [ ] 011 | P3 | Docker build + e2e tests |
+- [ ] 012 | P3 | Deploy! |
+- [ ] 013 | P4 | Multi-repo scanner + project.yaml |
+- [ ] 014 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
+- [ ] 015 | P4 | Tasks.py should pick blocking task first | 012
