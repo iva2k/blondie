@@ -36,3 +36,5 @@ Status: id | priority | title | depends_on
 - [ ] 023 | P5 | in loop.py:BlondieAgent._apply_llm_edits() implement dict for continuous action verbs, i.e. fix "Create-ing" |
 - [ ] 024 | P5 | in router.py:LLMRouter._init_clients() raise error for not configured API endpoint |
 - [ ] 025 | P5 | Use router.py:LLMRouter.check_daily_limit() |
+- [ ] 029 | P1 | In journal, add all shell commands, their return code and stdout/sterr |
+- [ ] 030 | P1 | In journal, add system prompt, endpoint URL, and model name to LLM entries |
