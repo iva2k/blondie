@@ -105,10 +105,9 @@ Format as clean Markdown."""
 
         response = await client.chat(messages, temperature=0.1, max_tokens=2000, model=model)
         self.daily_cost += response.cost_usd
-
-        self.journal.print(f"📋 [{provider.upper()}] Plan: {response.tokens_used}t")
         self.journal.log_chat(
             "plan_task",
+            provider,
             f"Task: {task_title}",
             response,
             context=repo_context,
@@ -157,6 +156,7 @@ Do not include markdown formatting (like ```yaml), just the raw YAML text.
         self.daily_cost += response.cost_usd
         self.journal.log_chat(
             "get_file_edits",
+            provider,
             f"Task: {task_title}\nPlan: {plan}",
             response,
             context=None,
@@ -197,10 +197,9 @@ Rules:
 
         response = await client.chat(messages, temperature=0.05, max_tokens=8000, model=model)
         self.daily_cost += response.cost_usd
-
-        self.journal.print(f"💾 [{provider.upper()}] {filename}: {response.tokens_used}t")
         self.journal.log_chat(
             "generate_code",
+            provider,
             f"File: {filename}\nInstruction: {instruction}",
             response,
             context=existing_content,
@@ -232,6 +231,7 @@ Rules:
         self.daily_cost += response.cost_usd
         self.journal.log_chat(
             "debug_error",
+            provider,
             f"Error: {error_log}",
             response,
             context=code_context,

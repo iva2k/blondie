@@ -61,6 +61,7 @@ class Journal:
     def log_chat(
         self,
         operation: str,
+        provider: str,
         prompt: str,
         response: Any,
         context: str | None = None,
@@ -78,16 +79,8 @@ class Journal:
             cost = getattr(response, "cost_usd", None)
 
             tokens = None
-            if hasattr(response, "usage"):
-                try:
-                    # Handle Pydantic or dict
-                    if hasattr(response.usage, "model_dump"):
-                        tokens = response.usage.model_dump()
-                    else:
-                        tokens = dict(response.usage)
-                except (ValueError, TypeError):
-                    tokens = {"raw": str(response.usage)}
-
+            if hasattr(response, "tokens_used"):
+                tokens = {"total_tokens": response.tokens_used}
             entry = {
                 "timestamp": datetime.datetime.now().isoformat(),
                 "type": "LLM",
@@ -107,6 +100,7 @@ class Journal:
             self.write_raw(f"\n=== LLM CHAT ({operation}) ===\n")
             self.write_raw(json.dumps(entry, indent=2, default=str))
             self.write_raw("\n==============================\n")
+        self.print(f"📋 [{provider.upper()}] {operation}: {response.tokens_used}t")
 
     def log_shell(self, command: str, returncode: int, stdout: str, stderr: str) -> None:
         """Log shell command execution."""
