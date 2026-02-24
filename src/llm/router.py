@@ -5,7 +5,6 @@
 from pathlib import Path
 
 import yaml
-from rich.console import Console
 
 from agent.llm_config import LLMConfig
 from agent.policy import Policy
@@ -20,7 +19,7 @@ class LLMRouter:
         self, secrets_path: Path, config_path: Path, policy: Policy | None = None, journal: Journal | None = None
     ):
         self.policy = policy
-        self.journal = journal or Console()
+        self.journal = journal or Journal()
         self.secrets = self._load_secrets(secrets_path)
         self.config = LLMConfig.from_file(config_path)
         self.clients: dict[str, LLMClient] = {}
@@ -145,7 +144,7 @@ Return ONLY a YAML list format. Example:
   action: delete
 
 Valid actions: create, edit, delete, shell.
-For shell actions:
+For all shell actions:
 - Use non-interactive flags (e.g. -y, --no-input) to prevent hanging.
 - Specify a timeout in seconds (default 120) if the command is expected to be slow.
 Do not include markdown formatting (like ```yaml), just the raw YAML text.
