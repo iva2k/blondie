@@ -37,6 +37,7 @@ Status: id | priority | title | depends_on
 - [ ] 035 | P2 | compose summary of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037
 - [ ] 025 | P3 | Use router.py:LLMRouter.check_daily_limit() |
 - [ ] 039 | P3 | refactor LLM code - use common worker method, each existing method should call the worker with system prompt, user prompt, etc. |
+- [ ] 040 | P3 | Agent should have its user/email set for git commits |
 
 - [ ] 015 | P4 | **DEPLOY!** Start self-editing | 025, 032, 037, 028, 035, 025, 039
 
@@ -50,3 +51,4 @@ Status: id | priority | title | depends_on
 - [ ] 021 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
 - [ ] 036 | P5 | Use grep to allow LLM finding all relevant source files |
 - [ ] 038 | P5 | Allow multirepo - limit agent to a project subfolder inside a bigger repo |
+- [ ] 041 | P5 | Agent should communicate with external world: email, slack, twitter. Events: task queue stuck (all tasks blocked, can't finish blockers), Deploy triggered. Carefull as swarm will flood the channels. |
