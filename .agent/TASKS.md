@@ -26,7 +26,7 @@ Status: id | priority | title | depends_on
 - [x] 030 | P1 | In journal, add system prompt, endpoint URL, and model name to LLM entries |
 - [x] 034 | P1 | subprocess.run() hangs on Windows despite timeout=120 on e.g. `poetry cache clear --all pypi` which shows user prompt |
 - [x] 031 | P2 | Put Journal files into log/\<project_id>/task\<id>/ subfolders |
-- [x] 033 | P1 | In journal, log complete untruncated messages, and convert \n to real line breaks for long text. When passing messages to console, truncate these long ones. |
+- [x] 033 | P1 | In journal, log complete untruncated messages. When passing messages to console, truncate these long ones. |
 
 ## Todo
 
@@ -35,9 +35,10 @@ Status: id | priority | title | depends_on
 - [ ] 028 | P2 | In shell command retry/debug loop - Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
 
 - [ ] 035 | P2 | compose summary of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037
-- [ ] 025 | P5 | Use router.py:LLMRouter.check_daily_limit() |
+- [ ] 025 | P3 | Use router.py:LLMRouter.check_daily_limit() |
+- [ ] 039 | P3 | refactor LLM code - use common worker method, each existing method should call the worker with system prompt, user prompt, etc. |
 
-- [ ] 015 | P3 | Deploy! Start self-editing | 025
+- [ ] 015 | P4 | **DEPLOY!** Start self-editing | 025, 032, 037, 028, 035, 025, 039
 
 - [ ] 027 | P1 | Connect stderr/stdout/stdin of shell commands interactively to LLM, so it could respond to prompts |
 - [ ] 013 | P3 | Vercel/Netlify CLI wrappers |
