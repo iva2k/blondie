@@ -48,3 +48,4 @@ Status: id | priority | title | depends_on
 - [ ] 019 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
 - [ ] 021 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
 - [ ] 036 | P5 | Use grep to allow LLM finding all relevant source files |
+- [ ] 038 | P5 | Allow multirepo - limit agent to a project subfolder inside a bigger repo |
