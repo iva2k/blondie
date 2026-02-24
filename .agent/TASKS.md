@@ -43,5 +43,6 @@ Status: id | priority | title | depends_on
 - [ ] 025 | P5 | Use router.py:LLMRouter.check_daily_limit() |
 - [ ] 032 | P1 | Add a fixed files list (e.g. .agent/POLICY.yaml) to never list to LLM context and never allow editing (use gitignore.py mechanism) |
 
-- [ ] 035 | P5 | in debug-fix LLM loops compose summary of previous chat, so LLM could understand it beats on the same problem and could try different approaches |
+- [ ] 035 | P5 | compose summary of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037
 - [ ] 036 | P5 | Use grep to allow LLM finding all relevant source files |
+- [ ] 037 | P1 | Somehow we should inform LLM of our python environment - conda/anaconda/venv/, preferred python version, etc. Otherwise it may want to install a new python version in an incompatible way. It is general for any coding environment, e.g. npm vs pnpm. |

@@ -167,15 +167,32 @@ class BlondieAgent:
         except Exception as e:
             self.journal.print(f"⚠️ Failed to save WIP: {e}")
 
-    def _gather_context(self, _task: Task) -> str:
+    def _gather_context(
+        self,
+        task: Task | None = None,
+        include_project: bool = True,
+        include_policy: bool = True,
+        include_git: bool = True,
+        include_files: bool = True,
+        include_task: bool = True,
+        # TODO: (when needed) include_spec: bool = True,
+    ) -> str:
         """Gather repo context for LLM."""
         context = []
-        context.append(f"Repo: {self.project.id}")
-        context.append(f"Policy: {self.policy.model_dump()}")
-        context.append(f"Commands: {list(self.policy.commands.keys())}")
-        context.append(f"Current branch: {self.git.current_branch()}")
-        context.append(f"Git status:\n{self.git.status()}")
-        context.append(f"Files:\n{self._get_file_tree()}")
+        context.append(f"CWD: {self.repo_path.resolve()}")
+
+        if include_project:
+            context.append(f"Project: {self.project.id}")
+        if include_policy:
+            context.append(f"Policy: {self.policy.model_dump()}")
+            context.append(f"Commands: {list(self.policy.commands.keys())}")
+        if include_git:
+            context.append(f"Current branch: {self.git.current_branch()}")
+            context.append(f"Git status:\n{self.git.status()}")
+        if include_files:
+            context.append(f"Files:\n{self._get_file_tree()}")
+        if task and include_task:
+            context.append(f"Task: {task.id} {task.title}")
         return "\n".join(context)
 
     def _get_file_tree(self) -> str:
@@ -260,7 +277,10 @@ class BlondieAgent:
                         break
 
                     self.journal.print("🔧 Triggering LLM debug for shell command...")
-                    context = f"Command: {command}\nCWD: {self.repo_path}"
+                    # Use full context in llm.debug_error
+                    context = self._gather_context(task)  # Refresh context
+                    context += f"\nCommand: {command}"
+                    # TODO: (now) Ponder on splitting debug_error() into debug_test_error() and debug_shell_error() with specialization
                     debug_response = await self.llm.debug_error(
                         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}", context
                     )
@@ -343,7 +363,16 @@ class BlondieAgent:
             elif action == "edit":
                 self.journal.print(f"⚠️  File {path_str} not found for edit, treating as create.")
 
-            code_resp = await self.llm.generate_code(path_str, existing_content, instruction)
+            # Provide file list context for imports
+            context = self._gather_context(
+                task,
+                include_project=False,
+                include_policy=False,
+                include_git=False,
+                include_files=True,
+                include_task=True,
+            )
+            code_resp = await self.llm.generate_code(path_str, existing_content, instruction, context=context)
 
             # Clean up potential markdown fences for code
             code = code_resp.content.strip()

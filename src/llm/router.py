@@ -167,7 +167,9 @@ Do not include markdown formatting (like ```yaml), just the raw YAML text.
         )
         return response
 
-    async def generate_code(self, filename: str, existing_content: str, instruction: str, **_kwargs) -> LLMResponse:
+    async def generate_code(
+        self, filename: str, existing_content: str, instruction: str, context: str = "", **_kwargs
+    ) -> LLMResponse:
         """Generate/edit single file."""
         provider, model = self.select_model("coding")
         client = self.clients.get(provider)
@@ -185,12 +187,13 @@ Rules:
 • Follow existing code style
 """
 
+        user_content = f"FILENAME: {filename}\nEXISTING: {existing_content}\nINSTRUCTION: {instruction}"
+        if context:
+            user_content += f"\nCONTEXT:\n{context}"
+
         messages = [
             {"role": "system", "content": system_prompt},
-            {
-                "role": "user",
-                "content": f"FILENAME: {filename}\nEXISTING: {existing_content}\nINSTRUCT: {instruction}",
-            },
+            {"role": "user", "content": user_content},
         ]
 
         response = await client.chat(messages, temperature=0.05, max_tokens=8000, model=model)
@@ -221,7 +224,7 @@ Rules:
             {
                 "role": "user",
                 "content": f"TEST ERROR:\n{error_log}\n\n"
-                f"CODE:\n{code_context}\n\n"
+                f"CONTEXT:\n{code_context}\n\n"
                 "Analyze the error and provide a step-by-step fix plan. "
                 "Focus on the specific files that need changes.",
             }
