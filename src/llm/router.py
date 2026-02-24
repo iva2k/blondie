@@ -200,7 +200,7 @@ Rules:
         self.journal.print(f"💾 [{provider.upper()}] {filename}: {response.tokens_used}t")
         self.journal.log_chat(
             "generate_code",
-            f"File: {filename}\nInstruct: {instruction}",
+            f"File: {filename}\nInstruction: {instruction}",
             response,
             context=existing_content,
             cost=response.cost_usd,
