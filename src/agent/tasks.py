@@ -9,12 +9,10 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-from rich.console import Console
 from rich.table import Table
 
 from cli.git import GitCLI
-
-console = Console()
+from llm.journal import Journal
 
 
 class TaskStatus(Enum):
@@ -50,16 +48,17 @@ class Task:
 class TasksManager:
     """Full TASKS.md lifecycle: parse → claim → complete → persist."""
 
-    def __init__(self, tasks_path: Path, project_id: str = "BLONDIE"):
+    def __init__(self, tasks_path: Path, project_id: str = "BLONDIE", journal: Journal | None = None):
         self.tasks_path = tasks_path
         self.project_id = project_id
+        self.journal = journal or Journal()
         self.tasks: list[Task] = []
         self._parse()
 
     def _parse(self) -> None:
         """Parse TASKS.md markdown checklists."""
         if not self.tasks_path.exists():
-            console.print(f"⚠️  [yellow]{self.tasks_path}[/yellow] not found")
+            self.journal.print(f"⚠️  [yellow]{self.tasks_path}[/yellow] not found")
             return
 
         content = self.tasks_path.read_text(encoding="utf-8")
@@ -164,7 +163,7 @@ class TasksManager:
             if task.id == clean_id:
                 task.status = TaskStatus.DONE
                 self._save()
-                # console.print(f"✅ Completed task [bold green]{task.full_id}[/]: {task.title}")
+                # self.journal.print(f"✅ Completed task [bold green]{task.full_id}[/]: {task.title}")
                 return True
         return False
 
@@ -207,7 +206,7 @@ class TasksManager:
                 ", ".join(task.depends_on),
             )
 
-        console.print(table)
+        self.journal.print(table)
 
 
 def main():

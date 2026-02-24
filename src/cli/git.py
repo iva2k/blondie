@@ -5,20 +5,18 @@
 import subprocess
 from pathlib import Path
 
-from rich.console import Console
-
 from agent.policy import Policy
-
-console = Console()
+from llm.journal import Journal
 
 
 class GitCLI:
     """Safe git wrapper with policy gating."""
 
-    def __init__(self, repo_path: Path, policy: Policy):
+    def __init__(self, repo_path: Path, policy: Policy, journal: Journal | None = None):
         self.repo_path = repo_path
         self.policy = policy
         self._cwd = repo_path
+        self.journal = journal or Journal()
 
     def run(self, *args: str, check: bool = True, capture_output: bool = False) -> subprocess.CompletedProcess:
         """Run git command with policy check."""
@@ -28,16 +26,34 @@ class GitCLI:
         if permission == "forbid":
             raise PermissionError(f"Git action '{args[0]}' forbidden by POLICY.yaml")
         if permission == "prompt":
-            console.print(f"❓ [yellow]Git {args[0]}[/yellow] requires approval")
-            if not console.input("[? Approve? (y/N)] ").lower().startswith("y"):
+            self.journal.print(f"❓ [yellow]Git {args[0]}[/yellow] requires approval")
+            # TODO: (now) Implement better architecture than calling journal.console()
+            if not self.journal.console.input("[? Approve? (y/N)] ").lower().startswith("y"):
                 raise PermissionError("User denied git operation")
 
-        console.print(f"🐙 git {args}")
+        self.journal.print(f"🐙 git {args}")
         # We're not using timeout=, nor we do try-debug-fix loop with LLM, as git commands are currently  all hardcoded.
         # TODO: (when needed) However, when we will start seeing merge conflicts, we should use LLM loop to
         # resolve conflicts.
-        result = subprocess.run(["git", *args], cwd=self._cwd, capture_output=capture_output, text=True, check=check)
-        return result
+        try:
+            # Always capture output for logging, but print to console if requested
+            result = subprocess.run(["git", *args], cwd=self._cwd, capture_output=True, text=True, check=check)
+            self.journal.log_shell(f"git {' '.join(args)}", result.returncode, result.stdout, result.stderr)
+
+            if not capture_output:
+                if result.stdout:
+                    self.journal.print(result.stdout.strip())
+                if result.stderr:
+                    self.journal.print(result.stderr.strip())
+            return result
+        except subprocess.CalledProcessError as e:
+            self.journal.log_shell(f"git {' '.join(args)}", e.returncode, e.stdout, e.stderr)
+            if not capture_output:
+                if e.stdout:
+                    self.journal.print(e.stdout.strip())
+                if e.stderr:
+                    self.journal.print(e.stderr.strip(), style="red")
+            raise e
 
     def checkout_branch(self, branch: str) -> None:
         """Safe branch checkout (creates if needed)."""
@@ -45,12 +61,12 @@ class GitCLI:
             self.checkout(branch)
         else:
             self.run("checkout", "-b", branch)
-            console.print(f"✅ Created [green]{branch}[/]")
+            self.journal.print(f"✅ Created [green]{branch}[/]")
 
     def checkout(self, branch: str) -> None:
         """Checkout existing branch."""
         self.run("checkout", branch)
-        console.print(f"✅ Switched to [green]{branch}[/]")
+        self.journal.print(f"✅ Switched to [green]{branch}[/]")
 
     def branch_exists(self, branch: str) -> bool:
         """Check if branch exists."""
@@ -107,7 +123,7 @@ class GitCLI:
 
         status = self.status()
         if status.strip():
-            console.print(f"💾 Changes detected:\n{status}")
+            self.journal.print(f"💾 Changes detected:\n{status}")
             self.add_all()
             self.commit(f"task {task_id}")
             self.push(branch_name)
@@ -117,12 +133,12 @@ class GitCLI:
     def merge_if_clean(self, branch: str, target_branch: str = "main") -> bool:
         """Merge branch if tests pass."""
         if not self.is_clean():
-            console.print("❌ Cannot merge: dirty working directory")
+            self.journal.print("❌ Cannot merge: dirty working directory")
             return False
 
         permission = self.policy.check_permission("git-merge")
         if permission != "allow":
-            console.print(f"⏸️  Merge requires {permission}")
+            self.journal.print(f"⏸️  Merge requires {permission}")
             return False
 
         try:
@@ -130,10 +146,10 @@ class GitCLI:
             self.run("pull", "origin", target_branch)
             self.run("merge", "--no-ff", branch)
             self.run("push", "origin", target_branch)
-            console.print(f"✅ Merged [bold green]{branch}[/] to {target_branch}")
+            self.journal.print(f"✅ Merged [bold green]{branch}[/] to {target_branch}")
             return True
         except subprocess.CalledProcessError:
-            console.print("❌ Merge failed")
+            self.journal.print("❌ Merge failed")
             return False
 
 

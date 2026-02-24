@@ -8,6 +8,7 @@ import pytest
 
 from agent.policy import Policy
 from cli.git import GitCLI
+from llm.journal import Journal
 
 
 @pytest.fixture
@@ -21,7 +22,7 @@ def mock_policy():
 @pytest.fixture
 def git_cli(mock_policy, tmp_path):
     """Create GitCLI instance with mock policy."""
-    return GitCLI(tmp_path, mock_policy)
+    return GitCLI(tmp_path, mock_policy, Journal())
 
 
 def test_run_allow(git_cli, mock_policy):
@@ -50,7 +51,7 @@ def test_run_prompt_approve(git_cli, mock_policy):
 
     with patch("subprocess.run") as mock_run:
         # Patch the console object instance in the module
-        with patch("cli.git.console.input", return_value="y"):
+        with patch.object(git_cli.journal.console, "input", return_value="y"):
             git_cli.run("merge")
             mock_run.assert_called_once()
 
@@ -60,7 +61,7 @@ def test_run_prompt_deny(git_cli, mock_policy):
     mock_policy.check_permission.return_value = "prompt"
 
     with patch("subprocess.run") as mock_run:
-        with patch("cli.git.console.input", return_value="n"):
+        with patch.object(git_cli.journal.console, "input", return_value="n"):
             with pytest.raises(PermissionError, match="User denied"):
                 git_cli.run("merge")
             mock_run.assert_not_called()

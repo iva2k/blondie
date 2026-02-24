@@ -6,9 +6,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from rich.console import Console
-
-console = Console()
 
 
 @dataclass

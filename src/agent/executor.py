@@ -9,11 +9,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from rich.console import Console
-
 from agent.policy import Policy
-
-console = Console()
+from llm.journal import Journal
 
 
 @dataclass
@@ -29,9 +26,10 @@ class CommandResult:
 class Executor:
     """Shell command executor obeying POLICY.yaml autonomy gates."""
 
-    def __init__(self, repo_path: Path, policy: Policy):
+    def __init__(self, repo_path: Path, policy: Policy, journal: Journal | None = None):
         self.repo_path = repo_path
         self.policy = policy
+        self.journal = journal or Journal()
 
     def _check_gate(self, action: str) -> bool:
         """Return True if action is allowed to run, False if blocked."""
@@ -39,13 +37,14 @@ class Executor:
         if permission == "allow":
             return True
         if permission == "forbid":
-            console.print(f"⛔ Action '{action}' forbidden by POLICY.yaml")
+            self.journal.print(f"⛔ Action '{action}' forbidden by POLICY.yaml")
             return False
         # prompt
-        console.print(f"❓ Action '{action}' requires approval (POLICY.yaml)")
-        answer = console.input("[Approve? (y/N)] ").strip().lower()
+        self.journal.print(f"❓ Action '{action}' requires approval (POLICY.yaml)")
+        # TODO: (now) Implement better architecture than calling journal.console()
+        answer = self.journal.console.input("[Approve? (y/N)] ").strip().lower()
         if not answer.startswith("y"):
-            console.print("⏭️  Skipping command.")
+            self.journal.print("⏭️  Skipping command.")
             return False
         return True
 
@@ -54,7 +53,7 @@ class Executor:
         if gate and not self._check_gate(gate):
             return CommandResult(command=command, returncode=0, stdout="", stderr="SKIPPED_BY_POLICY")
 
-        console.print(f"💻 [dim]{command}[/dim] (timeout: {timeout}s)")
+        self.journal.print(f"💻 [dim]{command}[/dim] (timeout: {timeout}s)")
         try:
             proc = subprocess.Popen(
                 command,
@@ -75,9 +74,9 @@ class Executor:
                 raise subprocess.TimeoutExpired(command, timeout, stdout, stderr) from ex
 
             if proc.returncode == 0:
-                console.print("✅ command ok")
+                self.journal.print("✅ command ok")
             else:
-                console.print(f"❌ command failed (exit {proc.returncode})")
+                self.journal.print(f"❌ command failed (exit {proc.returncode})")
 
             return CommandResult(
                 command=command,
@@ -86,7 +85,7 @@ class Executor:
                 stderr=stderr,
             )
         except subprocess.TimeoutExpired as e:
-            console.print(f"⏱️  Command timed out after {timeout}s")
+            self.journal.print(f"⏱️  Command timed out after {timeout}s")
             return CommandResult(
                 command=command,
                 returncode=124,
@@ -98,7 +97,7 @@ class Executor:
         """Run install command."""
         cmd = self.policy.commands.get("install")
         if not cmd:
-            console.print("ℹ️  No 'install' command configured, skipping.")
+            self.journal.print("ℹ️  No 'install' command configured, skipping.")
             return CommandResult("install (skipped)", 0, "", "")
         # installs may pull binaries / packages
         return self.run(cmd, gate="install-binary", timeout=600)
@@ -107,16 +106,16 @@ class Executor:
         """Run tests command."""
         cmd = self.policy.commands.get("test")
         if not cmd:
-            console.print("ℹ️  No 'test' command configured, skipping.")
+            self.journal.print("ℹ️  No 'test' command configured, skipping.")
             return CommandResult("test (skipped)", 0, "", "")
 
-        console.print("🧪 Running tests...")
+        self.journal.print("🧪 Running tests...")
         return self.run(cmd, timeout=600)
 
     def run_build(self) -> CommandResult:
         """Run build command."""
         cmd = self.policy.commands.get("build")
         if not cmd:
-            console.print("ℹ️  No 'build' command configured, skipping.")
+            self.journal.print("ℹ️  No 'build' command configured, skipping.")
             return CommandResult("build (skipped)", 0, "", "")
         return self.run(cmd, timeout=300)

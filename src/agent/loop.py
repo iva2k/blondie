@@ -32,9 +32,9 @@ class BlondieAgent:
         self.secrets_path = self.agent_dir / "secrets.env.yaml"
         self.llm_config_path = self.agent_dir / "llm_config.yaml"
 
-        self.tasks = TasksManager(self.tasks_path, project_id=self.project.id.upper())
-        self.git = GitCLI(self.repo_path, self.policy)
-        self.exec = Executor(self.repo_path, self.policy)
+        self.tasks = TasksManager(self.tasks_path, project_id=self.project.id.upper(), journal=self.journal)
+        self.git = GitCLI(self.repo_path, self.policy, self.journal)
+        self.exec = Executor(self.repo_path, self.policy, self.journal)
         self.gitignore = GitIgnore(self.repo_path)
         self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal)
 
