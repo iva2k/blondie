@@ -40,6 +40,10 @@ class BlondieAgent:
 
     async def run_once(self) -> bool:
         """Execute one full task cycle. Returns True if task completed."""
+        # 025: Check daily limit
+        if not self.llm.check_daily_limit():
+            return False
+
         # 0. Handle uncommitted changes from previous run/crash
         status = self.exec.run("git status --porcelain")
         if status.stdout.strip():
@@ -80,6 +84,7 @@ class BlondieAgent:
                 return False
 
         branch_name = task.branch_name
+        start_cost = self.llm.daily_cost
 
         try:
             # 1. Ensure we are on the branch (idempotent)
@@ -155,6 +160,10 @@ class BlondieAgent:
             self._save_wip(branch_name, f"WIP: Crash recovery - {e}")
             self.journal.print("Leaving task In Progress for review...")
             return False
+        finally:
+            # 042: Log task cost
+            task_cost = self.llm.daily_cost - start_cost
+            self.journal.print(f"💰 Task cost: ${task_cost:.4f}")
 
     def _save_wip(self, branch_name: str, message: str) -> None:
         """Save current work as WIP commit."""
@@ -412,6 +421,12 @@ class BlondieAgent:
         completed = 0
 
         while True:
+            # 025: Check daily limit
+            if not self.llm.check_daily_limit():
+                self.journal.print("⏳ Daily limit reached. Idling for 1 hour...")
+                await asyncio.sleep(3600)
+                continue
+
             try:
                 success = await self.run_once()
                 if success:
@@ -434,10 +449,14 @@ class BlondieAgent:
 
     async def run(self) -> None:
         """Run one cycle or forever based on config."""
-        if self.project.mode == "once":
-            await self.run_once()
-        else:
-            await self.run_forever()
+        try:
+            if self.project.mode == "once":
+                await self.run_once()
+            else:
+                await self.run_forever()
+        finally:
+            # 043: Log daily cost on exit
+            self.journal.print(f"💰 Total session cost: ${self.llm.daily_cost:.4f}")
 
 
 async def main(repo_path: str, journal_dir: str | None = None) -> None:

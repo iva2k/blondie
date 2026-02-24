@@ -2,6 +2,7 @@
 
 """LLM Router - selects provider/model per task type."""
 
+import datetime
 from pathlib import Path
 
 import yaml
@@ -24,6 +25,7 @@ class LLMRouter:
         self.config = LLMConfig.from_file(config_path)
         self.clients: dict[str, LLMClient] = {}
         self.daily_cost = 0.0
+        self.last_reset_date = datetime.date.today()
         self._init_clients()
 
     def _load_secrets(self, secrets_path: Path) -> dict:
@@ -243,6 +245,11 @@ Rules:
 
     def check_daily_limit(self) -> bool:
         """Check cost limit from policy."""
+        if datetime.date.today() > self.last_reset_date:
+            self.daily_cost = 0.0
+            self.last_reset_date = datetime.date.today()
+            self.journal.print("🔄 Daily cost reset for new day.")
+
         if not self.policy:
             return True
         limit = self.policy.limits.get("max_daily_cost_usd", float("inf"))
