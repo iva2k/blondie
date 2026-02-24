@@ -25,6 +25,8 @@ Status: id | priority | title | depends_on
 - [x] 029 | P1 | In journal, add all shell commands, their return code and stdout/sterr |
 - [x] 030 | P1 | In journal, add system prompt, endpoint URL, and model name to LLM entries |
 - [x] 034 | P1 | subprocess.run() hangs on Windows despite timeout=120 on e.g. `poetry cache clear --all pypi` which shows user prompt |
+- [x] 031 | P2 | Put Journal files into log/\<project_id>/task\<id>/ subfolders |
+- [x] 033 | P1 | In journal, log complete untruncated messages, and convert \n to real line breaks for long text. When passing messages to console, truncate these long ones. |
 
 ## Todo
 
@@ -39,9 +41,6 @@ Status: id | priority | title | depends_on
 - [ ] 019 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
 - [ ] 021 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
 - [ ] 025 | P5 | Use router.py:LLMRouter.check_daily_limit() |
-
-- [ ] 031 | P2 | Put Journal files into log/\<project_id>/task\<id>/ subfolders |
 - [ ] 032 | P1 | Add a fixed files list (e.g. .agent/POLICY.yaml) to never list to LLM context and never allow editing (use gitignore.py mechanism) |
-- [ ] 033 | P1 | In journal, log complete untruncated messages, and convert \n to real line breaks for long text. When passing messages to console, truncate. |
 
 - [ ] 035 | P5 | in debug-fix LLM loops compose summary of previous chat, so LLM could understand it beats on the same problem and could try different approaches |

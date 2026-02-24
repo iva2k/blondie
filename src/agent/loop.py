@@ -25,7 +25,7 @@ class BlondieAgent:
         self.repo_path = Path(repo_path)
         self.agent_dir = self.repo_path / ".agent"
         self.project = Project.from_file(self.agent_dir / "project.yaml")
-        self.journal = Journal(journal_dir)
+        self.journal = Journal(journal_dir, project_id=self.project.id)
         self.policy_path = self.agent_dir / self.project.policy
         self.policy = Policy.from_file(self.policy_path)
         self.tasks_path = self.agent_dir / "TASKS.md"
@@ -91,7 +91,7 @@ class BlondieAgent:
             context = self._gather_context(task)
             plan_response = await self.llm.plan_task(task.title, context, self.policy.model_dump())
             plan = plan_response.content
-            self.journal.print(f"📋 [dim]Plan:[/dim]\n{plan[:500]}...")
+            self.journal.print(f"📋 [dim]Plan:[/dim]\n{plan}", truncate=500)
 
             # 3. LLM File Edits (STUB - implement file editing)
             edit_result = await self._apply_llm_edits(task, plan)
@@ -119,7 +119,7 @@ class BlondieAgent:
                 context = self._gather_context(task)  # Refresh context
                 debug_response = await self.llm.debug_error(test_result.stderr, context)
                 fix_plan = debug_response.content
-                self.journal.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan[:500]}...")
+                self.journal.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan}", truncate=500)
 
                 if not await self._apply_llm_edits(task, fix_plan):
                     self.journal.print("❌ LLM fix edits failed")
@@ -269,7 +269,7 @@ class BlondieAgent:
                         f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}", context
                     )
                     fix_plan = debug_response.content
-                    self.journal.print(f"📋 [dim]Shell Fix Plan:[/dim]\n{fix_plan[:500]}...")
+                    self.journal.print(f"📋 [dim]Shell Fix Plan:[/dim]\n{fix_plan}", truncate=500)
 
                     if not await self._apply_llm_edits(task, fix_plan):
                         self.journal.print("❌ LLM fix edits failed, aborting retries.")

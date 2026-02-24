@@ -13,8 +13,9 @@ from rich.console import Console
 class Journal:
     """Logger for agent activities and LLM interactions."""
 
-    def __init__(self, root_dir: Path | str | None = None):
+    def __init__(self, root_dir: Path | str | None = None, project_id: str | None = None):
         self.root_dir = Path(root_dir) if root_dir else None
+        self.project_id = project_id
         self.console = Console()
         self.current_log_file: Path | None = None
 
@@ -25,7 +26,12 @@ class Journal:
 
         # Sanitize task ID for folder name (e.g. BLONDIE-020 -> task020)
         safe_id = "".join(c for c in task_id if c.isalnum() or c in ("-", "_"))
-        task_dir = self.root_dir / f"task{safe_id}"
+
+        if self.project_id:
+            safe_project_id = "".join(c for c in self.project_id if c.isalnum() or c in ("-", "_"))
+            task_dir = self.root_dir / safe_project_id / f"task{safe_id}"
+        else:
+            task_dir = self.root_dir / f"task{safe_id}"
         task_dir.mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.datetime.now().strftime("%Y-%m%d-%H%M")
@@ -33,9 +39,19 @@ class Journal:
 
         self.write_raw(f"=== Journal started for task {task_id} at {timestamp} ===\n")
 
-    def print(self, *args: Any, **kwargs: Any) -> None:
+    def print(self, *args: Any, truncate: int | None = None, **kwargs: Any) -> None:
         """Print to console and log to file."""
-        self.console.print(*args, **kwargs)
+        if truncate is not None:
+            console_args = []
+            for arg in args:
+                s = str(arg)
+                if len(s) > truncate:
+                    console_args.append(s[:truncate] + "... [truncated]")
+                else:
+                    console_args.append(arg)
+            self.console.print(*console_args, **kwargs)
+        else:
+            self.console.print(*args, **kwargs)
 
         if self.current_log_file:
             # Simple text logging for console output
@@ -77,8 +93,8 @@ class Journal:
             "timestamp": datetime.datetime.now().isoformat(),
             "type": "LLM",
             "operation": operation,
-            "prompt_summary": prompt[:1000] + "..." if len(prompt) > 1000 else prompt,
-            "context_summary": (context[:500] + "...") if context else None,
+            "prompt_summary": prompt,  # prompt[:1000] + "..." if len(prompt) > 1000 else prompt,
+            "context_summary": context,  # (context[:500] + "...") if context else None,
             "response_content": content,
             "tokens": tokens,
             "cost": cost,
