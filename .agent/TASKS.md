@@ -16,7 +16,7 @@ Status: id | priority | title | depends_on
 - [x] 009 | P2 | Implement LLM code edits per the plan |
 - [x] 010 | P3 | Failing test should trigger debugging loop and fix code (and possibly tests), retries should be for the test-debug-fix loop |
 - [x] 011 | P3 | After failing test the agent leaves uncommited files and stumbles trying to restart the task |
-- [x] 012 | P3 | Implement agent shell commands (with retry/debug loop). Flatten the errors up (or break outer edit loop) to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits. | 026, 027
+- [x] 012 | P3 | Implement agent shell commands (with retry/debug loop). Flatten the errors up (or break outer edit loop) to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits. |
 - [x] 020 | P0 | Implement journal - Option to log all chats to a trace dir/files (per task) |
 - [x] 022 | P5 | in loop.py:BlondieAgent._get_file_tree() use current .gitignore instead of hard-coded list |
 - [x] 023 | P5 | in loop.py:BlondieAgent._apply_llm_edits() implement dict for continuous action verbs, i.e. fix "Create-ing" |
@@ -30,19 +30,21 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
-- [ ] 027 | P1 | Connect stderr/stdout/stdin of shell commands interactively to LLM, so it could respond to requests |
-- [ ] 028 | P2 | In shell commands retry/debug loop - Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 026, 027
+- [ ] 032 | P1 | Add a fixed files list (e.g. .agent/POLICY.yaml) to never list to LLM context and never allow editing (use gitignore.py mechanism) |
+- [ ] 037 | P1 | Somehow we should inform LLM of our python environment - conda/anaconda/venv/, preferred python version, etc. Otherwise it may want to install a new python version in an incompatible way. It is general for any coding environment, e.g. npm vs pnpm. |
+- [ ] 028 | P2 | In shell command retry/debug loop - Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
+
+- [ ] 035 | P2 | compose summary of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037
+- [ ] 025 | P5 | Use router.py:LLMRouter.check_daily_limit() |
+
+- [ ] 015 | P3 | Deploy! Start self-editing | 025
+
+- [ ] 027 | P1 | Connect stderr/stdout/stdin of shell commands interactively to LLM, so it could respond to prompts |
 - [ ] 013 | P3 | Vercel/Netlify CLI wrappers |
 - [ ] 014 | P3 | Docker build + e2e tests |
-- [ ] 015 | P3 | Deploy! Start self-editing | 025
 - [ ] 016 | P4 | Multi-repo scanner + project.yaml |
-- [ ] 017 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" | 002
-- [ ] 018 | P4 | Tasks.py should pick blocking task first | 012
+- [ ] 017 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" |
+- [ ] 018 | P4 | Tasks.py should pick blocking task first |
 - [ ] 019 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
 - [ ] 021 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
-- [ ] 025 | P5 | Use router.py:LLMRouter.check_daily_limit() |
-- [ ] 032 | P1 | Add a fixed files list (e.g. .agent/POLICY.yaml) to never list to LLM context and never allow editing (use gitignore.py mechanism) |
-
-- [ ] 035 | P5 | compose summary of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037
 - [ ] 036 | P5 | Use grep to allow LLM finding all relevant source files |
-- [ ] 037 | P1 | Somehow we should inform LLM of our python environment - conda/anaconda/venv/, preferred python version, etc. Otherwise it may want to install a new python version in an incompatible way. It is general for any coding environment, e.g. npm vs pnpm. |
