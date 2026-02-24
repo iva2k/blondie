@@ -42,13 +42,15 @@ class BlondieAgent:
         """Execute one full task cycle. Returns True if task completed."""
         # 0. Handle uncommitted changes from previous run/crash
         status = self.exec.run("git status --porcelain")
+        self.journal.log_shell("git status --porcelain", status.returncode, status.stdout, status.stderr)
         if status.stdout.strip():
             self.journal.print("⚠️  Found uncommitted changes from previous session.")
             current_branch = self.git.current_branch()
 
             if current_branch == self.project.main_branch:
                 self.journal.print("🧹 Stashing changes on main to allow pull...")
-                self.exec.run("git stash -u")
+                res = self.exec.run("git stash -u")
+                self.journal.log_shell("git stash -u", res.returncode, res.stdout, res.stderr)
             else:
                 self.journal.print(f"💾 Saving WIP on {current_branch}...")
                 self._save_wip(current_branch, "WIP: Crash recovery")
@@ -90,14 +92,6 @@ class BlondieAgent:
             plan_response = await self.llm.plan_task(task.title, context, self.policy.model_dump())
             plan = plan_response.content
             self.journal.print(f"📋 [dim]Plan:[/dim]\n{plan[:500]}...")
-            self.journal.log_chat(
-                "plan_task",
-                f"Task: {task.title}\nContext len: {len(context)}",
-                plan_response,
-                context=context,
-                cost=plan_response.cost_usd,
-                tokens={"total": plan_response.tokens_used},
-            )
 
             # 3. LLM File Edits (STUB - implement file editing)
             edit_result = await self._apply_llm_edits(task, plan)
@@ -112,6 +106,7 @@ class BlondieAgent:
 
             for attempt in range(max_retries):
                 test_result = self.exec.run_tests()
+                self.journal.log_shell("run_tests", test_result.returncode, test_result.stdout, test_result.stderr)
                 if test_result.returncode == 0:
                     tests_passed = True
                     break
@@ -125,14 +120,6 @@ class BlondieAgent:
                 debug_response = await self.llm.debug_error(test_result.stderr, context)
                 fix_plan = debug_response.content
                 self.journal.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan[:500]}...")
-                self.journal.log_chat(
-                    "debug_error",
-                    f"Error: {test_result.stderr}",
-                    debug_response,
-                    context=context,
-                    cost=debug_response.cost_usd,
-                    tokens={"total": debug_response.tokens_used},
-                )
 
                 if not await self._apply_llm_edits(task, fix_plan):
                     self.journal.print("❌ LLM fix edits failed")
@@ -225,13 +212,6 @@ class BlondieAgent:
         self.journal.print("🤔 Identifying files to edit...")
 
         response = await self.llm.get_file_edits(task.title, plan)
-        self.journal.log_chat(
-            "get_file_edits",
-            f"Plan: {plan}",
-            response,
-            cost=response.cost_usd,
-            tokens={"total": response.tokens_used},
-        )
 
         # Clean up potential markdown fences
         content = response.content.strip()
@@ -274,6 +254,7 @@ class BlondieAgent:
 
                 for attempt in range(max_retries):
                     result = self.exec.run(command, gate=gate, timeout=timeout)
+                    self.journal.log_shell(command, result.returncode, result.stdout, result.stderr)
                     if result.returncode == 0:
                         cmd_success = True
                         break
@@ -289,14 +270,6 @@ class BlondieAgent:
                     )
                     fix_plan = debug_response.content
                     self.journal.print(f"📋 [dim]Shell Fix Plan:[/dim]\n{fix_plan[:500]}...")
-                    self.journal.log_chat(
-                        "debug_shell",
-                        f"Command: {command}\nError: {result.stderr}",
-                        debug_response,
-                        context=context,
-                        cost=debug_response.cost_usd,
-                        tokens={"total": debug_response.tokens_used},
-                    )
 
                     if not await self._apply_llm_edits(task, fix_plan):
                         self.journal.print("❌ LLM fix edits failed, aborting retries.")
@@ -375,14 +348,6 @@ class BlondieAgent:
                 self.journal.print(f"⚠️  File {path_str} not found for edit, treating as create.")
 
             code_resp = await self.llm.generate_code(path_str, existing_content, instruction)
-            self.journal.log_chat(
-                "generate_code",
-                f"File: {path_str}\nInstr: {instruction}",
-                code_resp,
-                context=existing_content,
-                cost=code_resp.cost_usd,
-                tokens={"total": code_resp.tokens_used},
-            )
 
             # Clean up potential markdown fences for code
             code = code_resp.content.strip()

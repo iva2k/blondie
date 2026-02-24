@@ -50,6 +50,9 @@ class Journal:
         context: str | None = None,
         cost: float | None = None,
         tokens: dict[str, Any] | None = None,
+        system_prompt: str | None = None,
+        model: str | None = None,
+        endpoint: str | None = None,
     ) -> None:
         """Log LLM interaction details."""
         if not self.current_log_file:
@@ -81,9 +84,30 @@ class Journal:
             "cost": cost,
             "full_prompt": prompt,
             "full_context": context,
+            "system_prompt": system_prompt,
+            "model": model,
+            "endpoint": endpoint,
         }
 
         self.write_raw(f"\n=== LLM CHAT ({operation}) ===\n")
+        self.write_raw(json.dumps(entry, indent=2, default=str))
+        self.write_raw("\n==============================\n")
+
+    def log_shell(self, command: str, returncode: int, stdout: str, stderr: str) -> None:
+        """Log shell command execution."""
+        if not self.current_log_file:
+            return
+
+        entry = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "type": "SHELL",
+            "command": command,
+            "returncode": returncode,
+            "stdout": stdout,
+            "stderr": stderr,
+        }
+
+        self.write_raw(f"\n=== SHELL ({command[:50]}...) ===\n")
         self.write_raw(json.dumps(entry, indent=2, default=str))
         self.write_raw("\n==============================\n")
 

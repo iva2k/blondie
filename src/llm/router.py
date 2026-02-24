@@ -108,6 +108,16 @@ Format as clean Markdown."""
         self.daily_cost += response.cost_usd
 
         self.journal.print(f"📋 [{provider.upper()}] Plan: {response.tokens_used}t")
+        self.journal.log_chat(
+            "plan_task",
+            f"Task: {task_title}",
+            response,
+            context=repo_context,
+            cost=response.cost_usd,
+            system_prompt=system_prompt,
+            model=client.model,
+            endpoint=client.base_url,
+        )
         return response
 
     async def get_file_edits(self, task_title: str, plan: str, **_kwargs) -> LLMResponse:
@@ -147,6 +157,15 @@ Do not include markdown formatting (like ```yaml), just the raw YAML text.
 
         response = await client.chat(messages, temperature=0.1, max_tokens=1000, model=model)
         self.daily_cost += response.cost_usd
+        self.journal.log_chat(
+            "get_file_edits",
+            f"Task: {task_title}\nPlan: {plan}",
+            response,
+            cost=response.cost_usd,
+            system_prompt=system_prompt,
+            model=client.model,
+            endpoint=client.base_url,
+        )
         return response
 
     async def generate_code(self, filename: str, existing_content: str, instruction: str, **_kwargs) -> LLMResponse:
@@ -179,6 +198,16 @@ Rules:
         self.daily_cost += response.cost_usd
 
         self.journal.print(f"💾 [{provider.upper()}] {filename}: {response.tokens_used}t")
+        self.journal.log_chat(
+            "generate_code",
+            f"File: {filename}\nInstruct: {instruction}",
+            response,
+            context=existing_content,
+            cost=response.cost_usd,
+            system_prompt=system_prompt,
+            model=client.model,
+            endpoint=client.base_url,
+        )
         return response
 
     async def debug_error(self, error_log: str, code_context: str, **_kwargs) -> LLMResponse:
@@ -201,6 +230,15 @@ Rules:
 
         response = await client.chat(messages, temperature=0.2, max_tokens=1500, model=model)
         self.daily_cost += response.cost_usd
+        self.journal.log_chat(
+            "debug_error",
+            f"Error: {error_log}",
+            response,
+            context=code_context,
+            cost=response.cost_usd,
+            model=client.model,
+            endpoint=client.base_url,
+        )
         return response
 
     def check_daily_limit(self) -> bool:
