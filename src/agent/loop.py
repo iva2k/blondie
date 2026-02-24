@@ -147,7 +147,7 @@ class BlondieAgent:
                 return True  # Task is technically done, just not merged
 
             self.journal.print(f"✅ Completed task [bold green]{task.full_id}[/]: {task.title}")
-            self.journal.print(f"{'='*100}\n")
+            self.journal.print(f"{'=' * 100}\n")
             return True
 
         except Exception as e:
