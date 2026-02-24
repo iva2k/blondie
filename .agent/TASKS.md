@@ -40,7 +40,7 @@ Status: id | priority | title | depends_on
 - [ ] 021 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
 - [ ] 025 | P5 | Use router.py:LLMRouter.check_daily_limit() |
 
-- [ ] 031 | P2 | Put Journal files into log/<project_id>/task<id>/ subfolders |
+- [ ] 031 | P2 | Put Journal files into log/\<project_id>/task\<id>/ subfolders |
 - [ ] 032 | P1 | Add a fixed files list (e.g. .agent/POLICY.yaml) to never list to LLM context and never allow editing (use gitignore.py mechanism) |
 - [ ] 033 | P1 | In journal, log complete untruncated messages, and convert \n to real line breaks for long text. When passing messages to console, truncate. |
 
