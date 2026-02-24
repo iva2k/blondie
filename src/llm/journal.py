@@ -124,7 +124,7 @@ class Journal:
         elif returncode == 124:  # Timeout
             self.print(f"⏱️ command {stderr}")
         else:
-            self.print(f"❌ command failed (exit {returncode}) Error: {stderr}")
+            self.print(f"❌ command failed (exit {returncode}) Error: {stderr or stdout}")
 
     def write_raw(self, text: str) -> None:
         """Write raw text to log file."""
