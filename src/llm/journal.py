@@ -111,6 +111,13 @@ class Journal:
 
     def log_shell(self, command: str, returncode: int, stdout: str, stderr: str) -> None:
         """Log shell command execution."""
+        if returncode == 0:
+            self.print("✅ command ok")
+        elif returncode == 124:
+            self.print(f"⏱️ command {stderr}")
+        else:
+            self.print(f"❌ command failed (exit {returncode}) {stderr}")
+
         if not self.current_log_file:
             return
 

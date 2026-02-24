@@ -5,6 +5,7 @@
 import subprocess
 from pathlib import Path
 
+from agent.executor import Executor
 from agent.policy import Policy
 from llm.journal import Journal
 
@@ -17,43 +18,34 @@ class GitCLI:
         self.policy = policy
         self._cwd = repo_path
         self.journal = journal or Journal()
+        self.executor = Executor(repo_path, policy, self.journal)
 
     def run(self, *args: str, check: bool = True, capture_output: bool = False) -> subprocess.CompletedProcess:
         """Run git command with policy check."""
+        cmd_list = ["git", *args]
+        gate = f"git-{args[0]}"
 
-        # Policy gate
-        permission = self.policy.check_permission(f"git-{args[0]}")
-        if permission == "forbid":
+        # We use a longer timeout (5 min) for git operations
+        result = self.executor.run(cmd_list, gate=gate, timeout=300)
+
+        if result.stderr == "SKIPPED_BY_POLICY":
             raise PermissionError(f"Git action '{args[0]}' forbidden by POLICY.yaml")
-        if permission == "prompt":
-            self.journal.print(f"❓ [yellow]Git {args[0]}[/yellow] requires approval")
-            # TODO: (now) Implement better architecture than calling journal.console()
-            if not self.journal.console.input("[? Approve? (y/N)] ").lower().startswith("y"):
-                raise PermissionError("User denied git operation")
 
-        self.journal.print(f"🐙 git {args}")
-        # We're not using timeout=, nor we do try-debug-fix loop with LLM, as git commands are currently  all hardcoded.
-        # TODO: (when needed) However, when we will start seeing merge conflicts, we should use LLM loop to
-        # resolve conflicts.
-        try:
-            # Always capture output for logging, but print to console if requested
-            result = subprocess.run(["git", *args], cwd=self._cwd, capture_output=True, text=True, check=check)
-            self.journal.log_shell(f"git {' '.join(args)}", result.returncode, result.stdout, result.stderr)
+        if check and result.returncode != 0:
+            raise subprocess.CalledProcessError(result.returncode, cmd_list, output=result.stdout, stderr=result.stderr)
 
-            if not capture_output:
-                if result.stdout:
-                    self.journal.print(result.stdout.strip())
-                if result.stderr:
-                    self.journal.print(result.stderr.strip())
-            return result
-        except subprocess.CalledProcessError as e:
-            self.journal.log_shell(f"git {' '.join(args)}", e.returncode, e.stdout, e.stderr)
-            if not capture_output:
-                if e.stdout:
-                    self.journal.print(e.stdout.strip())
-                if e.stderr:
-                    self.journal.print(e.stderr.strip(), style="red")
-            raise e
+        if not capture_output:
+            if result.stdout:
+                self.journal.print(result.stdout.strip())
+            if result.stderr:
+                self.journal.print(result.stderr.strip())
+
+        return subprocess.CompletedProcess(
+            args=cmd_list,
+            returncode=result.returncode,
+            stdout=result.stdout,
+            stderr=result.stderr,
+        )
 
     def checkout_branch(self, branch: str) -> None:
         """Safe branch checkout (creates if needed)."""
@@ -111,7 +103,7 @@ class GitCLI:
 
     def is_clean(self) -> bool:
         """Check if working directory is clean."""
-        result = self.run("diff", "--quiet", "HEAD", capture_output=True)
+        result = self.run("diff", "--quiet", "HEAD", capture_output=True, check=False)
         return result.returncode == 0
 
     def create_pr_branch(self, task_id: str) -> str:

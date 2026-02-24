@@ -42,15 +42,13 @@ class BlondieAgent:
         """Execute one full task cycle. Returns True if task completed."""
         # 0. Handle uncommitted changes from previous run/crash
         status = self.exec.run("git status --porcelain")
-        self.journal.log_shell("git status --porcelain", status.returncode, status.stdout, status.stderr)
         if status.stdout.strip():
             self.journal.print("⚠️  Found uncommitted changes from previous session.")
             current_branch = self.git.current_branch()
 
             if current_branch == self.project.main_branch:
                 self.journal.print("🧹 Stashing changes on main to allow pull...")
-                res = self.exec.run("git stash -u")
-                self.journal.log_shell("git stash -u", res.returncode, res.stdout, res.stderr)
+                _res = self.exec.run("git stash -u")
             else:
                 self.journal.print(f"💾 Saving WIP on {current_branch}...")
                 self._save_wip(current_branch, "WIP: Crash recovery")
@@ -106,7 +104,6 @@ class BlondieAgent:
 
             for attempt in range(max_retries):
                 test_result = self.exec.run_tests()
-                self.journal.log_shell("run_tests", test_result.returncode, test_result.stdout, test_result.stderr)
                 if test_result.returncode == 0:
                     tests_passed = True
                     break
@@ -254,7 +251,6 @@ class BlondieAgent:
 
                 for attempt in range(max_retries):
                     result = self.exec.run(command, gate=gate, timeout=timeout)
-                    self.journal.log_shell(command, result.returncode, result.stdout, result.stderr)
                     if result.returncode == 0:
                         cmd_success = True
                         break

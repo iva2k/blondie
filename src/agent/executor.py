@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -48,10 +49,14 @@ class Executor:
             return False
         return True
 
-    def run(self, command: str, *, gate: str | None = None, timeout: int = 120) -> CommandResult:
+    def run(self, command: str | list[str], *, gate: str | None = None, timeout: int = 120) -> CommandResult:
         """Run a shell command in repo, optionally gated by autonomy policy."""
+        if sys.platform == "win32":
+            command_str = subprocess.list2cmdline(command) if isinstance(command, list) else command
+        else:
+            command_str = shlex.join(command) if isinstance(command, list) else command
         if gate and not self._check_gate(gate):
-            return CommandResult(command=command, returncode=0, stdout="", stderr="SKIPPED_BY_POLICY")
+            return CommandResult(command=command_str, returncode=125, stdout="", stderr="SKIPPED_BY_POLICY")
 
         self.journal.print(f"💻 [dim]{command}[/dim] (timeout: {timeout}s)")
         try:
@@ -73,24 +78,22 @@ class Executor:
                 stdout, stderr = proc.communicate()
                 raise subprocess.TimeoutExpired(command, timeout, stdout, stderr) from ex
 
-            if proc.returncode == 0:
-                self.journal.print("✅ command ok")
-            else:
-                self.journal.print(f"❌ command failed (exit {proc.returncode})")
-
+            self.journal.log_shell(command_str, proc.returncode, stdout, stderr)
             return CommandResult(
-                command=command,
+                command=command_str,
                 returncode=proc.returncode,
                 stdout=stdout,
                 stderr=stderr,
             )
         except subprocess.TimeoutExpired as e:
-            self.journal.print(f"⏱️  Command timed out after {timeout}s")
+            stdout = str(e.stdout or "")
+            stderr = str(e.stderr or f"Timeout after {timeout}s")
+            self.journal.log_shell(command_str, 124, stdout, stderr)
             return CommandResult(
-                command=command,
+                command=command_str,
                 returncode=124,
-                stdout=str(e.stdout or ""),
-                stderr=str(e.stderr or f"Timeout after {timeout}s"),
+                stdout=stdout,
+                stderr=stderr,
             )
 
     def run_install(self) -> CommandResult:
