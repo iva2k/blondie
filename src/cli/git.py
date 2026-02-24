@@ -33,6 +33,9 @@ class GitCLI:
                 raise PermissionError("User denied git operation")
 
         console.print(f"🐙 git {args}")
+        # We're not using timeout=, nor we do try-debug-fix loop with LLM, as git commands are currently  all hardcoded.
+        # TODO: (when needed) However, when we will start seeing merge conflicts, we should use LLM loop to
+        # resolve conflicts.
         result = subprocess.run(["git", *args], cwd=self._cwd, capture_output=capture_output, text=True, check=check)
         return result
 

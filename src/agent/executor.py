@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -55,15 +56,24 @@ class Executor:
 
         console.print(f"💻 [dim]{command}[/dim] (timeout: {timeout}s)")
         try:
-            proc = subprocess.run(
+            proc = subprocess.Popen(
                 command,
                 cwd=self.repo_path,
                 shell=True,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
                 text=True,
-                check=False,
-                timeout=timeout,
             )
+            try:
+                stdout, stderr = proc.communicate(input="n\n", timeout=timeout)
+            except subprocess.TimeoutExpired as ex:
+                proc.kill()
+                if sys.platform == "win32":
+                    subprocess.run(f"taskkill /F /T /PID {proc.pid}", shell=True, capture_output=True, check=False)
+                stdout, stderr = proc.communicate()
+                raise subprocess.TimeoutExpired(command, timeout, stdout, stderr) from ex
+
             if proc.returncode == 0:
                 console.print("✅ command ok")
             else:
@@ -72,8 +82,8 @@ class Executor:
             return CommandResult(
                 command=command,
                 returncode=proc.returncode,
-                stdout=proc.stdout,
-                stderr=proc.stderr,
+                stdout=stdout,
+                stderr=stderr,
             )
         except subprocess.TimeoutExpired as e:
             console.print(f"⏱️  Command timed out after {timeout}s")
