@@ -64,75 +64,73 @@ class Journal:
         prompt: str,
         response: Any,
         context: str | None = None,
-        cost: float | None = None,
-        tokens: dict[str, Any] | None = None,
         system_prompt: str | None = None,
         model: str | None = None,
         endpoint: str | None = None,
     ) -> None:
         """Log LLM interaction details."""
-        if not self.current_log_file:
-            return
+        if self.current_log_file:
+            # Extract content/usage from response if available
+            content = str(response)
+            if hasattr(response, "content"):
+                content = response.content
 
-        # Extract content/usage from response if available
-        content = str(response)
-        if hasattr(response, "content"):
-            content = response.content
+            cost = getattr(response, "cost_usd", None)
 
-        if tokens is None and hasattr(response, "usage"):
-            try:
-                # Handle Pydantic or dict
-                if hasattr(response.usage, "model_dump"):
-                    tokens = response.usage.model_dump()
-                else:
-                    tokens = dict(response.usage)
-            except (ValueError, TypeError):
-                tokens = {"raw": str(response.usage)}
+            tokens = None
+            if hasattr(response, "usage"):
+                try:
+                    # Handle Pydantic or dict
+                    if hasattr(response.usage, "model_dump"):
+                        tokens = response.usage.model_dump()
+                    else:
+                        tokens = dict(response.usage)
+                except (ValueError, TypeError):
+                    tokens = {"raw": str(response.usage)}
 
-        entry = {
-            "timestamp": datetime.datetime.now().isoformat(),
-            "type": "LLM",
-            "operation": operation,
-            "prompt_summary": prompt,  # prompt[:1000] + "..." if len(prompt) > 1000 else prompt,
-            "context_summary": context,  # (context[:500] + "...") if context else None,
-            "response_content": content,
-            "tokens": tokens,
-            "cost": cost,
-            "full_prompt": prompt,
-            "full_context": context,
-            "system_prompt": system_prompt,
-            "model": model,
-            "endpoint": endpoint,
-        }
+            entry = {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "type": "LLM",
+                "operation": operation,
+                "prompt_summary": prompt,  # prompt[:1000] + "..." if len(prompt) > 1000 else prompt,
+                "context_summary": context,  # (context[:500] + "...") if context else None,
+                "response_content": content,
+                "tokens": tokens,
+                "cost": cost,
+                "full_prompt": prompt,
+                "full_context": context,
+                "system_prompt": system_prompt,
+                "model": model,
+                "endpoint": endpoint,
+            }
 
-        self.write_raw(f"\n=== LLM CHAT ({operation}) ===\n")
-        self.write_raw(json.dumps(entry, indent=2, default=str))
-        self.write_raw("\n==============================\n")
+            self.write_raw(f"\n=== LLM CHAT ({operation}) ===\n")
+            self.write_raw(json.dumps(entry, indent=2, default=str))
+            self.write_raw("\n==============================\n")
 
     def log_shell(self, command: str, returncode: int, stdout: str, stderr: str) -> None:
         """Log shell command execution."""
+
+        if self.current_log_file:
+            entry = {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "type": "SHELL",
+                "command": command,
+                "returncode": returncode,
+                "stdout": stdout,
+                "stderr": stderr,
+            }
+
+            self.write_raw(f"\n=== SHELL ({command[:50]}...) ===\n")
+            self.write_raw(json.dumps(entry, indent=2, default=str))
+            self.write_raw("\n==============================\n")
+
         if returncode == 0:
             self.print("✅ command ok")
-        elif returncode == 124:
+        elif returncode == 124:  # Timeout
             self.print(f"⏱️ command {stderr}")
         else:
-            self.print(f"❌ command failed (exit {returncode}) {stderr}")
-
-        if not self.current_log_file:
-            return
-
-        entry = {
-            "timestamp": datetime.datetime.now().isoformat(),
-            "type": "SHELL",
-            "command": command,
-            "returncode": returncode,
-            "stdout": stdout,
-            "stderr": stderr,
-        }
-
-        self.write_raw(f"\n=== SHELL ({command[:50]}...) ===\n")
-        self.write_raw(json.dumps(entry, indent=2, default=str))
-        self.write_raw("\n==============================\n")
+            self.print(f"❌ command failed (exit {returncode}) Error: {stderr}")
 
     def write_raw(self, text: str) -> None:
         """Write raw text to log file."""
