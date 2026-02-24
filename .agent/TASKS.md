@@ -36,6 +36,8 @@ Status: id | priority | title | depends_on
 
 - [ ] 035 | P2 | compose summary of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037
 - [ ] 025 | P3 | Use router.py:LLMRouter.check_daily_limit() |
+- [ ] 042 | P3 | Track task cost, When task is done, log to journal and console task cost |
+- [ ] 043 | P3 | When exiting agent (even by keyboard interrupt), log to journal and console daily cost |
 - [ ] 039 | P3 | refactor LLM code - use common worker method, each existing method should call the worker with system prompt, user prompt, etc. |
 - [ ] 040 | P3 | Agent should have its user/email set for git commits |
 
