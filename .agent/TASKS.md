@@ -44,3 +44,4 @@ Status: id | priority | title | depends_on
 - [ ] 032 | P1 | Add a fixed files list (e.g. .agent/POLICY.yaml) to never list to LLM context and never allow editing (use gitignore.py mechanism) |
 
 - [ ] 035 | P5 | in debug-fix LLM loops compose summary of previous chat, so LLM could understand it beats on the same problem and could try different approaches |
+- [ ] 036 | P5 | Use grep to allow LLM finding all relevant source files |
