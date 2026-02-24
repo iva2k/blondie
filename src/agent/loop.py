@@ -183,6 +183,8 @@ class BlondieAgent:
 
         if include_project:
             context.append(f"Project: {self.project.id}")
+            if self.project.dev_env:
+                context.append(f"Dev Environment: {self.project.dev_env}")
         if include_policy:
             context.append(f"Policy: {self.policy.model_dump()}")
             context.append(f"Commands: {list(self.policy.commands.keys())}")

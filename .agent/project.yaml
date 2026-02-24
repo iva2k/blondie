@@ -8,6 +8,7 @@ commands:
   test: pytest tests/
   build: python -m build
 policy: POLICY.yaml
+dev_config: dev.yaml
 docs:
   - README.md
   - docs/
@@ -17,3 +18,4 @@ protected_files:
   - .agent/POLICY.yaml
   - .agent/project.yaml
   - .agent/secrets.env.yaml
+  - .agent/dev.yaml

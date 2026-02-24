@@ -9,15 +9,14 @@ commands:
   build: "{{build|default('npm run build')}}"
   deploy-preview: "{{deploy_preview|default('vercel --prebuilt')}}"
 policy: POLICY.yaml
+dev_config: dev.yaml
 docs:
   - README.md
   - docs/
-cloud:
-  vercel:
-    token: "{{secret:vercel_token}}"
-  netlify:
-    token: "{{secret:netlify_token}}"
+deploy:
+  docker: docker build -t blondie:v1 .
 protected_files:
   - .agent/POLICY.yaml
   - .agent/project.yaml
   - .agent/secrets.env.yaml
+  - .agent/dev.yaml

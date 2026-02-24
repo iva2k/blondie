@@ -1,0 +1,13 @@
+environment:
+  language: python
+  manager: poetry
+  python_version: "3.10"
+  linter: ruff
+  formatter: ruff
+  types: mypy
+  scripts: poe
+guidelines:
+  - "Use poetry for dependency management"
+  - "Use pytest for testing"
+  - "Follow PEP 8 via ruff"
+  - "Use mypy for type checking"
