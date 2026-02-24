@@ -24,6 +24,7 @@ class Project(BaseModel):
     docs: list[str] = []
     deploy: dict[str, str] = {}
     mode: Literal["once", "continuous"] = "continuous"
+    protected_files: list[str] = []
 
     @classmethod
     def from_file(cls, path: Path) -> Project:

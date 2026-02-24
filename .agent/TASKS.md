@@ -27,10 +27,10 @@ Status: id | priority | title | depends_on
 - [x] 034 | P1 | subprocess.run() hangs on Windows despite timeout=120 on e.g. `poetry cache clear --all pypi` which shows user prompt |
 - [x] 031 | P2 | Put Journal files into log/\<project_id>/task\<id>/ subfolders |
 - [x] 033 | P1 | In journal, log complete untruncated messages. When passing messages to console, truncate these long ones. |
+- [x] 032 | P1 | Add a fixed files list (e.g. .agent/POLICY.yaml) to never list to LLM context and never allow editing (use gitignore.py mechanism) |
 
 ## Todo
 
-- [ ] 032 | P1 | Add a fixed files list (e.g. .agent/POLICY.yaml) to never list to LLM context and never allow editing (use gitignore.py mechanism) |
 - [ ] 037 | P1 | Somehow we should inform LLM of our python environment - conda/anaconda/venv/, preferred python version, etc. Otherwise it may want to install a new python version in an incompatible way. It is general for any coding environment, e.g. npm vs pnpm. |
 - [ ] 028 | P2 | In shell command retry/debug loop - Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
 

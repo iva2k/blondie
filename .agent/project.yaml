@@ -13,3 +13,7 @@ docs:
   - docs/
 deploy:
   docker: docker build -t blondie:v1 .
+protected_files:
+  - .agent/POLICY.yaml
+  - .agent/project.yaml
+  - .agent/secrets.env.yaml

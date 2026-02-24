@@ -208,6 +208,9 @@ class BlondieAgent:
             except ValueError:
                 continue
 
+            if rel_path.as_posix() in self.project.protected_files:
+                continue
+
             if self.gitignore.is_ignored(path):
                 continue
 
@@ -300,6 +303,18 @@ class BlondieAgent:
                 continue
 
             full_path = self.repo_path / path_str
+
+            # Check protected files
+            try:
+                resolved_path = full_path.resolve()
+                resolved_repo = self.repo_path.resolve()
+                if resolved_path.is_relative_to(resolved_repo):
+                    rel_path = resolved_path.relative_to(resolved_repo)
+                    if rel_path.as_posix() in self.project.protected_files:
+                        self.journal.print(f"🛡️  Skipping protected file {path_str}")
+                        continue
+            except Exception:
+                pass
 
             # Detect directory operation
             is_dir_op = path_str.endswith("/") or path_str.endswith("\\")

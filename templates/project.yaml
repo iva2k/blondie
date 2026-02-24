@@ -17,3 +17,7 @@ cloud:
     token: "{{secret:vercel_token}}"
   netlify:
     token: "{{secret:netlify_token}}"
+protected_files:
+  - .agent/POLICY.yaml
+  - .agent/project.yaml
+  - .agent/secrets.env.yaml
