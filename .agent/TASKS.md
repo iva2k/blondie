@@ -30,6 +30,7 @@ Status: id | priority | title | depends_on
 - [x] 032 | P1 | Add a fixed files list (e.g. .agent/POLICY.yaml) to never list to LLM context and never allow editing (use gitignore.py mechanism) |
 - [x] 037 | P1 | Inform LLM of python environment (conda/venv/poetry) via dev.yaml config and context injection. |
 - [x] 025 | P3 | Use router.py:LLMRouter.check_daily_limit() |
+- [x] 039 | P3 | refactor LLM router code - use common worker method, each existing method should call the worker with system prompt, user prompt, etc. |
 - [x] 042 | P3 | Track task cost, When task is done, log to journal and console task cost |
 - [x] 043 | P3 | When exiting agent (even by keyboard interrupt), log to journal and console total daily cost |
 - [x] 044 | P1 | Remove gates copy from top level of Policy (conserve context) |
@@ -39,7 +40,6 @@ Status: id | priority | title | depends_on
 - [ ] 028 | P2 | In shell command retry/debug loop - Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
 
 - [ ] 035 | P2 | compose summary of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037
-- [ ] 039 | P3 | refactor LLM code - use common worker method, each existing method should call the worker with system prompt, user prompt, etc. |
 - [ ] 040 | P3 | Agent should have its user/email set for git commits |
 
 - [ ] 015 | P4 | **DEPLOY!** Start self-editing | 025, 032, 037, 028, 035, 025, 039

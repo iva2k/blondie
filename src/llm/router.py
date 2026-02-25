@@ -89,14 +89,42 @@ class LLMRouter:
 
         raise ValueError(f"No active LLM provider found for operation '{operation}'")
 
-    async def plan_task(self, task_title: str, repo_context: str, policy_summary: dict, **_kwargs) -> LLMResponse:
-        """Generate detailed implementation plan."""
-        provider, model = self.select_model("planning")
+    async def _execute_llm_task(
+        self,
+        operation: str,
+        system_prompt: str,
+        user_prompt: str | None,
+        temperature: float,
+        max_tokens: int,
+        log_action: str,
+        log_title: str,
+    ) -> LLMResponse:
+        """Execute LLM task with common logging and cost tracking."""
+        provider, model = self.select_model(operation)
         client = self.clients.get(provider)
 
         if not client:
             raise ValueError(f"No client for provider '{provider}'")
 
+        messages = [{"role": "system", "content": system_prompt}]
+        if user_prompt:
+            messages.append({"role": "user", "content": user_prompt})
+
+        response = await client.chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
+        self.daily_cost += response.cost_usd
+        self.journal.log_chat(
+            log_action,
+            provider,
+            log_title,
+            response,
+            system_prompt=system_prompt,
+            model=client.model,
+            endpoint=client.base_url,
+        )
+        return response
+
+    async def plan_task(self, task_title: str, repo_context: str, policy_summary: dict, **_kwargs) -> LLMResponse:
+        """Generate detailed implementation plan."""
         system_prompt = f"""You are Blondie, an autonomous coding agent.
 You are planning changes for a software repository.
 Your output will be used by another LLM to generate specific file edits and shell commands.
@@ -126,30 +154,19 @@ Format as clean Markdown with these sections:
 5. **Verification**: Automated tests to run (e.g. `pytest tests/test_foo.py`). Do not list manual steps.
 6. **Risks**: Potential risks + mitigations."""
 
-        messages = [{"role": "system", "content": system_prompt}]
-
-        response = await client.chat(messages, temperature=0.1, max_tokens=2000, model=model)
-        self.daily_cost += response.cost_usd
-        self.journal.log_chat(
-            "plan_task",
-            provider,
-            f"Task: {task_title}",
-            response,
+        return await self._execute_llm_task(
+            operation="planning",
             system_prompt=system_prompt,
-            model=client.model,
-            endpoint=client.base_url,
+            user_prompt=None,
+            temperature=0.1,
+            max_tokens=2000,
+            log_action="plan_task",
+            log_title=f"Task: {task_title}",
         )
-        return response
 
     async def get_file_edits(self, task_title: str, plan: str, context: str = "", **_kwargs) -> LLMResponse:
         """Identify files to edit from plan."""
-        provider, model = self.select_model("planning")
-        client = self.clients.get(provider)
-
-        if not client:
-            raise ValueError(f"No client for provider '{provider}'")
-
-        system_prompt = """You are a coding architect.
+        system_prompt = f"""You are a coding architect.
 
 You Are at step 2 of AGENT FLOW.
 
@@ -189,35 +206,21 @@ Do not include markdown formatting (like ```yaml), just the raw YAML text.
         if context:
             user_content = f"CONTEXT:\n{context}\n\n{user_content}"
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content},
-        ]
-
-        response = await client.chat(messages, temperature=0.1, max_tokens=1000, model=model)
-        self.daily_cost += response.cost_usd
-        self.journal.log_chat(
-            "get_file_edits",
-            provider,
-            f"Task: {task_title}\nPlan: {plan}",
-            response,
+        return await self._execute_llm_task(
+            operation="planning",
             system_prompt=system_prompt,
-            model=client.model,
-            endpoint=client.base_url,
+            user_prompt=user_content,
+            temperature=0.1,
+            max_tokens=1000,
+            log_action="get_file_edits",
+            log_title=f"Task: {task_title}",
         )
-        return response
 
     async def generate_code(
         self, filename: str, existing_content: str, instruction: str, context: str = "", **_kwargs
     ) -> LLMResponse:
         """Generate/edit single file."""
-        provider, model = self.select_model("coding")
-        client = self.clients.get(provider)
-
-        if not client:
-            raise ValueError(f"No client for provider '{provider}'")
-
-        system_prompt = """You are an expert code editor.
+        system_prompt = f"""You are an expert code editor.
 
 You Are at step 3 of AGENT FLOW.
 
@@ -239,68 +242,46 @@ Rules:
         if context:
             user_content += f"\nCONTEXT:\n{context}"
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content},
-        ]
-
-        response = await client.chat(messages, temperature=0.05, max_tokens=8000, model=model)
-        self.daily_cost += response.cost_usd
-        self.journal.log_chat(
-            "generate_code",
-            provider,
-            f"File: {filename}\nInstruction: {instruction}",
-            response,
+        return await self._execute_llm_task(
+            operation="coding",
             system_prompt=system_prompt,
-            model=client.model,
-            endpoint=client.base_url,
+            user_prompt=user_content,
+            temperature=0.05,
+            max_tokens=8000,
+            log_action="generate_code",
+            log_title=f"File: {filename}\nInstruction: {instruction}",
         )
-        return response
 
     async def debug_error(self, error_log: str, code_context: str, **_kwargs) -> LLMResponse:
         """Suggest fix for test failures."""
-        provider, model = self.select_model("debugging")
-        client = self.clients.get(provider)
-
-        if not client:
-            raise ValueError(f"No client for provider '{provider}'")
-
-        messages = [
-            {
-                "role": "system",
-                "content": """You are an autonomous debugging assistant.
+        system_prompt = f"""You are an autonomous debugging assistant.
 
 You Are at step 5 of AGENT FLOW.
 
 AGENT FLOW: {AGENT_FLOW}
 
-Your goal is to fix the error.""",
-            },
-            {
-                "role": "user",
-                "content": f"TEST ERROR:\n{error_log}\n\n"
-                f"CONTEXT:\n{code_context}\n\n"
-                "Analyze the error and provide a fix plan.\n"
-                "Rules:\n"
-                "1. Focus on specific files to edit.\n"
-                "2. Provide concrete instructions for code changes.\n"
-                "3. Do NOT use human steps like 'Open file'.\n"
-                "4. If a shell command is needed (e.g. install missing package, grep for error), specify it exactly with non-interactive flags.",
-            },
-        ]
+Your goal is to fix the error."""
 
-        response = await client.chat(messages, temperature=0.2, max_tokens=1500, model=model)
-        self.daily_cost += response.cost_usd
-        self.journal.log_chat(
-            "debug_error",
-            provider,
-            f"Error: {error_log}",
-            response,
-            system_prompt=None,
-            model=client.model,
-            endpoint=client.base_url,
+        user_content = (
+            f"TEST ERROR:\n{error_log}\n\n"
+            f"CONTEXT:\n{code_context}\n\n"
+            "Analyze the error and provide a fix plan.\n"
+            "Rules:\n"
+            "1. Focus on specific files to edit.\n"
+            "2. Provide concrete instructions for code changes.\n"
+            "3. Do NOT use human steps like 'Open file'.\n"
+            "4. If a shell command is needed (e.g. install missing package, grep for error), specify it exactly with non-interactive flags."
         )
-        return response
+
+        return await self._execute_llm_task(
+            operation="debugging",
+            system_prompt=system_prompt,
+            user_prompt=user_content,
+            temperature=0.2,
+            max_tokens=1500,
+            log_action="debug_error",
+            log_title=f"Error: {error_log}",
+        )
 
     def check_daily_limit(self) -> bool:
         """Check cost limit from policy."""
