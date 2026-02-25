@@ -47,3 +47,10 @@ def test_default_allow() -> None:
     """Test default allow behavior."""
     policy = Policy()
     assert policy.check_permission("anything") == "allow"
+
+
+def test_policy_structure(sample_policy_file: Path) -> None:
+    """Test that gates are not flattened to top level."""
+    policy = Policy.from_file(sample_policy_file)
+    assert not hasattr(policy, "gates")
+    assert policy.autonomy["gates"]["git-merge"] == "prompt"

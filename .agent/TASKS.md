@@ -32,10 +32,10 @@ Status: id | priority | title | depends_on
 - [x] 025 | P3 | Use router.py:LLMRouter.check_daily_limit() |
 - [x] 042 | P3 | Track task cost, When task is done, log to journal and console task cost |
 - [x] 043 | P3 | When exiting agent (even by keyboard interrupt), log to journal and console total daily cost |
+- [x] 044 | P1 | Remove gates copy from top level of Policy (conserve context) |
 
 ## Todo
 
-- [ ] 045 | P1 | Remove gates copy from top level of Policy (conserve context) |
 - [ ] 028 | P2 | In shell command retry/debug loop - Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
 
 - [ ] 035 | P2 | compose summary of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037

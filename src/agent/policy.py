@@ -21,7 +21,6 @@ class AutonomyRule(BaseModel):
 class Policy(BaseModel):
     """Parsed POLICY.yaml configuration for repo autonomy and commands."""
 
-    gates: dict[str, Literal["allow", "prompt", "forbid"]] = {}
     autonomy: dict[str, Any] = {}
     limits: dict[str, Any] = {}
     commands: dict[str, str] = {}
@@ -34,20 +33,18 @@ class Policy(BaseModel):
         content = path.read_text(encoding="utf-8")
         data = yaml.safe_load(content) or {}
 
-        # Flatten autonomy.gates -> gates
-        if "autonomy" in data and isinstance(data["autonomy"], dict):
-            data["gates"] = data["autonomy"].get("gates", {})
-
         return cls(**data)
 
     def check_permission(self, action: str) -> Literal["allow", "prompt", "forbid"]:
         """Check permission for specific action with prefix matching."""
+        gates = self.autonomy.get("gates", {})
+
         # Exact match first
-        if action in self.gates:
-            return self.gates[action]
+        if action in gates:
+            return gates[action]
 
         # Prefix wildcard matching (deploy-*)
-        for pattern, permission in self.gates.items():
+        for pattern, permission in gates.items():
             if pattern.endswith("*") and action.startswith(pattern[:-1]):
                 return permission
 

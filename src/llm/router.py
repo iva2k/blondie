@@ -110,21 +110,21 @@ POLICY SUMMARY: {policy_summary}
 CONTEXT: {repo_context}
 
 Instructions:
-1. Analyze the request and context.
-2. Generate a concrete implementation plan.
-3. Use specific file paths (relative to repo root).
-4. Do NOT use placeholders like <project_name> or <date>. Use actual values or sensible defaults.
-5. Do NOT provide human-centric instructions like "Open file", "Navigate to".
-6. For shell commands, use exact flags for non-interactive execution (e.g. -y, --no-input).
-7. Standard shell commands (grep, find, etc.) are allowed per POLICY.
-8. For package version resolution, instruct to use internet query (e.g. npm view, pip index) to get latest versions.
+1. Generate implementation plan.
+2. Use specific file paths (relative to repo root).
+3. Do NOT use placeholders like <project_name> or <date>. Use actual values or sensible defaults.
+4. Do NOT provide human-centric instructions like "Open file", "Navigate to".
+5. For shell commands, use exact flags for non-interactive execution (e.g. -y, --no-input).
+6. Standard shell commands (grep, find, etc.) are allowed per POLICY.
+7. For package version resolution, instruct to use internet query (e.g. npm view, pip index) to get latest versions.
 
 Format as clean Markdown with these sections:
-1. **Files to Create/Modify**: List of files.
-2. **Shell Commands**: List of commands to run (install dependencies, etc).
-3. **Code Changes**: Detailed description of logic changes.
-4. **Verification**: Automated tests to run (e.g. `pytest tests/test_foo.py`). Do not list manual steps.
-5. **Risks**: Potential risks + mitigations."""
+1. **Shell Commands to Initialize**: List of commands to prepare project (scaffolding).
+2. **Files to Create/Modify**: List of files.
+3. **Shell Commands**: List of commands to run (install dependencies, etc).
+4. **Code Changes**: Detailed description of logic changes.
+5. **Verification**: Automated tests to run (e.g. `pytest tests/test_foo.py`). Do not list manual steps.
+6. **Risks**: Potential risks + mitigations."""
 
         messages = [{"role": "system", "content": system_prompt}]
 
@@ -135,7 +135,6 @@ Format as clean Markdown with these sections:
             provider,
             f"Task: {task_title}",
             response,
-            context=repo_context,
             system_prompt=system_prompt,
             model=client.model,
             endpoint=client.base_url,
@@ -202,7 +201,6 @@ Do not include markdown formatting (like ```yaml), just the raw YAML text.
             provider,
             f"Task: {task_title}\nPlan: {plan}",
             response,
-            context=None,
             system_prompt=system_prompt,
             model=client.model,
             endpoint=client.base_url,
@@ -253,7 +251,6 @@ Rules:
             provider,
             f"File: {filename}\nInstruction: {instruction}",
             response,
-            context=existing_content,
             system_prompt=system_prompt,
             model=client.model,
             endpoint=client.base_url,
@@ -299,7 +296,6 @@ Your goal is to fix the error.""",
             provider,
             f"Error: {error_log}",
             response,
-            context=code_context,
             system_prompt=None,
             model=client.model,
             endpoint=client.base_url,
