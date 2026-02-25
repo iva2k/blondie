@@ -94,7 +94,7 @@ class BlondieAgent:
             context = self._gather_context(task)
             plan_response = await self.llm.plan_task(task.title, context, self.policy.model_dump())
             plan = plan_response.content
-            self.journal.print(f"📋 [dim]Plan:[/dim]\n{plan}", truncate=500)
+            self.journal.print(f"📋 [dim]Plan:[/dim]\n{plan}", truncate=500)  ## TODO: (now) decide if we want to print plan to the console
 
             # 3. LLM File Edits (STUB - implement file editing)
             edit_result = await self._apply_llm_edits(task, plan)

@@ -33,7 +33,7 @@ docs:
 
 
 def test_policy_yaml_parsing(sample_policy_file: Path) -> None:
-    """Test YAML frontmatter parsing."""
+    """Test YAML yaml parsing."""
     policy = Policy.from_file(sample_policy_file)
 
     assert policy.check_permission("git-merge") == "prompt"

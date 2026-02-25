@@ -11,22 +11,19 @@ from agent.llm_config import LLMConfig
 from agent.policy import Policy
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
 from llm.journal import Journal
-
-AGENT_FLOW = """
-1. Plan: Analyze task and design solution (CURRENT STEP). Output: Markdown plan.
-2. Architect: Determine file operations. Output: YAML list of actions.
-3. Code Gen: Generate content for specific files. Output: Full file content.
-4. Verify: Run tests.
-5. Debug: Fix errors if verification fails.
-6. Commit: System commits changes. (Do NOT run git commands manually).
-"""
+from llm.skill import Skill
 
 
 class LLMRouter:
     """Smart LLM router with cost tracking and policy gating."""
 
     def __init__(
-        self, secrets_path: Path, config_path: Path, policy: Policy | None = None, journal: Journal | None = None
+        self,
+        secrets_path: Path,
+        config_path: Path,
+        policy: Policy | None = None,
+        journal: Journal | None = None,
+        skills_dir: Path | None = None,
     ):
         self.policy = policy
         self.journal = journal or Journal()
@@ -35,6 +32,13 @@ class LLMRouter:
         self.clients: dict[str, LLMClient] = {}
         self.daily_cost = 0.0
         self.last_reset_date = datetime.date.today()
+
+        # Load skills
+        if skills_dir is None:
+            # Default to root/skills relative to this file
+            skills_dir = Path(__file__).parents[2] / "skills"
+        self.skills = self._load_skills(skills_dir)
+
         self._init_clients()
 
     def _load_secrets(self, secrets_path: Path) -> dict:
@@ -44,6 +48,20 @@ class LLMRouter:
 
         with secrets_path.open("r") as f:
             return yaml.safe_load(f) or {}
+
+    def _load_skills(self, skills_dir: Path) -> dict[str, Skill]:
+        skills = {}
+        if not skills_dir.exists():
+            self.journal.print(f"⚠️ Skills directory not found: {skills_dir}")
+            return skills
+
+        for path in skills_dir.glob("*.md"):
+            try:
+                skill = Skill.from_file(path)
+                skills[skill.name] = skill
+            except Exception as e:
+                self.journal.print(f"❌ Failed to load skill {path.name}: {e}")
+        return skills
 
     def _init_clients(self) -> None:
         """Initialize available LLM providers."""
@@ -125,34 +143,12 @@ class LLMRouter:
 
     async def plan_task(self, task_title: str, repo_context: str, policy_summary: dict, **_kwargs) -> LLMResponse:
         """Generate detailed implementation plan."""
-        system_prompt = f"""You are Blondie, an autonomous coding agent.
-You are planning changes for a software repository.
-Your output will be used by another LLM to generate specific file edits and shell commands.
-
-You Are at step 1 of AGENT FLOW.
-
-AGENT FLOW: {AGENT_FLOW}
-
-TASK: {task_title}
-POLICY SUMMARY: {policy_summary}
-CONTEXT: {repo_context}
-
-Instructions:
-1. Generate implementation plan.
-2. Use specific file paths (relative to repo root).
-3. Do NOT use placeholders like <project_name> or <date>. Use actual values or sensible defaults.
-4. Do NOT provide human-centric instructions like "Open file", "Navigate to".
-5. For shell commands, use exact flags for non-interactive execution (e.g. -y, --no-input).
-6. Standard shell commands (grep, find, etc.) are allowed per POLICY.
-7. For package version resolution, instruct to use internet query (e.g. npm view, pip index) to get latest versions.
-
-Format as clean Markdown with these sections:
-1. **Shell Commands to Initialize**: List of commands to prepare project (scaffolding).
-2. **Files to Create/Modify**: List of files.
-3. **Shell Commands**: List of commands to run (install dependencies, etc).
-4. **Code Changes**: Detailed description of logic changes.
-5. **Verification**: Automated tests to run (e.g. `pytest tests/test_foo.py`). Do not list manual steps.
-6. **Risks**: Potential risks + mitigations."""
+        skill = self.skills["plan_task"]
+        system_prompt = skill.render_system_prompt(
+            task_title=task_title,
+            repo_context=repo_context,
+            policy_summary=policy_summary,
+        )
 
         return await self._execute_llm_task(
             operation="planning",
@@ -166,42 +162,9 @@ Format as clean Markdown with these sections:
 
     async def get_file_edits(self, task_title: str, plan: str, context: str = "", **_kwargs) -> LLMResponse:
         """Identify files to edit from plan."""
-        system_prompt = f"""You are a coding architect.
+        skill = self.skills["get_file_edits"]
+        system_prompt = skill.render_system_prompt()
 
-You Are at step 2 of AGENT FLOW.
-
-AGENT FLOW: {AGENT_FLOW}
-
-Based on the TASK and PLAN, return a list of file operations.
-Return ONLY a YAML list format.
-
-Rules:
-1. Use specific file paths relative to repo root. Check CONTEXT for existing file structure.
-2. For 'edit' actions, the instruction must be a clear directive for a code generator (e.g. "Add function X", "Update import Y").
-3. Do NOT use human instructions like "Open file" or "Locate line".
-4. For 'shell' actions, provide the exact command string.
-   - MUST use non-interactive flags (e.g. -y, --no-input, --batch).
-   - Do NOT use placeholders.
-   - Specify timeout in seconds if needed.
-   - Standard bash tools (grep, find, cat) are allowed.
-
-Example:
-
-- path: src/main.py
-  action: edit
-  instruction: Add login function
-- path: tests/test_main.py
-  action: create
-  instruction: Add unit tests for login
-- action: shell
-  command: npm install axios
-  timeout: 300
-- path: old_file.py
-  action: delete
-
-Valid actions: create, edit, delete, shell.
-Do not include markdown formatting (like ```yaml), just the raw YAML text.
-"""
         user_content = f"TASK: {task_title}\nPLAN:\n{plan}"
         if context:
             user_content = f"CONTEXT:\n{context}\n\n{user_content}"
@@ -220,23 +183,8 @@ Do not include markdown formatting (like ```yaml), just the raw YAML text.
         self, filename: str, existing_content: str, instruction: str, context: str = "", **_kwargs
     ) -> LLMResponse:
         """Generate/edit single file."""
-        system_prompt = f"""You are an expert code editor.
-
-You Are at step 3 of AGENT FLOW.
-
-AGENT FLOW: {AGENT_FLOW}
-
-Your task is to output the FULL content of the file based on the INSTRUCTION.
-
-Rules:
-• Return ONLY the file content. No markdown fences, no explanations.
-• If creating a new file, provide complete implementation.
-• If editing, you must output the COMPLETE file with changes applied.
-• Preserve imports, structure, formatting, comments, docstrings (unless instructed to change).
-• CRITICAL: You must output the ENTIRE file content. Do not omit any parts. Do not use comments like `# ... existing code ...`.
-• Do NOT use placeholders for variable names or config values.
-• Ensure code is syntactically correct and follows the repo's style.
-"""
+        skill = self.skills["generate_code"]
+        system_prompt = skill.render_system_prompt()
 
         user_content = f"FILENAME: {filename}\nEXISTING: {existing_content}\nINSTRUCTION: {instruction}"
         if context:
@@ -254,24 +202,10 @@ Rules:
 
     async def debug_error(self, error_log: str, code_context: str, **_kwargs) -> LLMResponse:
         """Suggest fix for test failures."""
-        system_prompt = f"""You are an autonomous debugging assistant.
+        skill = self.skills["debug_error"]
+        system_prompt = skill.render_system_prompt()
 
-You Are at step 5 of AGENT FLOW.
-
-AGENT FLOW: {AGENT_FLOW}
-
-Your goal is to fix the error."""
-
-        user_content = (
-            f"TEST ERROR:\n{error_log}\n\n"
-            f"CONTEXT:\n{code_context}\n\n"
-            "Analyze the error and provide a fix plan.\n"
-            "Rules:\n"
-            "1. Focus on specific files to edit.\n"
-            "2. Provide concrete instructions for code changes.\n"
-            "3. Do NOT use human steps like 'Open file'.\n"
-            "4. If a shell command is needed (e.g. install missing package, grep for error), specify it exactly with non-interactive flags."
-        )
+        user_content = f"TEST ERROR:\n{error_log}\n\nCONTEXT:\n{code_context}"
 
         return await self._execute_llm_task(
             operation="debugging",
