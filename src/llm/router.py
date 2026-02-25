@@ -12,6 +12,15 @@ from agent.policy import Policy
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
 from llm.journal import Journal
 
+AGENT_FLOW = """
+1. Plan: Analyze task and design solution (CURRENT STEP). Output: Markdown plan.
+2. Architect: Determine file operations. Output: YAML list of actions.
+3. Code Gen: Generate content for specific files. Output: Full file content.
+4. Verify: Run tests.
+5. Debug: Fix errors if verification fails.
+6. Commit: System commits changes. (Do NOT run git commands manually).
+"""
+
 
 class LLMRouter:
     """Smart LLM router with cost tracking and policy gating."""
@@ -88,20 +97,34 @@ class LLMRouter:
         if not client:
             raise ValueError(f"No client for provider '{provider}'")
 
-        system_prompt = f"""You are Blondie, autonomous coding agent.
+        system_prompt = f"""You are Blondie, an autonomous coding agent.
+You are planning changes for a software repository.
+Your output will be used by another LLM to generate specific file edits and shell commands.
 
-REPO: Frontend web app (detect language/framework from context)
+You Are at step 1 of AGENT FLOW.
+
+AGENT FLOW: {AGENT_FLOW}
+
 TASK: {task_title}
-CONTEXT: {repo_context}
 POLICY SUMMARY: {policy_summary}
+CONTEXT: {repo_context}
 
-Generate a 5-step implementation plan. Include:
-1. Files to create/modify
-2. Key code changes  
-3. Test verification steps
-4. Potential risks + mitigations
+Instructions:
+1. Analyze the request and context.
+2. Generate a concrete implementation plan.
+3. Use specific file paths (relative to repo root).
+4. Do NOT use placeholders like <project_name> or <date>. Use actual values or sensible defaults.
+5. Do NOT provide human-centric instructions like "Open file", "Navigate to".
+6. For shell commands, use exact flags for non-interactive execution (e.g. -y, --no-input).
+7. Standard shell commands (grep, find, etc.) are allowed per POLICY.
+8. For package version resolution, instruct to use internet query (e.g. npm view, pip index) to get latest versions.
 
-Format as clean Markdown."""
+Format as clean Markdown with these sections:
+1. **Files to Create/Modify**: List of files.
+2. **Shell Commands**: List of commands to run (install dependencies, etc).
+3. **Code Changes**: Detailed description of logic changes.
+4. **Verification**: Automated tests to run (e.g. `pytest tests/test_foo.py`). Do not list manual steps.
+5. **Risks**: Potential risks + mitigations."""
 
         messages = [{"role": "system", "content": system_prompt}]
 
@@ -119,7 +142,7 @@ Format as clean Markdown."""
         )
         return response
 
-    async def get_file_edits(self, task_title: str, plan: str, **_kwargs) -> LLMResponse:
+    async def get_file_edits(self, task_title: str, plan: str, context: str = "", **_kwargs) -> LLMResponse:
         """Identify files to edit from plan."""
         provider, model = self.select_model("planning")
         client = self.clients.get(provider)
@@ -128,8 +151,25 @@ Format as clean Markdown."""
             raise ValueError(f"No client for provider '{provider}'")
 
         system_prompt = """You are a coding architect.
+
+You Are at step 2 of AGENT FLOW.
+
+AGENT FLOW: {AGENT_FLOW}
+
 Based on the TASK and PLAN, return a list of file operations.
-Return ONLY a YAML list format. Example:
+Return ONLY a YAML list format.
+
+Rules:
+1. Use specific file paths relative to repo root. Check CONTEXT for existing file structure.
+2. For 'edit' actions, the instruction must be a clear directive for a code generator (e.g. "Add function X", "Update import Y").
+3. Do NOT use human instructions like "Open file" or "Locate line".
+4. For 'shell' actions, provide the exact command string.
+   - MUST use non-interactive flags (e.g. -y, --no-input, --batch).
+   - Do NOT use placeholders.
+   - Specify timeout in seconds if needed.
+   - Standard bash tools (grep, find, cat) are allowed.
+
+Example:
 
 - path: src/main.py
   action: edit
@@ -144,14 +184,15 @@ Return ONLY a YAML list format. Example:
   action: delete
 
 Valid actions: create, edit, delete, shell.
-For all shell actions:
-- Use non-interactive flags (e.g. -y, --no-input) to prevent hanging.
-- Specify a timeout in seconds (default 120) if the command is expected to be slow.
 Do not include markdown formatting (like ```yaml), just the raw YAML text.
 """
+        user_content = f"TASK: {task_title}\nPLAN:\n{plan}"
+        if context:
+            user_content = f"CONTEXT:\n{context}\n\n{user_content}"
+
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"TASK: {task_title}\nPLAN:\n{plan}"},
+            {"role": "user", "content": user_content},
         ]
 
         response = await client.chat(messages, temperature=0.1, max_tokens=1000, model=model)
@@ -178,14 +219,22 @@ Do not include markdown formatting (like ```yaml), just the raw YAML text.
         if not client:
             raise ValueError(f"No client for provider '{provider}'")
 
-        system_prompt = """You are expert code editor. Return ONLY full file content.
+        system_prompt = """You are an expert code editor.
+
+You Are at step 3 of AGENT FLOW.
+
+AGENT FLOW: {AGENT_FLOW}
+
+Your task is to output the FULL content of the file based on the INSTRUCTION.
 
 Rules:
+• Return ONLY the file content. No markdown fences, no explanations.
 • If creating a new file, provide complete implementation.
-• If editing, preserve imports, structure, formatting, comments, docstrings.
-• Make minimal targeted changes based on INSTRUCT.
-• Include tests if new feature
-• Follow existing code style
+• If editing, you must output the COMPLETE file with changes applied.
+• Preserve imports, structure, formatting, comments, docstrings (unless instructed to change).
+• CRITICAL: You must output the ENTIRE file content. Do not omit any parts. Do not use comments like `# ... existing code ...`.
+• Do NOT use placeholders for variable names or config values.
+• Ensure code is syntactically correct and follows the repo's style.
 """
 
         user_content = f"FILENAME: {filename}\nEXISTING: {existing_content}\nINSTRUCTION: {instruction}"
@@ -221,12 +270,26 @@ Rules:
 
         messages = [
             {
+                "role": "system",
+                "content": """You are an autonomous debugging assistant.
+
+You Are at step 5 of AGENT FLOW.
+
+AGENT FLOW: {AGENT_FLOW}
+
+Your goal is to fix the error.""",
+            },
+            {
                 "role": "user",
                 "content": f"TEST ERROR:\n{error_log}\n\n"
                 f"CONTEXT:\n{code_context}\n\n"
-                "Analyze the error and provide a step-by-step fix plan. "
-                "Focus on the specific files that need changes.",
-            }
+                "Analyze the error and provide a fix plan.\n"
+                "Rules:\n"
+                "1. Focus on specific files to edit.\n"
+                "2. Provide concrete instructions for code changes.\n"
+                "3. Do NOT use human steps like 'Open file'.\n"
+                "4. If a shell command is needed (e.g. install missing package, grep for error), specify it exactly with non-interactive flags.",
+            },
         ]
 
         response = await client.chat(messages, temperature=0.2, max_tokens=1500, model=model)

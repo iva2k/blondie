@@ -35,6 +35,7 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
+- [ ] 045 | P1 | Remove gates copy from top level of Policy (conserve context) |
 - [ ] 028 | P2 | In shell command retry/debug loop - Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
 
 - [ ] 035 | P2 | compose summary of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037

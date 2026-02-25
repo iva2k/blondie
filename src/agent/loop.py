@@ -181,14 +181,17 @@ class BlondieAgent:
         task: Task | None = None,
         include_project: bool = True,
         include_policy: bool = True,
-        include_git: bool = True,
+        include_cwd: bool = False,
+        include_git: bool = False,
         include_files: bool = True,
         include_task: bool = True,
         # TODO: (when needed) include_spec: bool = True,
     ) -> str:
-        """Gather repo context for LLM."""
+        """Gather project context for LLM."""
         context = []
-        context.append(f"CWD: {self.repo_path.resolve()}")
+        if include_cwd:
+            context.append(f"CWD: {self.repo_path.resolve()}")
+        context.append("Temp dir: ./_tmp")
 
         if include_project:
             context.append(f"Project: {self.project.id}")
@@ -201,7 +204,7 @@ class BlondieAgent:
             context.append(f"Current branch: {self.git.current_branch()}")
             context.append(f"Git status:\n{self.git.status()}")
         if include_files:
-            context.append(f"Files:\n{self._get_file_tree()}")
+            context.append(f"Existing Files:\n{self._get_file_tree()}\n")
         if task and include_task:
             context.append(f"Task: {task.id} {task.title}")
         return "\n".join(context)
@@ -239,7 +242,15 @@ class BlondieAgent:
         """Apply LLM-generated file edits."""
         self.journal.print("🤔 Identifying files to edit...")
 
-        response = await self.llm.get_file_edits(task.title, plan)
+        # Gather file structure context so the LLM knows valid paths
+        context = self._gather_context(
+            task,
+            include_project=False,
+            include_policy=False,
+            include_files=True,
+            include_task=False,
+        )
+        response = await self.llm.get_file_edits(task.title, plan, context=context)
 
         # Clean up potential markdown fences
         content = response.content.strip()
@@ -394,7 +405,6 @@ class BlondieAgent:
                 task,
                 include_project=False,
                 include_policy=False,
-                include_git=False,
                 include_files=True,
                 include_task=True,
             )
