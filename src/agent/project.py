@@ -26,7 +26,6 @@ class Project(BaseModel):
     mode: Literal["once", "continuous"] = "continuous"
     protected_files: list[str] = []
     dev_config: str = "dev.yaml"
-    dev_overrides: dict[str, Any] = {}
     dev_env: dict[str, Any] = {}
 
     @classmethod
@@ -50,8 +49,5 @@ class Project(BaseModel):
             except Exception as _e:
                 # TODO: (now) Log error to journal/console.
                 pass
-
-        if project.dev_overrides:
-            project.dev_env.update(project.dev_overrides)
 
         return project
