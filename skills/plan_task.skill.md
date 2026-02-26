@@ -31,9 +31,9 @@ Instructions:
 1. Generate implementation plan.
 2. Use specific file paths (relative to repo root).
 3. Do NOT use placeholders like <project_name> or <date>. Use actual values or sensible defaults.
-4. Do NOT provide human-centric instructions like "Open file", "Navigate to".
-5. For shell commands, use exact flags for non-interactive execution (e.g. -y, --no-input).
-6. Standard shell commands (grep, find, etc.) are allowed per POLICY.
+4. Do NOT provide human-centric instructions like "Open file", "Navigate to". Compose instructions for shell commands, tool execution or code changes.
+5. For shell commands, use flags for non-interactive execution (e.g. -y, --no-input).
+6. Use standard shell commands (grep, find, etc.) to e.g. explore codebase as allowed per POLICY.
 7. For package version resolution, instruct to use internet query (e.g. npm view, pip index) to get latest versions.
 
 Format as clean Markdown with these sections:
