@@ -10,6 +10,8 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel
 
+from llm.journal import Journal
+
 
 class Project(BaseModel):
     """Parsed project.yaml configuration."""
@@ -28,8 +30,10 @@ class Project(BaseModel):
     dev_config: str = "dev.yaml"
     dev_env: dict[str, Any] = {}
 
+    journal: Journal = Journal()
+
     @classmethod
-    def from_file(cls, path: Path) -> Project:
+    def from_file(cls, path: Path, journal: Journal | None = None) -> Project:
         """Parse project.yaml."""
         if not path.exists():
             raise FileNotFoundError(f"Project config not found at {path}")
@@ -37,6 +41,7 @@ class Project(BaseModel):
         content = path.read_text(encoding="utf-8")
         data = yaml.safe_load(content) or {}
         project = cls(**data)
+        project.journal = journal or Journal()
 
         # Load dev config
         dev_path = path.parent / project.dev_config
@@ -46,8 +51,7 @@ class Project(BaseModel):
                 loaded_env = yaml.safe_load(dev_content) or {}
                 loaded_env.update(project.dev_env)
                 project.dev_env = loaded_env
-            except Exception as _e:
-                # TODO: (now) Log error to journal/console.
-                pass
+            except Exception as e:
+                project.journal.print(f"❌ Failed to load dev_config {dev_path}: {e}")
 
         return project

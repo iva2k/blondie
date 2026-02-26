@@ -110,9 +110,7 @@ class BlondieAgent:
             # 2. LLM Implementation Plan
             plan_response = await self.llm.plan_task(self.context_gatherer, task.title, str(self.policy.model_dump()))
             plan = plan_response.content
-            self.journal.print(
-                f"📋 [dim]Plan:[/dim]\n{plan}", truncate=500
-            )  ## TODO: (now) decide if we want to print plan to the console
+            # self.journal.print(f"📋 [dim]Plan:[/dim]\n{plan}", truncate=500)
 
             # 3. LLM File Edits
             edit_result = await self._apply_llm_edits(task, plan)
@@ -138,7 +136,7 @@ class BlondieAgent:
                 self.journal.print("🔧 Triggering LLM debug...")
                 self.context_gatherer.add_task(task)
                 debug_response = await self.llm.debug_error(
-                    self.context_gatherer, task.title, test_result.stderr or test_result.stdout
+                    self.context_gatherer, task.title, f"STDOUT:\n{test_result.stdout}\nSTDERR:\n{test_result.stderr}"
                 )
                 fix_plan = debug_response.content
                 self.journal.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan}", truncate=500)
