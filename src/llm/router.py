@@ -18,6 +18,27 @@ from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
 from llm.journal import Journal
 from llm.skill import Skill
 
+TOOL_DEFINITIONS = {
+    "run_shell": {
+        "name": "run_shell",
+        "description": "Execute a shell command on the host machine. Use for exploration (ls, grep, find) or execution.",
+        "parameters": {
+            "type": "object",
+            "properties": {"command": {"type": "string", "description": "The shell command to execute."}},
+            "required": ["command"],
+        },
+    },
+    "read_file": {
+        "name": "read_file",
+        "description": "Read the contents of a file.",
+        "parameters": {
+            "type": "object",
+            "properties": {"path": {"type": "string", "description": "Path to the file relative to repo root."}},
+            "required": ["path"],
+        },
+    },
+}
+
 
 class ChatSession:
     """Stateful chat session for multi-turn conversations."""
@@ -36,6 +57,7 @@ class ChatSession:
         log_title: str,
         response_model: Any | None = None,
         response_format: Literal["json", "yaml"] | None = None,
+        tools: list[dict[str, Any]] | None = None,
     ):
         self.client = client
         self.provider_name = provider_name
@@ -49,8 +71,9 @@ class ChatSession:
         self.log_title = log_title
         self.response_model = response_model
         self.response_format = response_format
+        self.tools = tools
 
-        self.messages: list[dict[str, str]] = [{"role": "system", "content": self.system_prompt}]
+        self.messages: list[dict[str, Any]] = [{"role": "system", "content": self.system_prompt}]
 
     async def send(
         self,
@@ -78,6 +101,7 @@ class ChatSession:
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
                 model=self.model,
+                tools=self.tools,
             )
 
             # Track cost
@@ -98,6 +122,12 @@ class ChatSession:
                 model=self.client.model,
                 endpoint=self.client.base_url,
             )
+
+            # If tool calls, append to history and return (caller handles execution)
+            if response.tool_calls:
+                msg = {"role": "assistant", "content": response.content, "tool_calls": response.tool_calls}
+                self.messages.append(msg)
+                return response
 
             # If no validation needed, we are done
             if not response_model and not response_format:
@@ -147,6 +177,16 @@ class ChatSession:
                         "content": f"Error parsing response: {e}\nPlease return valid {str(response_format).upper()} matching the schema.",
                     }
                 )
+
+    def add_tool_result(self, tool_call_id: str, output: str) -> None:
+        """Add a tool execution result to the history."""
+        self.messages.append(
+            {
+                "role": "tool",
+                "tool_call_id": tool_call_id,
+                "content": output,
+            }
+        )
 
 
 class LLMRouter:
@@ -385,6 +425,14 @@ class LLMRouter:
 
         log_title = skill.log_title.format(**kwargs) if skill.log_title else skill.name
 
+        tools = []
+        if skill.tools:
+            for tool_name in skill.tools:
+                if tool_name in TOOL_DEFINITIONS:
+                    tools.append(TOOL_DEFINITIONS[tool_name])
+                else:
+                    self.journal.print(f"⚠️ Unknown tool '{tool_name}' in skill '{skill.name}'")
+
         session = ChatSession(
             client=self.clients[provider],
             provider_name=provider,
@@ -398,6 +446,7 @@ class LLMRouter:
             log_title=log_title,
             response_model=skill.response_model,
             response_format=skill.response_format,
+            tools=tools,
         )
 
         if skill.user_content:

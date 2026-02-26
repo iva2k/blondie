@@ -47,6 +47,7 @@ class Skill:
     context: dict[str, bool] | None = None
     response_model: Any | None = None
     response_format: Literal["json", "yaml"] | None = None
+    tools: list[str] | None = None
 
     @classmethod
     def from_file(cls, path: Path) -> "Skill":
@@ -88,6 +89,7 @@ class Skill:
             context=frontmatter.get("context", None),
             response_model=response_model,
             response_format=frontmatter.get("response_format", None),
+            tools=frontmatter.get("tools", None),
         )
 
     def render_system_prompt(self, **kwargs: Any) -> str:
