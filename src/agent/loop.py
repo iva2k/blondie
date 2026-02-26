@@ -41,7 +41,7 @@ class BlondieAgent:
         self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal)
 
     def pick_task(self) -> Task | None:
-        """Execute one full task cycle. Returns True if task completed."""
+        """Pick next task to run. Claims and starts the task."""
 
         # Check daily limit
         if not self.llm.check_daily_limit():
