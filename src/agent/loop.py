@@ -11,7 +11,7 @@ import yaml
 
 from agent.executor import Executor
 from agent.policy import Policy
-from agent.project import Project  # Added per your edits
+from agent.project import Project
 from agent.tasks import Task, TasksManager
 from cli import GitCLI
 from lib.gitignore import GitIgnore
@@ -94,9 +94,11 @@ class BlondieAgent:
             context = self._gather_context(task)
             plan_response = await self.llm.plan_task(task.title, context, self.policy.model_dump())
             plan = plan_response.content
-            self.journal.print(f"📋 [dim]Plan:[/dim]\n{plan}", truncate=500)  ## TODO: (now) decide if we want to print plan to the console
+            self.journal.print(
+                f"📋 [dim]Plan:[/dim]\n{plan}", truncate=500
+            )  ## TODO: (now) decide if we want to print plan to the console
 
-            # 3. LLM File Edits (STUB - implement file editing)
+            # 3. LLM File Edits
             edit_result = await self._apply_llm_edits(task, plan)
             if not edit_result:
                 self.journal.print("❌ LLM edits failed")
@@ -119,7 +121,7 @@ class BlondieAgent:
 
                 self.journal.print("🔧 Triggering LLM debug...")
                 context = self._gather_context(task)  # Refresh context
-                debug_response = await self.llm.debug_error(test_result.stderr, context)
+                debug_response = await self.llm.debug_error(task.title, test_result.stderr, context)
                 fix_plan = debug_response.content
                 self.journal.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan}", truncate=500)
 
@@ -307,7 +309,7 @@ class BlondieAgent:
                     context += f"\nCommand: {command}"
                     # TODO: (now) Ponder on splitting debug_error() into debug_test_error() and debug_shell_error() with specialization
                     debug_response = await self.llm.debug_error(
-                        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}", context
+                        task.title, f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}", context
                     )
                     fix_plan = debug_response.content
                     self.journal.print(f"📋 [dim]Shell Fix Plan:[/dim]\n{fix_plan}", truncate=500)
@@ -408,7 +410,9 @@ class BlondieAgent:
                 include_files=True,
                 include_task=True,
             )
-            code_resp = await self.llm.generate_code(path_str, existing_content, instruction, context=context)
+            code_resp = await self.llm.generate_code(
+                task.title, path_str, existing_content, instruction, context=context
+            )
 
             # Clean up potential markdown fences for code
             code = code_resp.content.strip()

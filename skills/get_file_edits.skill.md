@@ -2,6 +2,11 @@
 name: get_file_edits
 description: Identify files to edit from plan.
 user-invocable: false
+operation: "planning"
+temperature: 0.1
+max-tokens: 1000
+user-content: "CONTEXT:\n{context}\n\nTASK: {task_title}\nPLAN:\n{plan}"
+log-title: "Task: {task_title}"
 ---
 You are a coding architect.
 

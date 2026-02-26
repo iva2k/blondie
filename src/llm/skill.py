@@ -16,7 +16,12 @@ class Skill:
     name: str
     description: str
     system_prompt: str
+    user_content: str | None
+    operation: str = "coding"  # | "planning" | "coding" | "debugging" | "review"
     user_invocable: bool = False
+    log_title: str = ""
+    temperature: float = 0.1
+    max_tokens: int = 2000
 
     @classmethod
     def from_file(cls, path: Path) -> "Skill":
@@ -45,8 +50,13 @@ class Skill:
         return cls(
             name=frontmatter.get("name", path.stem),
             description=frontmatter.get("description", ""),
-            user_invocable=frontmatter.get("user-invocable", False),
             system_prompt=body,
+            user_content=frontmatter.get("user-content", None),
+            operation=frontmatter.get("operation", "coding"),
+            user_invocable=frontmatter.get("user-invocable", False),
+            log_title=frontmatter.get("log-title", ""),
+            temperature=frontmatter.get("temperature", 0.1),
+            max_tokens=frontmatter.get("max-tokens", 2000),
         )
 
     def render_system_prompt(self, **kwargs: Any) -> str:

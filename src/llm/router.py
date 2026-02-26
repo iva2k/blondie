@@ -4,6 +4,7 @@
 
 import datetime
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -50,7 +51,7 @@ class LLMRouter:
             return yaml.safe_load(f) or {}
 
     def _load_skills(self, skills_dir: Path) -> dict[str, Skill]:
-        skills = {}
+        skills: dict[str, Skill] = {}
         if not skills_dir.exists():
             self.journal.print(f"⚠️ Skills directory not found: {skills_dir}")
             return skills
@@ -141,80 +142,64 @@ class LLMRouter:
         )
         return response
 
-    async def plan_task(self, task_title: str, repo_context: str, policy_summary: dict, **_kwargs) -> LLMResponse:
+    async def _execute_llm_skill(self, skill_name: str, **kwargs: Any) -> LLMResponse:
         """Generate detailed implementation plan."""
-        skill = self.skills["plan_task"]
-        system_prompt = skill.render_system_prompt(
+        skill = self.skills[skill_name]
+        system_prompt = skill.render_system_prompt(**kwargs)
+        user_content = skill.user_content.format(**kwargs) if skill.user_content else ""
+        log_title = skill.log_title.format(**kwargs) if skill.log_title else ""
+        return await self._execute_llm_task(
+            operation=skill.operation,
+            system_prompt=system_prompt,
+            user_prompt=user_content,
+            temperature=skill.temperature,
+            max_tokens=skill.max_tokens,
+            log_action=skill_name,
+            log_title=log_title,
+        )
+
+    async def plan_task(self, task_title: str, repo_context: str, policy_summary: dict, **kwargs: Any) -> LLMResponse:
+        """Generate detailed implementation plan."""
+        return await self._execute_llm_skill(
+            "plan_task",
             task_title=task_title,
             repo_context=repo_context,
             policy_summary=policy_summary,
+            **kwargs,
         )
 
-        return await self._execute_llm_task(
-            operation="planning",
-            system_prompt=system_prompt,
-            user_prompt=None,
-            temperature=0.1,
-            max_tokens=2000,
-            log_action="plan_task",
-            log_title=f"Task: {task_title}",
-        )
-
-    async def get_file_edits(self, task_title: str, plan: str, context: str = "", **_kwargs) -> LLMResponse:
+    async def get_file_edits(self, task_title: str, plan: str, context: str = "", **kwargs: Any) -> LLMResponse:
         """Identify files to edit from plan."""
-        skill = self.skills["get_file_edits"]
-        system_prompt = skill.render_system_prompt()
-
-        user_content = f"TASK: {task_title}\nPLAN:\n{plan}"
-        if context:
-            user_content = f"CONTEXT:\n{context}\n\n{user_content}"
-
-        return await self._execute_llm_task(
-            operation="planning",
-            system_prompt=system_prompt,
-            user_prompt=user_content,
-            temperature=0.1,
-            max_tokens=1000,
-            log_action="get_file_edits",
-            log_title=f"Task: {task_title}",
+        return await self._execute_llm_skill(
+            "get_file_edits",
+            task_title=task_title,
+            plan=plan,
+            context=context,
+            **kwargs,
         )
 
     async def generate_code(
-        self, filename: str, existing_content: str, instruction: str, context: str = "", **_kwargs
+        self, task_title: str, filename: str, existing_content: str, instruction: str, context: str = "", **kwargs: Any
     ) -> LLMResponse:
         """Generate/edit single file."""
-        skill = self.skills["generate_code"]
-        system_prompt = skill.render_system_prompt()
-
-        user_content = f"FILENAME: {filename}\nEXISTING: {existing_content}\nINSTRUCTION: {instruction}"
-        if context:
-            user_content += f"\nCONTEXT:\n{context}"
-
-        return await self._execute_llm_task(
-            operation="coding",
-            system_prompt=system_prompt,
-            user_prompt=user_content,
-            temperature=0.05,
-            max_tokens=8000,
-            log_action="generate_code",
-            log_title=f"File: {filename}\nInstruction: {instruction}",
+        return await self._execute_llm_skill(
+            "generate_code",
+            task_title=task_title,
+            filename=filename,
+            existing_content=existing_content,
+            instruction=instruction,
+            context=context,
+            **kwargs,
         )
 
-    async def debug_error(self, error_log: str, code_context: str, **_kwargs) -> LLMResponse:
+    async def debug_error(self, task_title: str, error_log: str, code_context: str, **kwargs: Any) -> LLMResponse:
         """Suggest fix for test failures."""
-        skill = self.skills["debug_error"]
-        system_prompt = skill.render_system_prompt()
-
-        user_content = f"TEST ERROR:\n{error_log}\n\nCONTEXT:\n{code_context}"
-
-        return await self._execute_llm_task(
-            operation="debugging",
-            system_prompt=system_prompt,
-            user_prompt=user_content,
-            temperature=0.2,
-            max_tokens=1500,
-            log_action="debug_error",
-            log_title=f"Error: {error_log}",
+        return await self._execute_llm_skill(
+            "debug_error",
+            task_title=task_title,
+            error_log=error_log,
+            context=code_context,
+            **kwargs,
         )
 
     def check_daily_limit(self) -> bool:

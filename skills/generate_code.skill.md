@@ -2,6 +2,11 @@
 name: generate_code
 description: Generate/edit single file.
 user-invocable: false
+operation: "coding"
+temperature: 0.05
+max-tokens: 8000
+user-content: "FILENAME: {filename}\nEXISTING: {existing_content}\nINSTRUCTION: {instruction}\nCONTEXT:\n{context}"
+log-title: "File: {filename}\nInstruction: {instruction}"
 ---
 You are an expert code editor.
 

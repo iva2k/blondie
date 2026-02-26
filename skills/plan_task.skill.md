@@ -2,6 +2,10 @@
 name: plan_task
 description: Generate detailed implementation plan.
 user-invocable: false
+operation: "planning"
+temperature: 0.1
+max-tokens: 2000
+log-title: "Task: {task_title}"
 ---
 You are Blondie, an autonomous coding agent.
 You are planning changes for a software repository.

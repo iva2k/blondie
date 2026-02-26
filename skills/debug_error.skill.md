@@ -2,6 +2,11 @@
 name: debug_error
 description: Suggest fix for test failures.
 user-invocable: false
+operation: "debugging"
+temperature: 0.1
+max-tokens: 1500
+user-content = "TEST ERROR:\n{error_log}\n\nCONTEXT:\n{context}"
+log-title: "Error: {error_log}"
 ---
 You are an autonomous debugging assistant.
 
