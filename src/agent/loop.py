@@ -5,6 +5,7 @@
 import asyncio
 import shutil
 from pathlib import Path
+from typing import Literal
 
 import click
 import yaml
@@ -38,11 +39,12 @@ class BlondieAgent:
         self.gitignore = GitIgnore(self.repo_path)
         self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal)
 
-    async def run_once(self) -> bool:
+    def pick_task(self) -> Task | None:
         """Execute one full task cycle. Returns True if task completed."""
-        # 025: Check daily limit
+
+        # Check daily limit
         if not self.llm.check_daily_limit():
-            return False
+            return None
 
         # 0. Handle uncommitted changes from previous run/crash
         status = self.exec.run("git status --porcelain")
@@ -73,7 +75,7 @@ class BlondieAgent:
             task = self.tasks.get_next_task()
             if not task:
                 self.journal.print("✅ No tasks left, exiting.")
-                return False
+                return None
 
             self.journal.print(f"\n🚀 Processing [bold cyan]{task.id}[/] {task.title}")
             self.journal.start_task(task.id)
@@ -81,9 +83,24 @@ class BlondieAgent:
             # 4. Claim task
             if not self.tasks.claim_task(task.id, self.git):
                 self.journal.print(f'⚠️  Task {task.id} already claimed (remote branch "{task.branch_name}" exists)')
-                return False
+                return None
+
+        return task
+
+    async def run_once(self) -> bool:
+        """Execute one full task cycle. Returns True if task completed."""
+
+        # Check daily limit
+        if not self.llm.check_daily_limit():
+            return False
+
+        task = self.pick_task()
+        if not task:
+            return False
+
 
         branch_name = task.branch_name
+        main_branch = self.project.main_branch
         start_cost = self.llm.daily_cost
 
         try:
@@ -181,33 +198,40 @@ class BlondieAgent:
     def _gather_context(
         self,
         task: Task | None = None,
-        include_project: bool = True,
-        include_policy: bool = True,
-        include_cwd: bool = False,
-        include_git: bool = False,
-        include_files: bool = True,
-        include_task: bool = True,
-        # TODO: (when needed) include_spec: bool = True,
+        items: None | dict[str | Literal["project", "policy", "cwd", "git", "files", "task", "spec"], bool] = None,
     ) -> str:
         """Gather project context for LLM."""
+        items_val = {
+            "project": True,
+            "policy": True,
+            "cwd": False,
+            "git": False,
+            "files": True,
+            "task": True,
+        }
+        if items:
+            items_val.update(items)
+        items = items_val
+
         context = []
-        if include_cwd:
+        # TODO: (when needed) Implement: if items["spec"]: ...
+        if items["cwd"]:
             context.append(f"CWD: {self.repo_path.resolve()}")
         context.append("Temp dir: ./_tmp")
 
-        if include_project:
+        if items["project"]:
             context.append(f"Project: {self.project.id}")
             if self.project.dev_env:
                 context.append(f"Dev Environment: {self.project.dev_env}")
-        if include_policy:
+        if items["policy"]:
             context.append(f"Policy: {self.policy.model_dump()}")
             context.append(f"Commands: {list(self.policy.commands.keys())}")
-        if include_git:
+        if items["git"]:
             context.append(f"Current branch: {self.git.current_branch()}")
             context.append(f"Git status:\n{self.git.status()}")
-        if include_files:
+        if items["files"]:
             context.append(f"Existing Files:\n{self._get_file_tree()}\n")
-        if task and include_task:
+        if task and items["task"]:
             context.append(f"Task: {task.id} {task.title}")
         return "\n".join(context)
 
@@ -247,11 +271,12 @@ class BlondieAgent:
         # Gather file structure context so the LLM knows valid paths
         context = self._gather_context(
             task,
-            include_project=False,
-            include_policy=False,
-            include_files=True,
-            include_task=False,
-        )
+            {
+            "project": False,
+            "policy": False,
+            "files": True,
+            "task": False,
+        })
         response = await self.llm.get_file_edits(task.title, plan, context=context)
 
         # Clean up potential markdown fences
@@ -405,11 +430,11 @@ class BlondieAgent:
             # Provide file list context for imports
             context = self._gather_context(
                 task,
-                include_project=False,
-                include_policy=False,
-                include_files=True,
-                include_task=True,
-            )
+                {"project": False,
+                "policy": False,
+                "files": True,
+                "task": True,
+            })
             code_resp = await self.llm.generate_code(
                 task.title, path_str, existing_content, instruction, context=context
             )
