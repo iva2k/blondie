@@ -50,49 +50,80 @@ class ContextGatherer:
     def gather(
         self,
         items: dict[str, bool] | None = None,
-    ) -> str:
+    ) -> tuple[str, dict[str, str]]:
         """Gather project context for LLM."""
-        items_val = {
-            "project": False,
-            "policy": False,
-            "cwd": False,
-            "git": False,
-            "files": False,
-            "task": False,
-            "command": False,
-            "progress": False,
+        items = items or {}
+
+        # Define order for the string output
+        context_generators = {
+            "cwd": self._get_cwd_context,
+            "project": self._get_project_context,
+            "policy": self._get_policy_context,
+            "git": self._get_git_context,
+            "files": self._get_files_context,
+            "task": self._get_task_context,
+            "command": self._get_command_context,
+            "progress": self._get_progress_context,
         }
-        if items:
-            items_val.update(items)
-        items = items_val
 
-        context = []
-        # TODO: (when needed) Implement: if items["spec"]: ...
-        if items["cwd"]:
-            context.append(f"CWD: {self.repo_path.resolve()}")
-        context.append("Temp dir: ./_tmp")
+        context_parts: dict[str, str] = {}
+        full_context: list[str] = []
 
-        if items["project"]:
-            context.append(f"Project: {self.project.id}")
-            if self.project.dev_env:
-                context.append(f"Dev Environment: {self.project.dev_env}")
-        if items["policy"]:
-            context.append(f"Policy: {self.policy.model_dump()}")
-            # context.append(f"Commands: {list(self.policy.commands.keys())}")
-        if items["git"]:
-            context.append(f"Current branch: {self.git.current_branch()}")
-            context.append(f"Git status:\n{self.git.status()}")
-        if items["files"]:
-            context.append(f"Existing Files:\n{self._get_file_tree()}\n")
-        if self.task and items["task"]:
-            context.append(f"Task: {self.task.id} {self.task.title}")
-        if self.command and items["command"]:
-            context.append(f"\nCommand: {self.command}")
-        if items["progress"]:
-            context.append(f"Progress History:\n{self.progress.read()}")
-        return "\n".join(context)
+        for key, getter in context_generators.items():
+            if items.get(key, False):
+                result = getter()
+                if result:
+                    if isinstance(result, str):
+                        result = {key: result}
+                    if isinstance(result, dict):
+                        context_parts.update(result)
+                        for k, v in result.items():
+                            header = k.upper().replace("_", " ")
+                            if "\n" in v:
+                                full_context.append(f"{header}:\n{v}")
+                            else:
+                                full_context.append(f"{header}: {v}")
 
-    def _get_file_tree(self) -> str:
+        # Reset context transient data
+        self.command = None
+        # self.task = None
+
+        return "\n".join(full_context), context_parts
+
+    def _get_cwd_context(self) -> dict[str, str] | str | None:
+        return {
+            "cwd": str(self.repo_path.resolve()),
+            "Temp dir": "./_tmp",
+        }
+
+    def _get_project_context(self) -> dict[str, str] | str | None:
+        data = {"project_id": self.project.id}
+        if self.project.dev_env:
+            data["dev_environment"] = str(self.project.dev_env)
+        return data
+
+    def _get_policy_context(self) -> dict[str, str] | str | None:
+        return str(self.policy.model_dump())  # TODO: (now) Use formatter function
+
+    def _get_git_context(self) -> dict[str, str] | str | None:
+        return {
+            "current_branch": self.git.current_branch(),
+            "git_status": self.git.status(),
+        }
+
+    def _get_files_context(self) -> dict[str, str] | str | None:
+        return self._get_file_tree()
+
+    def _get_task_context(self) -> dict[str, str] | str | None:
+        return f"{self.task.id} {self.task.title}" if self.task else None
+
+    def _get_command_context(self) -> dict[str, str] | str | None:
+        return self.command
+
+    def _get_progress_context(self) -> dict[str, str] | str | None:
+        return self.progress.read()
+
+    def _get_file_tree(self) -> dict[str, str] | str | None:
         """Generate list of repo files (excluding ignored)."""
         files = []
 

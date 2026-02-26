@@ -5,7 +5,7 @@ user-invocable: false
 operation: "coding"
 temperature: 0.05
 max-tokens: 8000
-user-content: "FILENAME: {filename}\nEXISTING: {existing_content}\nINSTRUCTION: {instruction}\nCONTEXT:\n{context}"
+user-content: "FILENAME: {filename}\nINSTRUCTION: {instruction}\nEXISTING:\n{existing_content}\n"
 log-title: "File: {filename}\nInstruction: {instruction}"
 context:
   files: True
@@ -36,3 +36,6 @@ Rules:
 - CRITICAL: You must output the ENTIRE file content. Do not omit any parts. Do not use comments like `# ... existing code ...`.
 - Do NOT use placeholders for variable names or config values.
 - Ensure code is syntactically correct and follows the repo's style.
+
+CONTEXT:
+{context}

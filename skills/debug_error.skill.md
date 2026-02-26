@@ -5,7 +5,7 @@ user-invocable: false
 operation: "debugging"
 temperature: 0.1
 max-tokens: 1500
-user-content: "TEST ERROR:\n{error_log}\n\nCONTEXT:\n{context}"
+user-content: "TEST ERROR:\n{error_log}"
 log-title: "Error: {error_log}"
 context:
   project: True
@@ -37,3 +37,6 @@ Rules:
 2. Provide concrete instructions for code changes.
 3. Do NOT use human steps like 'Open file'.
 4. If a shell command is needed (e.g. install missing package, grep for error), specify it exactly with non-interactive flags.
+
+CONTEXT:
+{context}

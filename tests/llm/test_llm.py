@@ -66,7 +66,7 @@ async def test_plan_task(mock_policy, tmp_path: Path):
 
         router = LLMRouter(secrets_file, config_file, mock_policy)
         context_gatherer = MagicMock(spec=ContextGatherer)
-        context_gatherer.gather.return_value = "context"
+        context_gatherer.gather.return_value = ("context", {})
         response = await router.plan_task(context_gatherer, "test task", "")
 
         assert isinstance(response, LLMResponse)

@@ -29,9 +29,8 @@ AGENT FLOW:
 5. Debug: Fix errors if verification or shell command fails.
 6. Commit: System commits changes.
 
-TASK: {task_title}
-POLICY SUMMARY: {policy_summary}
-CONTEXT: {context}
+CONTEXT:
+{context}
 
 Instructions:
 

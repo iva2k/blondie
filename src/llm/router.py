@@ -153,7 +153,9 @@ class LLMRouter:
         skill = self.skills[skill_name]
         kwargs = kwargs or {}
         if context_gatherer:
-            kwargs["context"] = context_gatherer.gather(skill.context)
+            context_str, context_parts = context_gatherer.gather(skill.context)
+            kwargs["context"] = context_str
+            kwargs.update(context_parts)
         system_prompt = skill.render_system_prompt(**kwargs)
         user_content = skill.user_content.format(**kwargs) if skill.user_content else ""
         log_title = skill.log_title.format(**kwargs) if skill.log_title else ""

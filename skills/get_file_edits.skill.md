@@ -5,7 +5,7 @@ user-invocable: false
 operation: "planning"
 temperature: 0.1
 max-tokens: 1000
-user-content: "CONTEXT:\n{context}\n\nTASK: {task_title}\nPLAN:\n{plan}"
+user-content: "TASK: {task_title}\nPLAN:\n{plan}"
 log-title: "Task: {task_title}"
 context:
   task: True
@@ -59,3 +59,6 @@ Example:
 
 Valid actions: create, edit, delete, shell.
 Do not include markdown formatting (like ```yaml), just the raw YAML text.
+
+CONTEXT:
+{context}
