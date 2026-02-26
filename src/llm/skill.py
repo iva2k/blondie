@@ -22,6 +22,7 @@ class Skill:
     log_title: str = ""
     temperature: float = 0.1
     max_tokens: int = 2000
+    context: dict[str, bool] | None = None
 
     @classmethod
     def from_file(cls, path: Path) -> "Skill":
@@ -57,6 +58,7 @@ class Skill:
             log_title=frontmatter.get("log-title", ""),
             temperature=frontmatter.get("temperature", 0.1),
             max_tokens=frontmatter.get("max-tokens", 2000),
+            context=frontmatter.get("context", None),
         )
 
     def render_system_prompt(self, **kwargs: Any) -> str:

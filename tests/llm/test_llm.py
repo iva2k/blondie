@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
+from agent.context import ContextGatherer
 from agent.policy import Policy
 from llm.router import LLMResponse, LLMRouter
 
@@ -64,7 +65,9 @@ async def test_plan_task(mock_policy, tmp_path: Path):
         mock_post.return_value = mock_response
 
         router = LLMRouter(secrets_file, config_file, mock_policy)
-        response = await router.plan_task("test task", "context", {})
+        context_gatherer = MagicMock(spec=ContextGatherer)
+        context_gatherer.gather.return_value = "context"
+        response = await router.plan_task(context_gatherer, "test task", "")
 
         assert isinstance(response, LLMResponse)
         assert "Plan:" in response.content

@@ -7,6 +7,12 @@ temperature: 0.1
 max-tokens: 1500
 user-content = "TEST ERROR:\n{error_log}\n\nCONTEXT:\n{context}"
 log-title: "Error: {error_log}"
+context:
+  project: True
+  policy: True
+  files: True
+  task: True
+  command: True
 ---
 You are an autonomous debugging assistant.
 

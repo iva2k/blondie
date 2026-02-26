@@ -7,6 +7,9 @@ temperature: 0.05
 max-tokens: 8000
 user-content: "FILENAME: {filename}\nEXISTING: {existing_content}\nINSTRUCTION: {instruction}\nCONTEXT:\n{context}"
 log-title: "File: {filename}\nInstruction: {instruction}"
+context:
+  files: True
+  task: True
 ---
 You are an expert code editor.
 

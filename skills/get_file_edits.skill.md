@@ -7,6 +7,8 @@ temperature: 0.1
 max-tokens: 1000
 user-content: "CONTEXT:\n{context}\n\nTASK: {task_title}\nPLAN:\n{plan}"
 log-title: "Task: {task_title}"
+context:
+  files: True
 ---
 You are a coding architect.
 

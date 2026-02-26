@@ -8,6 +8,7 @@ from typing import Any
 
 import yaml
 
+from agent.context import ContextGatherer
 from agent.llm_config import LLMConfig
 from agent.policy import Policy
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
@@ -142,9 +143,16 @@ class LLMRouter:
         )
         return response
 
-    async def _execute_llm_skill(self, skill_name: str, **kwargs: Any) -> LLMResponse:
+    async def _execute_llm_skill(
+        self, skill_name: str, context_gatherer: ContextGatherer, **kwargs: Any
+    ) -> LLMResponse:
         """Generate detailed implementation plan."""
+        if skill_name not in self.skills:
+            raise ValueError(f"Skill not found: {skill_name}")
         skill = self.skills[skill_name]
+        kwargs = kwargs or {}
+        if context_gatherer:
+            kwargs["context"] = context_gatherer.gather(skill.context)
         system_prompt = skill.render_system_prompt(**kwargs)
         user_content = skill.user_content.format(**kwargs) if skill.user_content else ""
         log_title = skill.log_title.format(**kwargs) if skill.log_title else ""
@@ -158,47 +166,59 @@ class LLMRouter:
             log_title=log_title,
         )
 
-    async def plan_task(self, task_title: str, repo_context: str, policy_summary: dict, **kwargs: Any) -> LLMResponse:
+    async def plan_task(
+        self, context_gatherer: ContextGatherer, task_title: str, policy_summary: str, **kwargs: Any
+    ) -> LLMResponse:
         """Generate detailed implementation plan."""
         return await self._execute_llm_skill(
             "plan_task",
+            context_gatherer,
             task_title=task_title,
-            repo_context=repo_context,
             policy_summary=policy_summary,
             **kwargs,
         )
 
-    async def get_file_edits(self, task_title: str, plan: str, context: str = "", **kwargs: Any) -> LLMResponse:
+    async def get_file_edits(
+        self, context_gatherer: ContextGatherer, task_title: str, plan: str, **kwargs: Any
+    ) -> LLMResponse:
         """Identify files to edit from plan."""
         return await self._execute_llm_skill(
             "get_file_edits",
+            context_gatherer,
             task_title=task_title,
             plan=plan,
-            context=context,
             **kwargs,
         )
 
     async def generate_code(
-        self, task_title: str, filename: str, existing_content: str, instruction: str, context: str = "", **kwargs: Any
+        self,
+        context_gatherer: ContextGatherer,
+        task_title: str,
+        filename: str,
+        existing_content: str,
+        instruction: str,
+        **kwargs: Any,
     ) -> LLMResponse:
         """Generate/edit single file."""
         return await self._execute_llm_skill(
             "generate_code",
+            context_gatherer,
             task_title=task_title,
             filename=filename,
             existing_content=existing_content,
             instruction=instruction,
-            context=context,
             **kwargs,
         )
 
-    async def debug_error(self, task_title: str, error_log: str, code_context: str, **kwargs: Any) -> LLMResponse:
+    async def debug_error(
+        self, context_gatherer: ContextGatherer, task_title: str, error_log: str, **kwargs: Any
+    ) -> LLMResponse:
         """Suggest fix for test failures."""
         return await self._execute_llm_skill(
             "debug_error",
+            context_gatherer,
             task_title=task_title,
             error_log=error_log,
-            context=code_context,
             **kwargs,
         )
 

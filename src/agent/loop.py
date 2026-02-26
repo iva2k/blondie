@@ -5,11 +5,11 @@
 import asyncio
 import shutil
 from pathlib import Path
-from typing import Literal
 
 import click
 import yaml
 
+from agent.context import ContextGatherer
 from agent.executor import Executor
 from agent.policy import Policy
 from agent.project import Project
@@ -37,6 +37,7 @@ class BlondieAgent:
         self.git = GitCLI(self.repo_path, self.policy, self.journal)
         self.exec = Executor(self.repo_path, self.policy, self.journal)
         self.gitignore = GitIgnore(self.repo_path)
+        self.context_gatherer = ContextGatherer(self.repo_path, self.project, self.policy, self.git, self.gitignore)
         self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal)
 
     def pick_task(self) -> Task | None:
@@ -98,7 +99,6 @@ class BlondieAgent:
         if not task:
             return False
 
-
         branch_name = task.branch_name
         main_branch = self.project.main_branch
         start_cost = self.llm.daily_cost
@@ -108,8 +108,7 @@ class BlondieAgent:
             self.git.checkout_branch(branch_name)
 
             # 2. LLM Implementation Plan
-            context = self._gather_context(task)
-            plan_response = await self.llm.plan_task(task.title, context, self.policy.model_dump())
+            plan_response = await self.llm.plan_task(self.context_gatherer, task.title, str(self.policy.model_dump()))
             plan = plan_response.content
             self.journal.print(
                 f"📋 [dim]Plan:[/dim]\n{plan}", truncate=500
@@ -137,8 +136,10 @@ class BlondieAgent:
                     break
 
                 self.journal.print("🔧 Triggering LLM debug...")
-                context = self._gather_context(task)  # Refresh context
-                debug_response = await self.llm.debug_error(task.title, test_result.stderr, context)
+                self.context_gatherer.add_task(task)
+                debug_response = await self.llm.debug_error(
+                    self.context_gatherer, task.title, test_result.stderr or test_result.stdout
+                )
                 fix_plan = debug_response.content
                 self.journal.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan}", truncate=500)
 
@@ -195,89 +196,13 @@ class BlondieAgent:
         except Exception as e:
             self.journal.print(f"⚠️ Failed to save WIP: {e}")
 
-    def _gather_context(
-        self,
-        task: Task | None = None,
-        items: None | dict[str | Literal["project", "policy", "cwd", "git", "files", "task", "spec"], bool] = None,
-    ) -> str:
-        """Gather project context for LLM."""
-        items_val = {
-            "project": True,
-            "policy": True,
-            "cwd": False,
-            "git": False,
-            "files": True,
-            "task": True,
-        }
-        if items:
-            items_val.update(items)
-        items = items_val
-
-        context = []
-        # TODO: (when needed) Implement: if items["spec"]: ...
-        if items["cwd"]:
-            context.append(f"CWD: {self.repo_path.resolve()}")
-        context.append("Temp dir: ./_tmp")
-
-        if items["project"]:
-            context.append(f"Project: {self.project.id}")
-            if self.project.dev_env:
-                context.append(f"Dev Environment: {self.project.dev_env}")
-        if items["policy"]:
-            context.append(f"Policy: {self.policy.model_dump()}")
-            context.append(f"Commands: {list(self.policy.commands.keys())}")
-        if items["git"]:
-            context.append(f"Current branch: {self.git.current_branch()}")
-            context.append(f"Git status:\n{self.git.status()}")
-        if items["files"]:
-            context.append(f"Existing Files:\n{self._get_file_tree()}\n")
-        if task and items["task"]:
-            context.append(f"Task: {task.id} {task.title}")
-        return "\n".join(context)
-
-    def _get_file_tree(self) -> str:
-        """Generate list of repo files (excluding ignored)."""
-        files = []
-
-        for path in sorted(self.repo_path.rglob("*")):
-            if not path.is_file():
-                continue
-
-            try:
-                rel_path = path.relative_to(self.repo_path)
-            except ValueError:
-                continue
-
-            if rel_path.as_posix() in self.project.protected_files:
-                continue
-
-            if self.gitignore.is_ignored(path):
-                continue
-
-            if any(
-                part.startswith(".") and part not in [".agent", ".github", ".gitignore", ".dockerignore"]
-                for part in rel_path.parts
-            ):
-                continue
-
-            files.append(str(rel_path))
-
-        return "\n".join(files)
-
     async def _apply_llm_edits(self, task: Task, plan: str) -> bool:
         """Apply LLM-generated file edits."""
         self.journal.print("🤔 Identifying files to edit...")
 
         # Gather file structure context so the LLM knows valid paths
-        context = self._gather_context(
-            task,
-            {
-            "project": False,
-            "policy": False,
-            "files": True,
-            "task": False,
-        })
-        response = await self.llm.get_file_edits(task.title, plan, context=context)
+        self.context_gatherer.add_task(task)
+        response = await self.llm.get_file_edits(self.context_gatherer, task.title, plan)
 
         # Clean up potential markdown fences
         content = response.content.strip()
@@ -329,12 +254,11 @@ class BlondieAgent:
                         break
 
                     self.journal.print("🔧 Triggering LLM debug for shell command...")
-                    # Use full context in llm.debug_error
-                    context = self._gather_context(task)  # Refresh context
-                    context += f"\nCommand: {command}"
+                    self.context_gatherer.add_task(task)
+                    self.context_gatherer.add_command(command)
                     # TODO: (now) Ponder on splitting debug_error() into debug_test_error() and debug_shell_error() with specialization
                     debug_response = await self.llm.debug_error(
-                        task.title, f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}", context
+                        self.context_gatherer, task.title, f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
                     )
                     fix_plan = debug_response.content
                     self.journal.print(f"📋 [dim]Shell Fix Plan:[/dim]\n{fix_plan}", truncate=500)
@@ -428,15 +352,8 @@ class BlondieAgent:
                 self.journal.print(f"⚠️  File {path_str} not found for edit, treating as create.")
 
             # Provide file list context for imports
-            context = self._gather_context(
-                task,
-                {"project": False,
-                "policy": False,
-                "files": True,
-                "task": True,
-            })
             code_resp = await self.llm.generate_code(
-                task.title, path_str, existing_content, instruction, context=context
+                self.context_gatherer, task.title, path_str, existing_content, instruction
             )
 
             # Clean up potential markdown fences for code

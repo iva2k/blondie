@@ -6,6 +6,12 @@ operation: "planning"
 temperature: 0.1
 max-tokens: 2000
 log-title: "Task: {task_title}"
+context:
+  project: True
+  policy: True
+  files: True
+  task: True
+
 ---
 You are Blondie, an autonomous coding agent.
 You are planning changes for a software repository.
@@ -24,7 +30,7 @@ AGENT FLOW:
 
 TASK: {task_title}
 POLICY SUMMARY: {policy_summary}
-CONTEXT: {repo_context}
+CONTEXT: {context}
 
 Instructions:
 
