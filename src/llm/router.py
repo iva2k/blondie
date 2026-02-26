@@ -61,6 +61,7 @@ class LLMRouter:
             try:
                 skill = Skill.from_file(path)
                 skills[skill.name] = skill
+            # pylint: disable-next=broad-exception-caught
             except Exception as e:
                 self.journal.print(f"❌ Failed to load skill {path.name}: {e}")
         return skills

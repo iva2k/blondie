@@ -167,12 +167,14 @@ class BlondieAgent:
 
             if not self.git.merge_if_clean(branch_name, main_branch):
                 self.journal.print("⚠️  Merge failed (conflicts?), leaving branch for manual review.")
+                # TODO: (when needed) Implement LLM-assisted merge (due to conflicts when agents swarm merge changes to main)
                 return True  # Task is technically done, just not merged
 
             self.journal.print(f"✅ Completed task [bold green]{task.full_id}[/]: {task.title}")
             self.journal.print(f"{'=' * 100}\n")
             return True
 
+        # pylint: disable-next=broad-exception-caught
         except Exception as e:
             self.journal.print(f"💥 Task failed: {e}")
             self._save_wip(branch_name, f"WIP: Crash recovery - {e}")
@@ -191,6 +193,7 @@ class BlondieAgent:
                 self.git.add_all()
                 self.git.commit(message)
                 self.git.push(branch_name)
+        # pylint: disable-next=broad-exception-caught
         except Exception as e:
             self.journal.print(f"⚠️ Failed to save WIP: {e}")
 
@@ -216,6 +219,7 @@ class BlondieAgent:
             if not isinstance(edits, list):
                 self.journal.print(f"❌ Expected list of edits, got {type(edits)}")
                 return False
+        # pylint: disable-next=broad-exception-caught
         except Exception as e:
             self.journal.print(f"❌ Failed to parse file edits: {e}")
             return False
@@ -284,6 +288,7 @@ class BlondieAgent:
                     if rel_path.as_posix() in self.project.protected_files:
                         self.journal.print(f"🛡️  Skipping protected file {path_str}")
                         continue
+            # pylint: disable-next=broad-exception-caught
             except Exception:
                 pass
 
@@ -397,6 +402,7 @@ class BlondieAgent:
             except KeyboardInterrupt:
                 self.journal.print("\n⏹️  Interrupted by user")
                 break
+            # pylint: disable-next=broad-exception-caught
             except Exception as e:
                 self.journal.print(f"💥 Unexpected error: {e}")
                 await asyncio.sleep(5)  # Brief pause on error
