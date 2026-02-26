@@ -4,6 +4,7 @@
 
 import datetime
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal
 
@@ -16,6 +17,136 @@ from agent.policy import Policy
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
 from llm.journal import Journal
 from llm.skill import Skill
+
+
+class ChatSession:
+    """Stateful chat session for multi-turn conversations."""
+
+    def __init__(
+        self,
+        client: LLMClient,
+        provider_name: str,
+        model: str | None,
+        journal: Journal,
+        cost_callback: Callable[[float], None],
+        system_prompt: str,
+        temperature: float,
+        max_tokens: int,
+        log_action: str,
+        log_title: str,
+        response_model: Any | None = None,
+        response_format: Literal["json", "yaml"] | None = None,
+    ):
+        self.client = client
+        self.provider_name = provider_name
+        self.journal = journal
+        self.cost_callback = cost_callback
+        self.system_prompt = system_prompt
+        self.model = model
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.log_action = log_action
+        self.log_title = log_title
+        self.response_model = response_model
+        self.response_format = response_format
+
+        self.messages: list[dict[str, str]] = [{"role": "system", "content": self.system_prompt}]
+
+    async def send(
+        self,
+        content: str | None = None,
+        response_model: Any | None = None,
+        response_format: Literal["json", "yaml"] | None = None,
+    ) -> LLMResponse:
+        """Send message to LLM and get response."""
+        if content:
+            self.messages.append({"role": "user", "content": content})
+
+        # Defaults from session if not provided
+        response_model = response_model or self.response_model
+        response_format = response_format or self.response_format
+
+        max_retries = 3 if response_model else 0
+        attempts = 0
+
+        while True:
+            attempts += 1
+
+            # Call LLM
+            response = await self.client.chat(
+                self.messages,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+                model=self.model,
+            )
+
+            # Track cost
+            self.cost_callback(response.cost_usd)
+
+            # Log
+            turn = sum(1 for m in self.messages if m["role"] == "user")
+            log_suffix = ""
+            if turn > 1 or attempts > 1:
+                log_suffix = f" (Turn {turn}" + (f" Attempt {attempts})" if attempts > 1 else ")")
+
+            self.journal.log_chat(
+                self.log_action,
+                self.provider_name,
+                self.log_title + log_suffix,
+                response,
+                system_prompt=self.system_prompt,
+                model=self.client.model,
+                endpoint=self.client.base_url,
+            )
+
+            # If no validation needed, we are done
+            if not response_model and not response_format:
+                self.messages.append({"role": "assistant", "content": response.content})
+                return response
+
+            # Validation
+            try:
+                content_str = response.content.strip()
+                # Handle markdown code blocks
+                if content_str.startswith("```"):
+                    lines = content_str.splitlines()
+                    if lines and lines[0].startswith("```"):
+                        lines = lines[1:]
+                    if lines and lines[-1].strip() == "```":
+                        lines = lines[:-1]
+                    content_str = "\n".join(lines).strip()
+
+                data = None
+                if response_format == "json":
+                    data = json.loads(content_str)
+                elif response_format == "yaml":
+                    data = yaml.safe_load(content_str)
+
+                if data is not None:
+                    response.parsed = data
+
+                if response_model and hasattr(response_model, "model_validate"):
+                    validated = response_model.model_validate(data)
+                    response.parsed = validated
+
+                self.messages.append({"role": "assistant", "content": response.content})
+                return response
+
+            except (json.JSONDecodeError, yaml.YAMLError, ValidationError) as e:
+                if attempts > max_retries:
+                    self.journal.print(f"❌ Validation failed after {max_retries} retries: {e}")
+                    self.messages.append({"role": "assistant", "content": response.content})
+                    return response
+
+                self.journal.print(f"⚠️ Validation failed (Attempt {attempts}/{max_retries + 1}): {e}")
+
+                self.messages.append({"role": "assistant", "content": response.content})
+                self.messages.append(
+                    {
+                        "role": "user",
+                        "content": f"Error parsing response: {e}\nPlease return valid {str(response_format).upper()} matching the schema.",
+                    }
+                )
 
 
 class LLMRouter:
@@ -112,6 +243,9 @@ class LLMRouter:
 
         raise ValueError(f"No active LLM provider found for operation '{operation}'")
 
+    def _track_cost(self, cost: float) -> None:
+        self.daily_cost += cost
+
     async def _execute_llm_task(
         self,
         operation: str,
@@ -122,74 +256,29 @@ class LLMRouter:
         log_action: str,
         log_title: str,
         response_model: Any | None = None,
-        response_format: Literal["json", "yaml"] = "yaml",
+        response_format: Literal["json", "yaml"] | None = None,
     ) -> LLMResponse:
         """Execute LLM task with common logging and cost tracking."""
         provider, model = self.select_model(operation)
-        client = self.clients.get(provider)
+        if provider not in self.clients:
+            raise ValueError(f"Provider '{provider}' not configured")
 
-        if not client:
-            raise ValueError(f"No client for provider '{provider}'")
+        session = ChatSession(
+            client=self.clients[provider],
+            provider_name=provider,
+            model=model,
+            journal=self.journal,
+            cost_callback=self._track_cost,
+            system_prompt=system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            log_action=log_action,
+            log_title=log_title,
+            response_model=response_model,
+            response_format=response_format,
+        )
 
-        messages = [{"role": "system", "content": system_prompt}]
-        if user_prompt:
-            messages.append({"role": "user", "content": user_prompt})
-
-        max_retries = 3 if response_model else 0
-        attempts = 0
-
-        while True:
-            attempts += 1
-            response = await client.chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
-            self.daily_cost += response.cost_usd
-            self.journal.log_chat(
-                log_action,
-                provider,
-                log_title + (f" (Attempt {attempts})" if attempts > 1 else ""),
-                response,
-                system_prompt=system_prompt,
-                model=client.model,
-                endpoint=client.base_url,
-            )
-
-            if not response_model:
-                return response
-
-            try:
-                content = response.content.strip()
-                # Handle markdown code blocks
-                if content.startswith("```"):
-                    lines = content.splitlines()
-                    if lines and lines[0].startswith("```"):
-                        lines = lines[1:]
-                    if lines and lines[-1].strip() == "```":
-                        lines = lines[:-1]
-                    content = "\n".join(lines).strip()
-
-                if response_format == "json":
-                    data = json.loads(content)
-                else:
-                    data = yaml.safe_load(content)
-
-                if hasattr(response_model, "model_validate"):
-                    validated = response_model.model_validate(data)
-                    # Try to attach parsed object to response
-                    response.parsed = validated
-                return response
-
-            except (json.JSONDecodeError, yaml.YAMLError, ValidationError) as e:
-                if attempts > max_retries:
-                    self.journal.print(f"❌ Validation failed after {max_retries} retries: {e}")
-                    return response
-
-                self.journal.print(f"⚠️ Validation failed (Attempt {attempts}/{max_retries + 1}): {e}")
-                messages.append({"role": "assistant", "content": response.content})
-                messages.append(
-                    {
-                        "role": "user",
-                        "content": f"Error parsing response: {e}\nPlease return valid JSON matching the schema.",
-                    }
-                )
+        return await session.send(content=user_prompt)
 
     async def _execute_llm_skill(
         self, skill_name: str, context_gatherer: ContextGatherer, **kwargs: Any
@@ -275,6 +364,47 @@ class LLMRouter:
             error_log=error_log,
             **kwargs,
         )
+
+    def start_chat(
+        self, skill_name: str, context_gatherer: ContextGatherer | None = None, **kwargs: Any
+    ) -> ChatSession:
+        """Start a multi-turn chat session."""
+        if skill_name not in self.skills:
+            raise ValueError(f"Skill not found: {skill_name}")
+        skill = self.skills[skill_name]
+
+        if context_gatherer:
+            context_str, context_parts = context_gatherer.gather(skill.context)
+            kwargs["context"] = context_str
+            kwargs.update(context_parts)
+
+        system_prompt = skill.render_system_prompt(**kwargs)
+        provider, model = self.select_model(skill.operation)
+        if provider not in self.clients:
+            raise ValueError(f"Provider '{provider}' not configured")
+
+        log_title = skill.log_title.format(**kwargs) if skill.log_title else skill.name
+
+        session = ChatSession(
+            client=self.clients[provider],
+            provider_name=provider,
+            model=model,
+            journal=self.journal,
+            cost_callback=self._track_cost,
+            system_prompt=system_prompt,
+            temperature=skill.temperature,
+            max_tokens=skill.max_tokens,
+            log_action=skill.name,
+            log_title=log_title,
+            response_model=skill.response_model,
+            response_format=skill.response_format,
+        )
+
+        if skill.user_content:
+            user_content = skill.user_content.format(**kwargs)
+            session.messages.append({"role": "user", "content": user_content})
+
+        return session
 
     def check_daily_limit(self) -> bool:
         """Check cost limit from policy."""
