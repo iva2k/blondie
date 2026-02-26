@@ -34,12 +34,17 @@ Status: id | priority | title | depends_on
 - [x] 042 | P3 | Track task cost, When task is done, log to journal and console task cost |
 - [x] 043 | P3 | When exiting agent (even by keyboard interrupt), log to journal and console total daily cost |
 - [x] 044 | P1 | Remove gates copy from top level of Policy (conserve context) |
+- [x] 045 | P1 | Implement structured output validation in LLMRouter (JSON schema) with auto-retry on validation failure. |
 
 ## Todo
 
+- [ ] 046 | P1 | Implement ChatSession in LLMRouter to support multi-turn conversations with tool execution (REPL) for skills. |
+- [ ] 047 | P1 | Add `tools` definition to Skill class and implement basic shell/file tools for the interactive session. | 046
+- [ ] 048 | P2 | Update Planning skill to use interactive tool loop for repo exploration (grep, find, read). | 046, 047
+
 - [ ] 028 | P2 | In shell command retry/debug loop - Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
 
-- [ ] 035 | P2 | compose summary of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037
+- [ ] 035 | P2 | compose summary and LLM notes of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037
 - [ ] 040 | P3 | Agent should have its user/email set for git commits |
 
 - [ ] 015 | P4 | **DEPLOY!** Start self-editing | 025, 032, 037, 028, 035, 025, 039

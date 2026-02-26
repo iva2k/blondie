@@ -4,9 +4,27 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
+from pydantic import BaseModel, Field
+
+
+class FileEdit(BaseModel):
+    path: str | None = Field(None, description="File path relative to repo root")
+    action: Literal["create", "edit", "delete", "shell"] = Field(..., description="Action to perform")
+    instruction: str | None = Field(None, description="Instruction for file editing or creation")
+    command: str | None = Field(None, description="Shell command to execute")
+    timeout: int = Field(120, description="Timeout for shell command in seconds")
+
+
+class FileEdits(BaseModel):
+    edits: list[FileEdit]
+
+
+SKILL_MODELS = {
+    "FileEdits": FileEdits,
+}
 
 
 @dataclass
@@ -23,6 +41,8 @@ class Skill:
     temperature: float = 0.1
     max_tokens: int = 2000
     context: dict[str, bool] | None = None
+    response_model: Any | None = None
+    response_format: Literal["json", "yaml"] = "yaml"
 
     @classmethod
     def from_file(cls, path: Path) -> "Skill":
@@ -48,6 +68,9 @@ class Skill:
 
         body = parts[2].strip()
 
+        model_name = frontmatter.get("response_model")
+        response_model = SKILL_MODELS.get(model_name) if model_name else None
+
         return cls(
             name=frontmatter.get("name", path.stem),
             description=frontmatter.get("description", ""),
@@ -59,6 +82,8 @@ class Skill:
             temperature=frontmatter.get("temperature", 0.1),
             max_tokens=frontmatter.get("max-tokens", 2000),
             context=frontmatter.get("context", None),
+            response_model=response_model,
+            response_format=frontmatter.get("response_format", "yaml"),
         )
 
     def render_system_prompt(self, **kwargs: Any) -> str:

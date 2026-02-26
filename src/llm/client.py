@@ -16,6 +16,7 @@ class LLMResponse:
     model: str
     tokens_used: int
     cost_usd: float = 0.0
+    parsed: Any | None = None
 
 
 class LLMClient:

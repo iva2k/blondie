@@ -224,24 +224,26 @@ class BlondieAgent:
         self.context_gatherer.add_task(task)
         response = await self.llm.get_file_edits(self.context_gatherer, task.title, plan)
 
-        # Clean up potential markdown fences
-        content = response.content.strip()
-        if content.startswith("```"):
-            lines = content.splitlines()
-            lines = lines[1:]
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            content = "\n".join(lines)
+        if response.parsed:
+            edits = [e.model_dump() for e in response.parsed.edits]
+        else:
+            # Clean up potential markdown fences
+            content = response.content.strip()
+            if content.startswith("```"):
+                lines = content.splitlines()
+                lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                content = "\n".join(lines)
 
-        try:
-            edits = yaml.safe_load(content)
-            if not isinstance(edits, list):
-                self.journal.print(f"❌ Expected list of edits, got {type(edits)}")
+            try:
+                edits = yaml.safe_load(content)
+                if not isinstance(edits, list):
+                    self.journal.print(f"❌ Expected list of edits, got {type(edits)}")
+                    return False
+            except Exception as e:
+                self.journal.print(f"❌ Failed to parse file edits: {e}")
                 return False
-        # pylint: disable-next=broad-exception-caught
-        except Exception as e:
-            self.journal.print(f"❌ Failed to parse file edits: {e}")
-            return False
 
         self.journal.print(f"📝 Found {len(edits)} file operations.")
 

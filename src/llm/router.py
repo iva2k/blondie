@@ -3,10 +3,12 @@
 """LLM Router - selects provider/model per task type."""
 
 import datetime
+import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
+from pydantic import ValidationError
 
 from agent.context import ContextGatherer
 from agent.llm_config import LLMConfig
@@ -119,6 +121,8 @@ class LLMRouter:
         max_tokens: int,
         log_action: str,
         log_title: str,
+        response_model: Any | None = None,
+        response_format: Literal["json", "yaml"] = "yaml",
     ) -> LLMResponse:
         """Execute LLM task with common logging and cost tracking."""
         provider, model = self.select_model(operation)
@@ -131,18 +135,61 @@ class LLMRouter:
         if user_prompt:
             messages.append({"role": "user", "content": user_prompt})
 
-        response = await client.chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
-        self.daily_cost += response.cost_usd
-        self.journal.log_chat(
-            log_action,
-            provider,
-            log_title,
-            response,
-            system_prompt=system_prompt,
-            model=client.model,
-            endpoint=client.base_url,
-        )
-        return response
+        max_retries = 3 if response_model else 0
+        attempts = 0
+
+        while True:
+            attempts += 1
+            response = await client.chat(messages, temperature=temperature, max_tokens=max_tokens, model=model)
+            self.daily_cost += response.cost_usd
+            self.journal.log_chat(
+                log_action,
+                provider,
+                log_title + (f" (Attempt {attempts})" if attempts > 1 else ""),
+                response,
+                system_prompt=system_prompt,
+                model=client.model,
+                endpoint=client.base_url,
+            )
+
+            if not response_model:
+                return response
+
+            try:
+                content = response.content.strip()
+                # Handle markdown code blocks
+                if content.startswith("```"):
+                    lines = content.splitlines()
+                    if lines and lines[0].startswith("```"):
+                        lines = lines[1:]
+                    if lines and lines[-1].strip() == "```":
+                        lines = lines[:-1]
+                    content = "\n".join(lines).strip()
+
+                if response_format == "json":
+                    data = json.loads(content)
+                else:
+                    data = yaml.safe_load(content)
+
+                if hasattr(response_model, "model_validate"):
+                    validated = response_model.model_validate(data)
+                    # Try to attach parsed object to response
+                    response.parsed = validated
+                return response
+
+            except (json.JSONDecodeError, yaml.YAMLError, ValidationError) as e:
+                if attempts > max_retries:
+                    self.journal.print(f"❌ Validation failed after {max_retries} retries: {e}")
+                    return response
+
+                self.journal.print(f"⚠️ Validation failed (Attempt {attempts}/{max_retries + 1}): {e}")
+                messages.append({"role": "assistant", "content": response.content})
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": f"Error parsing response: {e}\nPlease return valid JSON matching the schema.",
+                    }
+                )
 
     async def _execute_llm_skill(
         self, skill_name: str, context_gatherer: ContextGatherer, **kwargs: Any
@@ -151,6 +198,8 @@ class LLMRouter:
         if skill_name not in self.skills:
             raise ValueError(f"Skill not found: {skill_name}")
         skill = self.skills[skill_name]
+        response_model = kwargs.pop("response_model", None) or skill.response_model
+        response_format = kwargs.pop("response_format", None) or skill.response_format
         kwargs = kwargs or {}
         if context_gatherer:
             context_str, context_parts = context_gatherer.gather(skill.context)
@@ -167,6 +216,8 @@ class LLMRouter:
             max_tokens=skill.max_tokens,
             log_action=skill_name,
             log_title=log_title,
+            response_model=response_model,
+            response_format=response_format,
         )
 
     async def plan_task(
