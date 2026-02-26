@@ -5,6 +5,7 @@
 from .executor import CommandResult, Executor
 from .loop import BlondieAgent
 from .policy import AutonomyRule, Policy
+from .progress import ProgressManager
 from .project import Project
 from .tasks import TasksManager
 
@@ -15,6 +16,7 @@ __all__ = [
     "BlondieAgent",
     "Policy",
     "AutonomyRule",
+    "ProgressManager",
     "Project",
     "TasksManager",
 ]

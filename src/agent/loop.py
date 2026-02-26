@@ -12,6 +12,7 @@ import yaml
 from agent.context import ContextGatherer
 from agent.executor import Executor
 from agent.policy import Policy
+from agent.progress import ProgressManager
 from agent.project import Project
 from agent.tasks import Task, TasksManager
 from cli import GitCLI
@@ -32,12 +33,21 @@ class BlondieAgent:
         self.tasks_path = self.agent_dir / "TASKS.md"
         self.secrets_path = self.agent_dir / "secrets.env.yaml"
         self.llm_config_path = self.agent_dir / "llm_config.yaml"
+        self.progress_path = self.agent_dir / "progress.txt"
 
         self.tasks = TasksManager(self.tasks_path, project_id=self.project.id.upper(), journal=self.journal)
         self.git = GitCLI(self.repo_path, self.policy, self.journal)
         self.exec = Executor(self.repo_path, self.policy, self.journal)
         self.gitignore = GitIgnore(self.repo_path)
-        self.context_gatherer = ContextGatherer(self.repo_path, self.project, self.policy, self.git, self.gitignore)
+        self.progress = ProgressManager(self.progress_path)
+        self.context_gatherer = ContextGatherer(
+            self.repo_path,
+            self.project,
+            self.policy,
+            self.git,
+            self.gitignore,
+            self.progress,
+        )
         self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal)
 
     def pick_task(self) -> Task | None:
@@ -80,6 +90,7 @@ class BlondieAgent:
 
             self.journal.print(f"\n🚀 Processing [bold cyan]{task.id}[/] {task.title}")
             self.journal.start_task(task.id)
+            self.progress.clear()
 
             # 4. Claim task
             if not self.tasks.claim_task(task.id, self.git):
@@ -153,6 +164,13 @@ class BlondieAgent:
 
             # 5. Commit & Push
             self.git.add_all()
+            # Ensure progress.txt is added even if ignored (to keep it in task branch)
+            try:
+                self.git.add(self.progress_path.relative_to(self.repo_path), force=True)
+            # pylint: disable-next=broad-exception-caught
+            except Exception:
+                pass
+
             self.git.commit(task.title)
             self.git.push(branch_name)
             self.journal.print(f"✅ Pushed [green]{branch_name}[/] 🎉")
@@ -165,7 +183,8 @@ class BlondieAgent:
             self.git.commit(f"Complete task {task.id}")
             self.git.push(branch_name)
 
-            if not self.git.merge_if_clean(branch_name, main_branch):
+            exclude_files = [self.progress_path.relative_to(self.repo_path).as_posix()]
+            if not self.git.merge_if_clean(branch_name, main_branch, exclude_files=exclude_files):
                 self.journal.print("⚠️  Merge failed (conflicts?), leaving branch for manual review.")
                 # TODO: (when needed) Implement LLM-assisted merge (due to conflicts when agents swarm merge changes to main)
                 return True  # Task is technically done, just not merged
@@ -249,9 +268,15 @@ class BlondieAgent:
                     result = self.exec.run(command, gate=gate, timeout=timeout)
                     if result.returncode == 0:
                         cmd_success = True
+                        self.progress.add_action("SHELL", command + f" # timeout={timeout}", "SUCCESS")
                         break
 
                     self.journal.print(f"❌ Shell command failed (Attempt {attempt + 1}/{max_retries})")
+                    self.progress.add_action(
+                        "SHELL",
+                        command + f" # timeout={timeout}",
+                        f"FAILED RC:{result.returncode} STDOUT:{result.stdout} STDERR:{result.stderr}",
+                    )
                     if attempt == max_retries:
                         break
 
@@ -300,9 +325,11 @@ class BlondieAgent:
                     if full_path.is_dir():
                         shutil.rmtree(full_path)
                         self.journal.print(f"🗑️  Deleted directory {path_str}...")
+                        self.progress.add_action("DELETE_DIR", path_str)
                     else:
                         self.journal.print(f"🗑️  Deleting {path_str}...")
                         full_path.unlink()
+                        self.progress.add_action("DELETE", path_str)
                 else:
                     self.journal.print(f"⚠️  File to delete not found: {path_str}")
                 continue
@@ -313,10 +340,12 @@ class BlondieAgent:
                     if full_path.exists() and not full_path.is_dir():
                         self.journal.print(f"⚠️  Removing file {path_str} to create directory.")
                         full_path.unlink()
+                        self.progress.add_action("DELETE", full_path)
 
                     if not full_path.exists():
                         self.journal.print(f"📂 Creating directory {path_str}...")
                         full_path.mkdir(parents=True, exist_ok=True)
+                        self.progress.add_action("CREATE_DIR", full_path)
                 continue
 
             if not instruction:
@@ -334,6 +363,7 @@ class BlondieAgent:
                         self.journal.print(f"⚠️  Removing file {p.relative_to(self.repo_path)} to create directory.")
                         p.unlink()
                         p.mkdir()
+                        self.progress.add_action("DELETE", p)
                     break
                 p = p.parent
 
@@ -342,8 +372,10 @@ class BlondieAgent:
                 try:
                     full_path.rmdir()
                     self.journal.print(f"⚠️  Removed empty directory {path_str} to create file.")
+                    self.progress.add_action("DELETE_DIR", full_path)
                 except OSError:
                     self.journal.print(f"❌ Directory {path_str} exists and is not empty. Cannot overwrite with file.")
+                    self.progress.add_action("DELETE_DIR", full_path)
                     continue
 
             existing_content = ""
@@ -371,6 +403,7 @@ class BlondieAgent:
             # Ensure directory exists
             full_path.parent.mkdir(parents=True, exist_ok=True)
             full_path.write_text(code, encoding="utf-8")
+            self.progress.add_action(action.upper(), path_str + f" # {instruction}")
 
         return True
 

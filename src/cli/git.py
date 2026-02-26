@@ -79,9 +79,12 @@ class GitCLI:
         """Pull latest changes."""
         self.run("pull", "origin", branch)
 
-    def add(self, path: str | Path) -> None:
+    def add(self, path: str | Path, force: bool = False) -> None:
         """Stage specific file."""
-        self.run("add", str(path))
+        if force:
+            self.run("add", "-f", str(path))
+        else:
+            self.run("add", str(path))
 
     def add_all(self) -> None:
         """Stage all changes."""
@@ -122,7 +125,7 @@ class GitCLI:
 
         return branch_name
 
-    def merge_if_clean(self, branch: str, target_branch: str = "main") -> bool:
+    def merge_if_clean(self, branch: str, target_branch: str = "main", exclude_files: list[str] | None = None) -> bool:
         """Merge branch if tests pass."""
         if not self.is_clean():
             self.journal.print("❌ Cannot merge: dirty working directory")
@@ -136,12 +139,28 @@ class GitCLI:
         try:
             self.run("checkout", target_branch)
             self.run("pull", "origin", target_branch)
-            self.run("merge", "--no-ff", branch)
+
+            if exclude_files:
+                self.run("merge", "--no-ff", "--no-commit", branch)
+                for path in exclude_files:
+                    # Try to restore from HEAD (target branch version)
+                    if self.run("checkout", "HEAD", "--", path, check=False).returncode != 0:
+                        # If not in HEAD, unstage (remove from index)
+                        self.run("rm", "--cached", "-f", path, check=False)
+                        # Remove from working dir to keep clean state
+                        full_path = self.repo_path / path
+                        if full_path.exists():
+                            full_path.unlink()
+                self.run("commit", "--no-edit")
+            else:
+                self.run("merge", "--no-ff", branch)
+
             self.run("push", "origin", target_branch)
             self.journal.print(f"✅ Merged [bold green]{branch}[/] to {target_branch}")
             return True
         except subprocess.CalledProcessError:
             self.journal.print("❌ Merge failed")
+            self.run("merge", "--abort", check=False)
             return False
 
 

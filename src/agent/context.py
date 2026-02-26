@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from agent.policy import Policy
+    from agent.progress import ProgressManager
     from agent.project import Project
     from agent.tasks import Task
     from cli.git import GitCLI
@@ -25,6 +26,7 @@ class ContextGatherer:
         policy: Policy,
         git: GitCLI,
         gitignore: GitIgnore,
+        progress: ProgressManager,
         task: Task | None = None,
         command: str | None = None,
     ):
@@ -33,6 +35,7 @@ class ContextGatherer:
         self.policy = policy
         self.git = git
         self.gitignore = gitignore
+        self.progress = progress
         self.task = task
         self.command = command
 
@@ -57,6 +60,7 @@ class ContextGatherer:
             "files": False,
             "task": False,
             "command": False,
+            "progress": False,
         }
         if items:
             items_val.update(items)
@@ -84,6 +88,8 @@ class ContextGatherer:
             context.append(f"Task: {self.task.id} {self.task.title}")
         if self.command and items["command"]:
             context.append(f"\nCommand: {self.command}")
+        if items["progress"]:
+            context.append(f"Progress History:\n{self.progress.read()}")
         return "\n".join(context)
 
     def _get_file_tree(self) -> str:
