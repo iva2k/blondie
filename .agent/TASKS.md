@@ -37,10 +37,9 @@ Status: id | priority | title | depends_on
 - [x] 045 | P1 | Implement structured output validation in LLMRouter (JSON schema) with auto-retry on validation failure. |
 - [x] 046 | P1 | Implement ChatSession in LLMRouter to support multi-turn conversations with tool execution (REPL) for skills. |
 - [x] 047 | P1 | Add `tools` definition to Skill class and implement basic shell/file tools for the interactive session. |
+- [x] 048 | P2 | Update Planning skill to use interactive tool loop for repo exploration (grep, find, read). |
 
 ## Todo
-
-- [ ] 048 | P2 | Update Planning skill to use interactive tool loop for repo exploration (grep, find, read). |
 
 - [ ] 027 | P1 | Connect stderr/stdout/stdin of shell commands interactively to LLM, so it could respond to prompts |
 - [ ] 028 | P2 | In shell command retry/debug loop - Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
