@@ -116,6 +116,8 @@ class BlondieAgent:
         main_branch = self.project.main_branch
         start_cost = self.llm.daily_cost
 
+        self.context_gatherer.add_task(task)
+
         try:
             # 1. Ensure we are on the branch (idempotent)
             self.git.checkout_branch(branch_name)
@@ -152,17 +154,15 @@ class BlondieAgent:
                     break
 
                 self.journal.print("🔧 Triggering LLM debug...")
-                self.context_gatherer.add_task(task)
 
                 # Heuristic to improve agent success
                 error_log = f"STDOUT:\n{test_result.stdout}\nSTDERR:\n{test_result.stderr}"
-                debug_skill = "debug_error"  # Default skill
-                if "access violation" in error_log or "segmentation fault" in error_log:
-                    # TODO: (when needed) debug_skill = "debug_native_crash"
-                    debug_skill = "debug_error"
-                elif "ModuleNotFoundError" in error_log:
-                    # TODO: (when needed) debug_skill = "debug_python_imports"
-                    debug_skill = "debug_error"
+                debug_skill = "debug_error"
+                # TODO: (when needed) debug_skill = "debug_native_crash"
+                # if "access violation" in error_log or "segmentation fault" in error_log:
+                #     debug_skill = "debug_native_crash"
+                # elif "ModuleNotFoundError" in error_log:
+                #     debug_skill = "debug_python_imports"
 
                 session = self.llm.start_chat(
                     debug_skill,
@@ -234,8 +234,11 @@ class BlondieAgent:
             if self.git.current_branch() == branch_name:
                 self.journal.print("💾 Saving WIP state...")
                 self.git.add_all()
-                self.git.commit(message)
-                self.git.push(branch_name)
+                if not self.git.is_clean():
+                    self.git.commit(message)
+                    self.git.push(branch_name)
+                else:
+                    self.journal.print("⚠️  Nothing to save (clean working directory)")
         # pylint: disable-next=broad-exception-caught
         except Exception as e:
             self.journal.print(f"⚠️ Failed to save WIP: {e}")

@@ -4,8 +4,12 @@
 
 from __future__ import annotations
 
+import os
+import platform
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import yaml
 
 if TYPE_CHECKING:
     from agent.policy import Policy
@@ -65,6 +69,7 @@ class ContextGatherer:
             "command": self._get_command_context,
             "progress": self._get_progress_context,
             "env": self._get_env_context,
+            "os": self._get_os_context,
         }
 
         context_parts: dict[str, str] = {}
@@ -80,10 +85,12 @@ class ContextGatherer:
                         context_parts.update(result)
                         for k, v in result.items():
                             header = k.upper().replace("_", " ")
-                            if "\n" in v:
-                                full_context.append(f"{header}:\n{v}")
-                            else:
-                                full_context.append(f"{header}: {v}")
+                            # if "\n" in v:
+                            #     full_context.append(f"{header}:\n{v}")
+                            # else:
+                            #     full_context.append(f"{header}: {v}")
+                            # Use Markdown-style headings:
+                            full_context.append(f"### {header}\n{v}")
 
         # Reset context transient data
         self.command = None
@@ -98,13 +105,10 @@ class ContextGatherer:
         }
 
     def _get_project_context(self) -> dict[str, str] | str | None:
-        data = {"project_id": self.project.id}
-        if self.project.dev_env:
-            data["dev_environment"] = str(self.project.dev_env)
-        return data
+        return yaml.safe_dump(self.project.model_dump())
 
     def _get_policy_context(self) -> dict[str, str] | str | None:
-        return str(self.policy.model_dump())  # TODO: (now) Use formatter function
+        return yaml.safe_dump(self.policy.model_dump())
 
     def _get_git_context(self) -> dict[str, str] | str | None:
         return {
@@ -116,13 +120,24 @@ class ContextGatherer:
         return self._get_file_tree()
 
     def _get_task_context(self) -> dict[str, str] | str | None:
-        return f"{self.task.id} {self.task.title}" if self.task else None
+        # return f"{self.task.id} {self.task.title}" if self.task else None
+        # return yaml.safe_dump(self.task.model_dump(mode="json")) if self.task else None
+        return (
+            {
+                "task_id": self.task.id,
+                "task_priority": self.task.priority or "",
+                "task_title": self.task.title,
+                "task_full_id": self.task.full_id,
+            }
+            if self.task
+            else None
+        )
 
     def _get_command_context(self) -> dict[str, str] | str | None:
         return self.command
 
     def _get_progress_context(self) -> dict[str, str] | str | None:
-        return self.progress.read()
+        return self.progress.read() or "(None)"  # Return non-empty string to ensure context section is not empty
 
     def _get_env_context(self) -> dict[str, str] | str | None:
         if not self.project.dev_env:
@@ -136,6 +151,42 @@ class ContextGatherer:
             return None
 
         return "\n".join(f"- {g}" for g in guidelines)
+
+    def _get_os_context(self) -> dict[str, str] | str | None:
+        system = platform.system()
+        release = platform.release()
+        version = platform.version()
+        machine = platform.machine()
+        processor = platform.processor()
+
+        os_info = f"{system} {release} ({version})"
+        arch = f"{machine} ({processor})" if processor else machine
+
+        if system == "Windows":
+            if os.environ.get("MSYSTEM"):
+                shell_info = f"Git Bash / MSYS2 ({os.environ.get('MSYSTEM')})"
+            elif os.environ.get("SHELL"):
+                shell_info = os.environ.get("SHELL", "")
+            elif "PROMPT" in os.environ:
+                shell_info = "cmd.exe"
+            else:
+                shell_info = "PowerShell"
+        elif system == "Linux":
+            if "microsoft" in release.lower() or "wsl" in release.lower():
+                shell_info = "WSL bash"
+            else:
+                shell_info = os.environ.get("SHELL", "bash")
+        elif system == "Darwin":
+            shell_info = os.environ.get("SHELL", "zsh")
+        else:
+            shell_info = os.environ.get("SHELL", "Unknown")
+        shell_info = shell_info or "Unknown"
+
+        return {
+            "os": str(os_info),
+            "arch": str(arch),
+            "shell": str(shell_info),
+        }
 
     def _get_file_tree(self) -> dict[str, str] | str | None:
         """Generate list of repo files (excluding ignored)."""

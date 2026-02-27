@@ -5,10 +5,10 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+from pydantic import BaseModel
 from rich.table import Table
 
 from cli.git import GitCLI
@@ -22,12 +22,11 @@ class TaskStatus(Enum):
     TODO = "Todo"
 
 
-@dataclass
-class Task:
+class Task(BaseModel):
     """Task."""
 
     id: str
-    priority: str | None  # P0, P1, P2
+    priority: str | None = None  # P0, P1, P2
     title: str
     depends_on: list[str]
     status: TaskStatus
@@ -218,6 +217,7 @@ def main():
     try:
         project = Project.from_file(Path(".agent/project.yaml"))
         project_id = project.id.upper()
+    # pylint: disable-next=broad-exception-caught
     except Exception:
         pass
 

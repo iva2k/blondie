@@ -326,7 +326,7 @@ class LLMRouter:
         system_prompt = skill.render_system_prompt(**kwargs)
         user_content = skill.user_content.format(**kwargs) if skill.user_content else ""
         log_title = skill.log_title.format(**kwargs) if skill.log_title else ""
-        return await self._execute_llm_task(
+        response = await self._execute_llm_task(
             operation=skill.operation,
             system_prompt=system_prompt,
             user_prompt=user_content,
@@ -337,6 +337,11 @@ class LLMRouter:
             response_schema=response_schema,
             response_format=response_format,
         )
+
+        if "Missing CONTEXT sections:" in response.content:
+            raise ValueError(f"Skill '{skill_name}' configuration error: {response.content.strip()}")
+
+        return response
 
     async def plan_task(
         self, context_gatherer: ContextGatherer, task_title: str, policy_summary: str, **kwargs: Any
@@ -351,14 +356,14 @@ class LLMRouter:
         )
 
     async def get_file_edits(
-        self, context_gatherer: ContextGatherer, task_title: str, plan: str, **kwargs: Any
+        self, context_gatherer: ContextGatherer, task_title: str, user_plan: str, **kwargs: Any
     ) -> LLMResponse:
         """Identify files to edit from plan."""
         return await self._execute_llm_skill(
             "get_file_edits",
             context_gatherer,
             task_title=task_title,
-            plan=plan,
+            user_plan=user_plan,
             **kwargs,
         )
 
