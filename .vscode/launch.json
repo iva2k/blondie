@@ -12,7 +12,35 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Blondie: Run Agent (Arg)",
+            "name": "Pytest: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${file}"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Pytest: All",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "."
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Blondie: Run Agent (_tmp/repo)",
             "type": "debugpy",
             "request": "launch",
             "module": "src.agent.loop",
