@@ -35,7 +35,7 @@ class ChatSession:
         max_tokens: int,
         log_action: str,
         log_title: str,
-        response_model: Any | None = None,
+        response_schema: Any | None = None,
         response_format: Literal["json", "yaml"] | None = None,
         tools: list[dict[str, Any]] | None = None,
     ):
@@ -49,7 +49,7 @@ class ChatSession:
         self.max_tokens = max_tokens
         self.log_action = log_action
         self.log_title = log_title
-        self.response_model = response_model
+        self.response_schema = response_schema
         self.response_format = response_format
         self.tools = tools
 
@@ -57,19 +57,19 @@ class ChatSession:
 
     async def send(
         self,
-        content: str | None = None,
-        response_model: Any | None = None,
+        prompt: str | None = None,
+        response_schema: Any | None = None,
         response_format: Literal["json", "yaml"] | None = None,
     ) -> LLMResponse:
         """Send message to LLM and get response."""
-        if content:
-            self.messages.append({"role": "user", "content": content})
+        if prompt:
+            self.messages.append({"role": "user", "content": prompt})
 
         # Defaults from session if not provided
-        use_response_model = response_model or self.response_model
+        use_response_schema = response_schema or self.response_schema
         use_response_format = response_format or self.response_format
 
-        max_retries = 3 if use_response_model else 0
+        max_retries = 3 if use_response_schema else 0
         attempts = 0
 
         while True:
@@ -91,7 +91,9 @@ class ChatSession:
             turn = sum(1 for m in self.messages if m["role"] == "user")
             log_suffix = ""
             if turn > 1 or attempts > 1:
-                log_suffix = f" (Turn {turn}" + (f" Attempt {attempts})" if attempts > 1 else ")")
+                log_suffix += f" (Turn {turn}" + (f" Attempt {attempts})" if attempts > 1 else ")")
+            if self.messages:
+                log_suffix += f": {len(self.messages)} messages"
 
             prompt_content = ""
             if self.messages:
@@ -117,7 +119,7 @@ class ChatSession:
                 return response
 
             # If no validation needed, we are done
-            if not use_response_model and not use_response_format:
+            if not use_response_schema and not use_response_format:
                 self.messages.append({"role": "assistant", "content": response.content})
                 return response
 
@@ -142,8 +144,8 @@ class ChatSession:
                 if data is not None:
                     response.parsed = data
 
-                if use_response_model and hasattr(use_response_model, "model_validate"):
-                    validated = use_response_model.model_validate(data)
+                if use_response_schema and hasattr(use_response_schema, "model_validate"):
+                    validated = use_response_schema.model_validate(data)
                     response.parsed = validated
 
                 self.messages.append({"role": "assistant", "content": response.content})
@@ -282,7 +284,7 @@ class LLMRouter:
         max_tokens: int,
         log_action: str,
         log_title: str,
-        response_model: Any | None = None,
+        response_schema: Any | None = None,
         response_format: Literal["json", "yaml"] | None = None,
     ) -> LLMResponse:
         """Execute LLM task with common logging and cost tracking."""
@@ -301,11 +303,11 @@ class LLMRouter:
             max_tokens=max_tokens,
             log_action=log_action,
             log_title=log_title,
-            response_model=response_model,
+            response_schema=response_schema,
             response_format=response_format,
         )
 
-        return await session.send(content=user_prompt)
+        return await session.send(prompt=user_prompt)
 
     async def _execute_llm_skill(
         self, skill_name: str, context_gatherer: ContextGatherer, **kwargs: Any
@@ -314,7 +316,7 @@ class LLMRouter:
         if skill_name not in self.skills:
             raise ValueError(f"Skill not found: {skill_name}")
         skill = self.skills[skill_name]
-        response_model = kwargs.pop("response_model", None) or skill.response_model
+        response_schema = kwargs.pop("response_schema", None) or skill.response_schema
         response_format = kwargs.pop("response_format", None) or skill.response_format
         kwargs = kwargs or {}
         if context_gatherer:
@@ -332,7 +334,7 @@ class LLMRouter:
             max_tokens=skill.max_tokens,
             log_action=skill_name,
             log_title=log_title,
-            response_model=response_model,
+            response_schema=response_schema,
             response_format=response_format,
         )
 
@@ -431,7 +433,7 @@ class LLMRouter:
             max_tokens=skill.max_tokens,
             log_action=skill.name,
             log_title=log_title,
-            response_model=skill.response_model,
+            response_schema=skill.response_schema,
             response_format=skill.response_format,
             tools=tools,
         )

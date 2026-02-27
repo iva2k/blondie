@@ -82,17 +82,18 @@ class Journal:
             if hasattr(response, "tokens_used"):
                 tokens = {"total_tokens": response.tokens_used}
             entry = {
-                "timestamp": datetime.datetime.now().isoformat(),
                 "type": "LLM",
-                "operation": operation,
                 "title": title,
-                "endpoint": endpoint,
+                "operation": operation,
+                "provider": provider,
                 "model": model,
+                "endpoint": endpoint,
                 "tokens": tokens,
                 "cost": cost,
-                "system_prompt": system_prompt,  # prompt[:1000] + "..." if len(prompt) > 1000 else prompt,
-                "prompt": prompt,
                 "content": content,
+                "prompt": prompt,
+                "system_prompt": system_prompt,  # prompt[:1000] + "..." if len(prompt) > 1000 else prompt,
+                "timestamp": datetime.datetime.now().isoformat(),
             }
 
             self.write_raw(f"\n=== LLM CHAT ({operation}) ===\n")
@@ -105,12 +106,12 @@ class Journal:
 
         if self.current_log_file:
             entry = {
-                "timestamp": datetime.datetime.now().isoformat(),
                 "type": "SHELL",
                 "command": command,
                 "returncode": returncode,
                 "stdout": stdout,
                 "stderr": stderr,
+                "timestamp": datetime.datetime.now().isoformat(),
             }
 
             self.write_raw(f"\n=== SHELL ({command[:50]}...) ===\n")

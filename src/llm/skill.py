@@ -45,7 +45,7 @@ class Skill:
     temperature: float = 0.1
     max_tokens: int = 2000
     context: dict[str, bool] | None = None
-    response_model: Any | None = None
+    response_schema: Any | None = None
     response_format: Literal["json", "yaml"] | None = None
     tools: list[str] | None = None
 
@@ -73,8 +73,8 @@ class Skill:
 
         body = parts[2].strip()
 
-        model_name = frontmatter.get("response_model")
-        response_model = SKILL_MODELS.get(model_name) if model_name else None
+        schema_name = frontmatter.get("response-schema")
+        response_schema = SKILL_MODELS.get(schema_name) if schema_name else None
 
         return cls(
             name=frontmatter.get("name", path.stem),
@@ -87,8 +87,8 @@ class Skill:
             temperature=frontmatter.get("temperature", 0.1),
             max_tokens=frontmatter.get("max-tokens", 2000),
             context=frontmatter.get("context", None),
-            response_model=response_model,
-            response_format=frontmatter.get("response_format", None),
+            response_schema=response_schema,
+            response_format=frontmatter.get("response-format", None),
             tools=frontmatter.get("tools", None),
         )
 

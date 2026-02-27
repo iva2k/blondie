@@ -88,8 +88,8 @@ class ToolHandler:
                 fn_name = tool["function"]["name"]
                 try:
                     args = json.loads(tool["function"]["arguments"])
-                except json.JSONDecodeError:
-                    session.add_tool_result(tool["id"], "Error: Invalid JSON arguments")
+                except json.JSONDecodeError as e:
+                    session.add_tool_result(tool["id"], f"Error: Invalid JSON arguments - {e}")
                     continue
 
                 tool_id = tool["id"]
