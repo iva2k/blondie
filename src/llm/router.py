@@ -113,14 +113,19 @@ class ChatSession:
             if turn > 1 or attempts > 1:
                 log_suffix = f" (Turn {turn}" + (f" Attempt {attempts})" if attempts > 1 else ")")
 
+            prompt_content = ""
+            if self.messages:
+                prompt_content = str(self.messages[-1].get("content", ""))
+
             self.journal.log_chat(
                 self.log_action,
                 self.provider_name,
-                self.log_title + log_suffix,
+                prompt_content,
                 response,
                 system_prompt=self.system_prompt,
                 model=self.client.model,
                 endpoint=self.client.base_url,
+                title=self.log_title + log_suffix,
             )
 
             # If tool calls, append to history and return (caller handles execution)

@@ -67,6 +67,7 @@ class Journal:
         system_prompt: str | None = None,
         model: str | None = None,
         endpoint: str | None = None,
+        title: str | None = None,
     ) -> None:
         """Log LLM interaction details."""
         if self.current_log_file:
@@ -84,6 +85,7 @@ class Journal:
                 "timestamp": datetime.datetime.now().isoformat(),
                 "type": "LLM",
                 "operation": operation,
+                "title": title,
                 "endpoint": endpoint,
                 "model": model,
                 "tokens": tokens,
