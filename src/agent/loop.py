@@ -154,11 +154,21 @@ class BlondieAgent:
                 self.journal.print("🔧 Triggering LLM debug...")
                 self.context_gatherer.add_task(task)
 
+                # Heuristic to improve agent success
+                error_log = f"STDOUT:\n{test_result.stdout}\nSTDERR:\n{test_result.stderr}"
+                debug_skill = "debug_error"  # Default skill
+                if "access violation" in error_log or "segmentation fault" in error_log:
+                    # TODO: (when needed) debug_skill = "debug_native_crash"
+                    debug_skill = "debug_error"
+                elif "ModuleNotFoundError" in error_log:
+                    # TODO: (when needed) debug_skill = "debug_python_imports"
+                    debug_skill = "debug_error"
+
                 session = self.llm.start_chat(
-                    "debug_error",
+                    debug_skill,
                     self.context_gatherer,
                     task_title=task.title,
-                    error_log=f"STDOUT:\n{test_result.stdout}\nSTDERR:\n{test_result.stderr}",
+                    error_log=error_log,
                 )
                 debug_response = await session.send()
                 debug_response = await self.tool_handler.run_loop(session, debug_response)
