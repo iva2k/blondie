@@ -66,10 +66,10 @@ class ChatSession:
             self.messages.append({"role": "user", "content": content})
 
         # Defaults from session if not provided
-        response_model = response_model or self.response_model
-        response_format = response_format or self.response_format
+        use_response_model = response_model or self.response_model
+        use_response_format = response_format or self.response_format
 
-        max_retries = 3 if response_model else 0
+        max_retries = 3 if use_response_model else 0
         attempts = 0
 
         while True:
@@ -117,7 +117,7 @@ class ChatSession:
                 return response
 
             # If no validation needed, we are done
-            if not response_model and not response_format:
+            if not use_response_model and not use_response_format:
                 self.messages.append({"role": "assistant", "content": response.content})
                 return response
 
@@ -134,16 +134,16 @@ class ChatSession:
                     content_str = "\n".join(lines).strip()
 
                 data = None
-                if response_format == "json":
+                if use_response_format == "json":
                     data = json.loads(content_str)
-                elif response_format == "yaml":
+                elif use_response_format == "yaml":
                     data = yaml.safe_load(content_str)
 
                 if data is not None:
                     response.parsed = data
 
-                if response_model and hasattr(response_model, "model_validate"):
-                    validated = response_model.model_validate(data)
+                if use_response_model and hasattr(use_response_model, "model_validate"):
+                    validated = use_response_model.model_validate(data)
                     response.parsed = validated
 
                 self.messages.append({"role": "assistant", "content": response.content})
@@ -161,7 +161,7 @@ class ChatSession:
                 self.messages.append(
                     {
                         "role": "user",
-                        "content": f"Error parsing response: {e}\nPlease return valid {str(response_format).upper()} matching the schema.",
+                        "content": f"Error parsing response: {e}\nPlease return valid {str(use_response_format).upper()} matching the schema.",
                     }
                 )
 
