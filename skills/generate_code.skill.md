@@ -8,6 +8,7 @@ max-tokens: 8000
 user-content: "FILENAME: {filename}\nINSTRUCTION: {instruction}\nEXISTING:\n{existing_content}\n"
 log-title: "File: {filename}\nInstruction: {instruction}"
 context:
+  env: True
   task: True
   plan: True
   files: True

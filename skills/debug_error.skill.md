@@ -8,6 +8,7 @@ max-tokens: 1500
 user-content: "ERROR:\n{error_log}"
 log-title: "Error: {error_log}"
 context:
+  env: True
   project: True
   policy: True
   files: True

@@ -8,6 +8,7 @@ max-tokens: 1000
 user-content: "TASK: {task_title}\nPLAN:\n{plan}"
 log-title: "Task: {task_title}"
 context:
+  env: True
   task: True
   plan: True
   files: True

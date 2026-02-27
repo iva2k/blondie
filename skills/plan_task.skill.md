@@ -7,6 +7,7 @@ temperature: 0.1
 max-tokens: 2000
 log-title: "Task: {task_title}"
 context:
+  env: True
   policy: True
   project: True
   task: True

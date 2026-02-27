@@ -64,6 +64,7 @@ class ContextGatherer:
             "task": self._get_task_context,
             "command": self._get_command_context,
             "progress": self._get_progress_context,
+            "env": self._get_env_context,
         }
 
         context_parts: dict[str, str] = {}
@@ -122,6 +123,19 @@ class ContextGatherer:
 
     def _get_progress_context(self) -> dict[str, str] | str | None:
         return self.progress.read()
+
+    def _get_env_context(self) -> dict[str, str] | str | None:
+        if not self.project.dev_env:
+            return None
+
+        guidelines = getattr(self.project.dev_env, "guidelines", None)
+        if guidelines is None and isinstance(self.project.dev_env, dict):
+            guidelines = self.project.dev_env.get("guidelines")
+
+        if not guidelines:
+            return None
+
+        return "\n".join(f"- {g}" for g in guidelines)
 
     def _get_file_tree(self) -> dict[str, str] | str | None:
         """Generate list of repo files (excluding ignored)."""
