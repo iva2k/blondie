@@ -17,27 +17,7 @@ from agent.policy import Policy
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
 from llm.journal import Journal
 from llm.skill import Skill
-
-TOOL_DEFINITIONS = {
-    "run_shell": {
-        "name": "run_shell",
-        "description": "Execute a shell command on the host machine. Use for exploration (ls, grep, find) or execution.",
-        "parameters": {
-            "type": "object",
-            "properties": {"command": {"type": "string", "description": "The shell command to execute."}},
-            "required": ["command"],
-        },
-    },
-    "read_file": {
-        "name": "read_file",
-        "description": "Read the contents of a file.",
-        "parameters": {
-            "type": "object",
-            "properties": {"path": {"type": "string", "description": "Path to the file relative to repo root."}},
-            "required": ["path"],
-        },
-    },
-}
+from llm.tooled import TOOL_DEFINITIONS
 
 
 class ChatSession:

@@ -14,6 +14,9 @@ context:
   task: True
   command: True
   progress: True
+tools:
+  - run_shell
+  - read_file
 ---
 You are an autonomous debugging assistant.
 

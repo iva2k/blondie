@@ -3,7 +3,6 @@
 """Blondie main agent loop."""
 
 import asyncio
-import json
 import shutil
 from pathlib import Path
 
@@ -19,8 +18,7 @@ from agent.tasks import Task, TasksManager
 from cli import GitCLI
 from lib.gitignore import GitIgnore
 from llm import Journal, LLMRouter
-from llm.client import LLMResponse
-from llm.router import ChatSession
+from llm.tooled import ToolHandler
 
 
 class BlondieAgent:
@@ -52,6 +50,7 @@ class BlondieAgent:
             self.progress,
         )
         self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal)
+        self.tool_handler = ToolHandler(self.repo_path, self.project, self.exec, self.journal, self.progress)
 
     def pick_task(self) -> Task | None:
         """Pick next task to run. Claims and starts the task."""
@@ -126,7 +125,7 @@ class BlondieAgent:
                 "plan_task", self.context_gatherer, task_title=task.title, policy_summary=str(self.policy.model_dump())
             )
             plan_response = await session.send()
-            plan_response = await self._handle_tool_loop(session, plan_response)
+            plan_response = await self.tool_handler.run_loop(session, plan_response)
             plan = plan_response.content
 
             # self.journal.print(f"📋 [dim]Plan:[/dim]\n{plan}", truncate=500)
@@ -154,9 +153,16 @@ class BlondieAgent:
 
                 self.journal.print("🔧 Triggering LLM debug...")
                 self.context_gatherer.add_task(task)
-                debug_response = await self.llm.debug_error(
-                    self.context_gatherer, task.title, f"STDOUT:\n{test_result.stdout}\nSTDERR:\n{test_result.stderr}"
+
+                session = self.llm.start_chat(
+                    "debug_error",
+                    self.context_gatherer,
+                    task_title=task.title,
+                    error_log=f"STDOUT:\n{test_result.stdout}\nSTDERR:\n{test_result.stderr}",
                 )
+                debug_response = await session.send()
+                debug_response = await self.tool_handler.run_loop(session, debug_response)
+
                 fix_plan = debug_response.content
                 self.journal.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan}", truncate=500)
 
@@ -249,6 +255,7 @@ class BlondieAgent:
                 if not isinstance(edits, list):
                     self.journal.print(f"❌ Expected list of edits, got {type(edits)}")
                     return False
+            # pylint: disable-next=broad-exception-caught
             except Exception as e:
                 self.journal.print(f"❌ Failed to parse file edits: {e}")
                 return False
@@ -294,9 +301,16 @@ class BlondieAgent:
                     self.context_gatherer.add_task(task)
                     self.context_gatherer.add_command(command)
                     # TODO: (now) Ponder on splitting debug_error() into debug_test_error() and debug_shell_error() with specialization
-                    debug_response = await self.llm.debug_error(
-                        self.context_gatherer, task.title, f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+
+                    session = self.llm.start_chat(
+                        "debug_error",
+                        self.context_gatherer,
+                        task_title=task.title,
+                        error_log=f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}",
                     )
+                    debug_response = await session.send()
+                    debug_response = await self.tool_handler.run_loop(session, debug_response)
+
                     fix_plan = debug_response.content
                     self.journal.print(f"📋 [dim]Shell Fix Plan:[/dim]\n{fix_plan}", truncate=500)
 
@@ -416,87 +430,6 @@ class BlondieAgent:
             self.progress.add_action(action.upper(), path_str + f" # {instruction}")
 
         return True
-
-    async def _handle_tool_loop(self, session: ChatSession, initial_response: LLMResponse) -> LLMResponse:
-        """Handle interactive tool execution loop."""
-        response = initial_response
-        max_cycles = 15
-
-        for _ in range(max_cycles):
-            if not response.tool_calls:
-                break
-
-            self.journal.print(f"🛠️  Processing {len(response.tool_calls)} tool calls...")
-
-            for tool in response.tool_calls:
-                fn_name = tool["function"]["name"]
-                try:
-                    args = json.loads(tool["function"]["arguments"])
-                except json.JSONDecodeError:
-                    session.add_tool_result(tool["id"], "Error: Invalid JSON arguments")
-                    continue
-
-                tool_id = tool["id"]
-                output = ""
-
-                self.journal.print(f"🔧 Executing {fn_name}: {args}")
-
-                try:
-                    if fn_name == "run_shell":
-                        command = args.get("command")
-                        if not command:
-                            output = "Error: Missing command argument"
-                        else:
-                            # Heuristic: map install commands to 'add-package' gate
-                            gate = (
-                                "add-package"
-                                if any(x in command for x in ["install", "add", "npm", "pip", "poetry"])
-                                else "shell"
-                            )
-                            # Use executor with high timeout for exploration
-                            res = self.exec.run(command, gate=gate, timeout=120)
-                            output = f"Exit Code: {res.returncode}\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
-                            status = "SUCCESS" if res.returncode == 0 else f"FAILED RC:{res.returncode}"
-                            self.progress.add_action("SHELL", command, status)
-
-                    elif fn_name == "read_file":
-                        path_str = args.get("path")
-                        if not path_str:
-                            output = "Error: Missing path argument"
-                        else:
-                            full_path = (self.repo_path / path_str).resolve()
-                            # Security check: ensure inside repo
-                            if not full_path.is_relative_to(self.repo_path.resolve()):
-                                output = f"Error: Access denied. Path {path_str} is outside repository."
-                                self.progress.add_action("READ", path_str, "FAILED: Access Denied")
-                            elif (
-                                full_path.relative_to(self.repo_path.resolve()).as_posix()
-                                in self.project.protected_files
-                            ):
-                                output = f"Error: Access denied. File {path_str} is protected."
-                                self.progress.add_action("READ", path_str, "FAILED: Protected File")
-                            elif not full_path.exists():
-                                output = f"Error: File {path_str} not found."
-                                self.progress.add_action("READ", path_str, "FAILED: Not Found")
-                            elif full_path.is_dir():
-                                output = f"Error: {path_str} is a directory."
-                                self.progress.add_action("READ", path_str, "FAILED: Is Directory")
-                            else:
-                                output = full_path.read_text(encoding="utf-8")
-                                self.progress.add_action("READ", path_str, "SUCCESS")
-                    else:
-                        output = f"Error: Unknown tool '{fn_name}'"
-
-                except Exception as e:
-                    output = f"Error executing tool: {e}"
-                    self.progress.add_action("TOOL_ERROR", fn_name, f"FAILED: {e}")
-
-                session.add_tool_result(tool_id, output)
-
-            # Get next response from LLM
-            response = await session.send()
-
-        return response
 
     async def run_forever(self) -> None:
         """Run continuous task loop."""

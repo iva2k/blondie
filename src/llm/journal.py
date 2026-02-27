@@ -130,5 +130,6 @@ class Journal:
             try:
                 with open(self.current_log_file, "a", encoding="utf-8") as f:
                     f.write(text)
+            # pylint: disable-next=broad-exception-caught
             except Exception as e:
                 self.console.print(f"[red]Journal write failed: {e}[/red]")
