@@ -469,7 +469,10 @@ class BlondieAgent:
                             if not full_path.is_relative_to(self.repo_path.resolve()):
                                 output = f"Error: Access denied. Path {path_str} is outside repository."
                                 self.progress.add_action("READ", path_str, "FAILED: Access Denied")
-                            elif full_path.relative_to(self.repo_path.resolve()).as_posix() in self.project.protected_files:
+                            elif (
+                                full_path.relative_to(self.repo_path.resolve()).as_posix()
+                                in self.project.protected_files
+                            ):
                                 output = f"Error: Access denied. File {path_str} is protected."
                                 self.progress.add_action("READ", path_str, "FAILED: Protected File")
                             elif not full_path.exists():
