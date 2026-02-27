@@ -37,6 +37,22 @@ TOOL_DEFINITIONS = {
             "required": ["path"],
         },
     },
+    "find_package": {
+        "name": "find_package",
+        "description": "Find available versions for a package. Supported ecosystems: python (pypi), node (npm).",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "package_name": {"type": "string", "description": "Name of the package."},
+                "ecosystem": {
+                    "type": "string",
+                    "enum": ["python", "node"],
+                    "description": "The ecosystem to search in.",
+                },
+            },
+            "required": ["package_name", "ecosystem"],
+        },
+    },
 }
 
 
@@ -124,6 +140,29 @@ class ToolHandler:
                             else:
                                 output = full_path.read_text(encoding="utf-8")
                                 self.progress.add_action("READ", path_str, "SUCCESS")
+
+                    elif fn_name == "find_package":
+                        pkg = args.get("package_name")
+                        eco = args.get("ecosystem")
+                        if not pkg or not eco:
+                            output = "Error: Missing package_name or ecosystem"
+                        else:
+                            cmd = ""
+                            if eco == "python":
+                                cmd = f"pip index versions {pkg}"
+                            elif eco == "node":
+                                cmd = f"npm view {pkg} versions"
+
+                            if cmd:
+                                res = self.executor.run(cmd, gate="shell", timeout=30)
+                                if res.returncode == 0:
+                                    output = res.stdout[:2000] + ("..." if len(res.stdout) > 2000 else "")
+                                    self.progress.add_action("FIND_PKG", f"{eco}:{pkg}", "SUCCESS")
+                                else:
+                                    output = f"Error finding package: {res.stderr or res.stdout}"
+                                    self.progress.add_action("FIND_PKG", f"{eco}:{pkg}", "FAILED")
+                            else:
+                                output = f"Error: Unsupported ecosystem '{eco}'"
                     else:
                         output = f"Error: Unknown tool '{fn_name}'"
 
