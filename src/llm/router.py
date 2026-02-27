@@ -95,7 +95,9 @@ class ChatSession:
 
             prompt_content = ""
             if self.messages:
-                prompt_content = str(self.messages[-1].get("content", ""))
+                last_msg = self.messages[-1]
+                if last_msg.get("role") == "user":
+                    prompt_content = str(last_msg.get("content", ""))
 
             self.journal.log_chat(
                 self.log_action,
