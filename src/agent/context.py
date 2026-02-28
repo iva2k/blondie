@@ -201,18 +201,19 @@ class ContextGatherer:
             except ValueError:
                 continue
 
-            if rel_path.as_posix() in self.project.protected_files:
-                continue
-
             if self.gitignore.is_ignored(path):
                 continue
 
             if any(
-                part.startswith(".") and part not in [".agent", ".github", ".gitignore", ".dockerignore"]
+                part.startswith(".") and part not in [".git", ".github", ".dockerignore"]
                 for part in rel_path.parts
             ):
                 continue
 
-            files.append(str(rel_path))
+            protected = ""
+            if rel_path.as_posix() in self.project.protected_files:
+                protected = " (* protected)"
+
+            files.append(str(rel_path) + protected)
 
         return "\n".join(files)

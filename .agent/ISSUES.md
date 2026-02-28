@@ -10,4 +10,9 @@
 
 - [ ] LLM still writes output instructions directed at human user with step-by-step like "open file, find line..., edit to include...", and occasional placeholders. Perhaps an iterative discovery skill can be used for LLM to trigger with command.
 
+- [ ] LLM misses that dev.yaml file exists in get_file_edits. It is NOT given in files list, but ENV section is given..
+
 - [ ] Debugging agent operation is quite tedious - copious logs, a lot of noise. A log browser app would be very handy.
+
+- [ ] Once there is shell, agent could escape. E.g. debug_error skill produced:  Executing run_shell: {'command': 'echo \'\nname = "Calculator"\nversion = "0.1.0"\ndescription = ""\nauthors = ["Ilya <iva2k@yahoo.com>"]\nreadme = "README.md"\n\n\npython = "^3.11"\npytest = "^7.0"\nruff = "^0.0"\nmypy = "^0.0"\n\n\ninclude = [{ include = "src", from = "src"
+}]\n\n\nrequires = ["poetry-core"]\nbuild-backend = "poetry.core.masonry.api"\' > pyproject.toml'}

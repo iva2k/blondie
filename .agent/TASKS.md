@@ -59,3 +59,5 @@ Status: id | priority | title | depends_on
 - [ ] 036 | P5 | Use grep to allow LLM finding all relevant source files |
 - [ ] 038 | P5 | Allow multirepo - limit agent to a project subfolder inside a bigger repo |
 - [ ] 041 | P5 | Agent should communicate with external world: email, slack, twitter. Events: task queue stuck (all tasks blocked, can't finish blockers), Deploy triggered. Carefull as swarm will flood the channels. |
+- [ ] 049 | P5 | add number of tool requests in journal.log_chat
+- [ ] 050 | P5 | Measure time of shell commands (both tools and yaml), show in journal
