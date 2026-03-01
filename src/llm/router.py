@@ -163,7 +163,8 @@ class ChatSession:
                 self.messages.append(
                     {
                         "role": "user",
-                        "content": f"Error parsing response: {e}\nPlease return valid {str(use_response_format).upper()} matching the schema.",
+                        "content": f"Error parsing response: {e}\n"
+                        f"Please return valid {str(use_response_format).upper()} matching the schema.",
                     }
                 )
 

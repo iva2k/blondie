@@ -6,11 +6,13 @@
 
 - [ ] runtime environment: running agent under conda clashes with agent's desire to use specific python version, and trying to resolve it installing a new version that never runs due to conda env hardcoded into bash environment. For other runtimes (npm, pnpm) there are similar problems.
 
+- [ ] Python env is 3.11, poetry is installed under mingw64 and it hitches a different python, lower version. Poetry install fails due to python version mismatch to one specified in `pyproject.toml`.
+
 - [x] source code discovery - we need to let agent decide which source files to add to the context for e.g. planning and debug stages (it only gets full file source in code editing stage). It needs to call grep to find files, it needs to search the internet.
 
 - [ ] LLM still writes output instructions directed at human user with step-by-step like "open file, find line..., edit to include...", and occasional placeholders. Perhaps an iterative discovery skill can be used for LLM to trigger with command.
 
-- [ ] LLM misses that dev.yaml file exists in get_file_edits. It is NOT given in files list, but ENV section is given..
+- [ ] LLM misses that dev.yaml file exists in get_file_edits. It is NOT given in files list, but PROJECT section mentions it iin protected files.
 
 - [ ] Debugging agent operation is quite tedious - copious logs, a lot of noise. A log browser app would be very handy.
 

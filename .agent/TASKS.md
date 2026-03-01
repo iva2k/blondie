@@ -61,3 +61,6 @@ Status: id | priority | title | depends_on
 - [ ] 041 | P5 | Agent should communicate with external world: email, slack, twitter. Events: task queue stuck (all tasks blocked, can't finish blockers), Deploy triggered. Carefull as swarm will flood the channels. |
 - [ ] 049 | P5 | add number of tool requests in journal.log_chat
 - [ ] 050 | P5 | Measure time of shell commands (both tools and yaml), show in journal
+- [ ] 051 | P5 | Script to query available LLM models from API, save to file. Use the list in client.py.
+- [ ] 052 | P5 | Script to query LLM models cost (scrape vendor webpage if no API), save to file. Use the costs in client.py and router.py to track costs.
+- [ ] 053 | P1 | Add to SKILL plan_task after "Initialize project" "... and install packages" (so that section is meaningfull for more tasks)

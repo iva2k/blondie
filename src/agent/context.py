@@ -90,7 +90,7 @@ class ContextGatherer:
                             # else:
                             #     full_context.append(f"{header}: {v}")
                             # Use Markdown-style headings:
-                            full_context.append(f"### {header}\n{v}")
+                            full_context.append(f"\n### {header}\n\n{v}")
 
         # Reset context transient data
         self.command = None
@@ -142,14 +142,11 @@ class ContextGatherer:
     def _get_env_context(self) -> dict[str, str] | str | None:
         if not self.project.dev_env:
             return None
-
-        guidelines = getattr(self.project.dev_env, "guidelines", None)
-        if guidelines is None and isinstance(self.project.dev_env, dict):
-            guidelines = self.project.dev_env.get("guidelines")
-
+        # TODO: (when needed) Implement whole dev_env, including environment
+        # return yaml.safe_dump(self.project.dev_env.model_dump())
+        guidelines = self.project.dev_env.get("guidelines", None) if self.project.dev_env else []
         if not guidelines:
             return None
-
         return "\n".join(f"- {g}" for g in guidelines)
 
     def _get_os_context(self) -> dict[str, str] | str | None:
@@ -205,8 +202,7 @@ class ContextGatherer:
                 continue
 
             if any(
-                part.startswith(".") and part not in [".git", ".github", ".dockerignore"]
-                for part in rel_path.parts
+                part.startswith(".") and part not in [".git", ".github", ".dockerignore"] for part in rel_path.parts
             ):
                 continue
 
@@ -214,6 +210,6 @@ class ContextGatherer:
             if rel_path.as_posix() in self.project.protected_files:
                 protected = " (* protected)"
 
-            files.append(str(rel_path) + protected)
+            files.append(str(rel_path.as_posix()) + protected)
 
         return "\n".join(files)

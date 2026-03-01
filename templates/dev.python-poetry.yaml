@@ -6,8 +6,16 @@ environment:
   formatter: ruff
   types: mypy
   scripts: poe
+  unit_test: pytest
+  gui: tkinter
 guidelines:
   - "Use poetry for dependency management"
   - "Use pytest for testing"
   - "Follow PEP 8 via ruff"
   - "Use mypy for type checking"
+  - "Run `poetry init --no-interaction` for project scaffolding"
+  - "Use an `src` layout."
+  - "Imports should be direct (e.g. `from mymodule import ...`) and NOT prefixed with `src.`."
+  - "Guard global executable code with `if __name__ == '__main__':` to prevent crashes during test collection (especially for GUI apps)."
+  - "Ensure shell commands are compatible with the current **OS**/**ARCH**/**SHELL**."
+  - "Ensure all code is compatible with Windows/Linux/MacOS"

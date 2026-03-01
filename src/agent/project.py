@@ -52,5 +52,5 @@ class Project(BaseModel):
             except Exception as e:
                 journal = journal or Journal()
                 journal.print(f"❌ Failed to load dev_config {dev_path}: {e}")
-
+        del project.dev_config  # Do not show it after loading
         return project
