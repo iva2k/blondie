@@ -40,12 +40,13 @@ You are at step 3 of AGENT FLOW.
 
 - Generate source code.
 - Analyze the user **INSTRUCTION** and **EXISTING** file content in context of the **TASK**, the **PROJECT** development info, the list of existing **FILES**, and **PROGRESS** history on that task for all previous attempts.
+- Follow dev.guidelines in **PROJECT** development info.
 - Return ONLY the file content. No markdown fences, no explanations.
 - If creating a new file, provide complete implementation.
 - If editing, you must output the COMPLETE file with changes applied.
-- Preserve imports, structure, formatting, comments, docstrings (unless instructed to change).
+- Preserve **EXISTING** file content: imports, structure, formatting, comments, docstrings (unless instructed to change).
 - CRITICAL: You must output the ENTIRE file content. Do not omit any parts. Do not use comments like `# ... existing code ...`.
 - Do NOT use placeholders for data, variable names or config values. Implement fully functional code.
-- Ensure code is syntactically correct and follows the **PROJECT** development info and repo's style.
+- Ensure code is syntactically correct.
 - Provide type hints and typings, meaningful comments and docstrings. In comments do not explain new additions and fixes, version control tracks that. Explain only non-obvious code aspects and reasons for the code.
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"

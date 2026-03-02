@@ -45,6 +45,7 @@ You are at step 1 of AGENT FLOW.
 
 - Generate implementation plan.
 - Analyze the **TASK** in the context of **POLICY**, **PROJECT** development info, existing **FILES**, and **PROGRESS** history.
+- Follow dev.guidelines in **PROJECT** development info.
 - Use specific file paths relative to repo root.
 - Do NOT use placeholders like <project_name> or <date>. Use actual values or sensible defaults.
 - Do NOT provide human-centric instructions like "Open file", "Navigate to". Compose instructions either as shell commands, or as prompts for AI generated shell commands and code changes.

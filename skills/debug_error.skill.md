@@ -48,6 +48,7 @@ You are at step 5 of AGENT FLOW.
 
 - Generate the fix plan.
 - Analyze the **ERROR** log in context of the **COMMAND**, **OS**/**ARCH**/**SHELL** information, **POLICY**, **PROJECT** development info, **FILES** list, **TASK** information and **PROGRESS** history.
+- Follow dev.guidelines in **PROJECT** development info.
 - Focus on specific files to edit.
 - Use specific file paths relative to repo root.
 - Do NOT use placeholders like <project_name> or <date>. Use actual values or sensible defaults.

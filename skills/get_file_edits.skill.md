@@ -51,6 +51,7 @@ Return ONLY a JSON object matching the schema.
 
 - Generate implementation actions plan.
 - Analyze the **USER_PLAN** in context of **OS**/**ARCH**/**SHELL** info, the **TASK**, **POLICY**, **PROJECT** development info, existing **FILES**, and **PROGRESS** history.
+- Follow dev.guidelines in **PROJECT** development info.
 - Use specific file paths relative to repo root. Check **FILES** for existing file structure.
 - Do NOT use placeholders like <project_name> or <date>. Use actual values or sensible defaults.
 - Specify actions for all sections and steps in the **USER_PLAN**, in the given order. Only change order to maintain specific dependencies, like project init should be done before editing the files that project init generates.
