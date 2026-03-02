@@ -168,6 +168,20 @@ If you use VS Code alongside FAR, you want to open files from the FAR command li
 
 Inside FAR, you just point the cursor at a file and type `code` Space, then hit `<Ctrl-Enter>` (to paste the filename) and hit Enter to launch VS Code - it will open the file.
 
+One thing that was not working - `conda init --all` is supposed to add hooks to all bash variants, but it was missing the one in MSYS2 `C:\msys64\home\$USER$\.bash_profile`. Make sure to copy conda hooks to .bash_profile in all locations.
+
+```bash
+...
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+if [ -f '/c/ProgramData/miniconda3/Scripts/conda.exe' ]; then
+    eval "$('/c/ProgramData/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+fi
+# <<< conda initialize <<<
+```
+
+The remaining small issue is that conda.exe hooks `conda ...` command, but shorthand `activate ...` and `deactivate ...` commands are not configured and won't work. Just use full `conda activate ...` and `conda deactivate ...` instead.
+
 ## The Workflow
 
 1. **Launch ConEmu.** It boots FAR instantly.
