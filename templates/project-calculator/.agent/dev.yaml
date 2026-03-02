@@ -5,17 +5,24 @@ environment:
   linter: ruff
   formatter: ruff
   types: mypy
-  scripts: poe
+  scripts: poethepoet
   unit_test: pytest
   gui: tkinter
+  env: conda
 guidelines:
   - "Use poetry for dependency management"
-  - "Use pytest for testing"
-  - "Follow PEP 8 via ruff"
-  - "Use mypy for type checking"
   - "Run `poetry init --no-interaction` for project scaffolding"
+  - "Add `poethepoet` as a dev dependency (`poetry add --group dev poethepoet`)."
+  - "Configure poetry to use the active Conda environment: `poetry config virtualenvs.create false --local`."
+  - "Ensure `pyproject.toml` python version matches the Conda environment."
+  - "Use poe (poethepoet) for scripts."
   - "Use an `src` layout."
+  - "Follow PEP 8 via ruff"
+  - "Use typing for type hints"
+  - "Use mypy for type checking"
+  - "Use pytest for testing"
   - "Imports should be direct (e.g. `from mymodule import ...`) and NOT prefixed with `src.`."
-  - "Guard global executable code with `if __name__ == '__main__':` to prevent crashes during test collection (especially for GUI apps)."
+  - "Guard global executable code in a main() function with `if __name__ == '__main__': main()` to prevent crashes during test collection (especially for GUI apps)."
+  - "Use `#!/usr/bin/env python3` shebang in files with main() function."
   - "Ensure shell commands are compatible with the current **OS**/**ARCH**/**SHELL**."
   - "Ensure all code is compatible with Windows/Linux/MacOS"
