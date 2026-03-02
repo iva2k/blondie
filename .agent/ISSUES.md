@@ -4,7 +4,8 @@
 
 - [x] It would be great to make LLM output (in the current LLM API wrapper) reliably multi-variable, e.g. have formatted object containing file source and other variables, like deciding on next step, or ending iterations in current chat. Perhaps a schema to validate and use ongoing chat to let it retry? This ability supports resolving other issues.
 
-- [ ] runtime environment: running agent under conda clashes with agent's desire to use specific python version, and trying to resolve it installing a new version that never runs due to conda env hardcoded into bash environment. For other runtimes (npm, pnpm) there are similar problems.
+- [x] runtime environment: running agent under conda clashes with agent's desire to use specific python version, and trying to resolve it installing a new version that never runs due to conda env hardcoded into bash environment. For other runtimes (npm, pnpm) there are similar problems.
+  - conda env updated to be dynamic (was combo of FAR Manager, hooks not installing in all relevant .bash_profile files)
 
 - [ ] Python env is 3.11, poetry is installed under mingw64 and it hitches a different python, lower version. Poetry install fails due to python version mismatch to one specified in `pyproject.toml`.
 
@@ -12,7 +13,7 @@
 
 - [ ] LLM still writes output instructions directed at human user with step-by-step like "open file, find line..., edit to include...", and occasional placeholders. Perhaps an iterative discovery skill can be used for LLM to trigger with command.
 
-- [ ] LLM misses that dev.yaml file exists in get_file_edits. It is NOT given in files list, but PROJECT section mentions it iin protected files.
+- [ ] LLM misses that dev.yaml file exists in get_file_edits. It is NOT given in files list, but PROJECT section mentions it in protected files.
 
 - [ ] Debugging agent operation is quite tedious - copious logs, a lot of noise. A log browser app would be very handy.
 

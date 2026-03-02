@@ -19,3 +19,4 @@ protected_files:
   - .agent/project.yaml
   - .agent/secrets.env.yaml
   - .agent/dev.yaml
+  - .venv
