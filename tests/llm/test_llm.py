@@ -3,7 +3,7 @@
 """Basic LLM router tests."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import yaml
@@ -37,7 +37,8 @@ def test_router_initialization(mock_secrets, mock_policy, tmp_path: Path):
     config_data = {"providers": {"openai": {"api_type": "openai", "default_model": "gpt-4o-mini"}}}
     config_file.write_text(yaml.dump(config_data), encoding="utf-8")
 
-    router = LLMRouter(secrets_file, config_file, mock_policy)
+    with patch("httpx.AsyncClient"):
+        router = LLMRouter(secrets_file, config_file, mock_policy)
 
     assert "openai" in router.clients
     assert router.clients["openai"].model == "gpt-4o-mini"
@@ -56,13 +57,14 @@ async def test_plan_task(mock_policy, tmp_path: Path):
     }
     config_file.write_text(yaml.dump(config_data), encoding="utf-8")
 
-    with patch("httpx.AsyncClient.post") as mock_post:
+    with patch("httpx.AsyncClient") as mock_client:
+        mock_instance = mock_client.return_value
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "choices": [{"message": {"content": "Plan: step 1"}}],
             "usage": {"total_tokens": 100},
         }
-        mock_post.return_value = mock_response
+        mock_instance.post = AsyncMock(return_value=mock_response)
 
         router = LLMRouter(secrets_file, config_file, mock_policy)
         context_gatherer = MagicMock(spec=ContextGatherer)
