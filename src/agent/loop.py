@@ -4,6 +4,7 @@
 
 import asyncio
 import shutil
+import traceback
 from pathlib import Path
 
 import click
@@ -219,7 +220,8 @@ class BlondieAgent:
 
         # pylint: disable-next=broad-exception-caught
         except Exception as e:
-            self.journal.print(f"💥 Task failed: {e}")
+            tb = traceback.format_exc()
+            self.journal.print(f"💥 Task failed: {e}\n{tb}")
             self._save_wip(branch_name, f"WIP: Crash recovery - {e}")
             self.journal.print("Leaving task In Progress for review...")
             return False
@@ -474,7 +476,8 @@ class BlondieAgent:
                 break
             # pylint: disable-next=broad-exception-caught
             except Exception as e:
-                self.journal.print(f"💥 Unexpected error: {e}")
+                tb = traceback.format_exc()
+                self.journal.print(f"💥 Unexpected error: {e}\n{tb}")
                 await asyncio.sleep(5)  # Brief pause on error
 
     async def run(self) -> None:
