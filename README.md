@@ -11,27 +11,50 @@ Helpful AI coding agent
 ```text
 blondie/
 ├── .agent/                   # Blondie's own config (git-ignored secrets)
-│   ├── POLICY.yaml           # Autonomy rules  
+│   ├── dev.yaml              # Development environment configuration
+│   ├── ISSUES.md             # Issues
+│   ├── llm_config.yaml       # LLM Models configuration
+│   ├── POLICY.yaml           # Autonomy rules
 │   ├── project.yaml          # Self-description
 │   ├── secrets.env.yaml      # LLM keys, tokens (mounted externally)
-│   └── TASKS.md              # Bootstrap backlog
+│   ├── SPEC.md               # Project high-level specification
+│   └── TASKS.md              # Project backlog tasks
+├── blog/                     # Blog articles
+├── docker/
+│   ├── Dockerfile            # Python 3.12-slim
+│   ├── docker-entrypoint.sh  # Main runner `blondie run`
+│   └── systemd-install.sh    # Binary deploy helper
+├── docs/                     # Blondie self-docs
+│   ├── DEPLOY.md             # Deployment instructions
+│   ├── DEVELOP.md            # Development instructions
+│   └── ARCHITECTURE.md       # Module diagram
+├── scripts/                  # Dev scripts and utils
+├── skills/                   # Core SKILL files
 ├── src/                      # Core runtime
 │   ├── agent/                # Main runtime
+│   │   ├── context.py        # LLM Context gatherer
 │   │   ├── executor.py       # Shell/git/cli wrapper
+│   │   ├── llm_config.py     # llm_config.yaml parser
 │   │   ├── loop.py           # Main task loop
 │   │   ├── policy.py         # POLICY.yaml parser
-│   │   ├── project.py        # project.yaml parser
-│   │   └── tasks.py          # TASKS.md parser
+│   │   ├── progress.py       # progress.txt keeper
+│   │   ├── project.py        # project.yaml parser (also loads dev.yaml)
+│   │   ├── router.py         # LLM router - OpenAI/Anthropic/etc.
+│   │   ├── tasks.py          # TASKS.md parser
+│   │   └── tooled.py         # Tooled LLM calls
+│   ├── cli/                  # CLI Wrappers (no MCP servers)
+│   │   ├── vercel.py         # vercel --prod wrapper
+│   │   ├── netlify.py        # netlify deploy wrapper
+│   │   └── git.py            # Git automation
+│   ├── lib/                  # Utilities
+│   │   └── gitignore.py      # .gitignore file parser
 │   ├── llm/                  # Model routing
-│   │   ├── router.py         # OpenAI/Anthropic/generic
-│   │   └── client.py         # HTTP abstraction
-│   ├── repo/                 # Multi-repo management
-│   │   ├── scanner.py        # Discover projects
-│   │   └── adapter.py        # project.yaml parser
-│   └── cli/                  # CLI Wrappers (no MCP servers)
-│       ├── vercel.py         # vercel --prod wrapper
-│       ├── netlify.py        # netlify deploy wrapper
-│       └── git.py            # Git automation
+│   │   ├── client.py         # HTTP abstraction
+│   │   ├── journal.py        # Journal keeper
+│   │   └── skill.py         # Skill files parser
+│   └── repo/                 # Multi-repo management
+│       ├── scanner.py        # Discover projects
+│       └── adapter.py        # project.yaml parser
 ├── templates/                # Repo bootstrap templates {{Handlebars}}
 │   ├── llm_config.yaml       # Default llm_config
 │   ├── POLICY.yaml           # Default POLICY
@@ -47,14 +70,6 @@ blondie/
 │   │   ├── test_git.py       #
 │   ├── llm/                  # Unit tests
 │   │   ├── test_llm.py       #
-├── docs/                     # Blondie self-docs
-│   ├── DEPLOY.md             # Deployment instructions
-│   ├── DEVELOP.md            # Development instructions
-│   └── ARCHITECTURE.md       # Module diagram
-├── docker/
-│   ├── Dockerfile            # Python 3.12-slim
-│   ├── docker-entrypoint.sh  # Main runner `blondie run`
-│   └── systemd-install.sh    # Binary deploy helper
 ├── pyproject.toml            # Poetry 2.0+
 ├── pytest.ini                # pythonpath=src
 └── README.md

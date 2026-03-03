@@ -34,6 +34,10 @@ class LLMClient:
         """Send chat completion request."""
         raise NotImplementedError
 
+    async def list_models(self) -> list[str]:
+        """List available models."""
+        raise NotImplementedError
+
     async def close(self) -> None:
         """Cleanup HTTP client."""
         await self.client.aclose()
@@ -73,6 +77,16 @@ class OpenAIClient(LLMClient):
             cost_usd=usage["total_tokens"] * 0.00002,  # GPT-4o-mini pricing
             tool_calls=choice.get("tool_calls"),
         )
+
+    async def list_models(self) -> list[str]:
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        resp = await self.client.get(f"{self.base_url}/models", headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
+        return [m["id"] for m in data["data"]]
 
 
 class AnthropicClient(LLMClient):
@@ -181,3 +195,14 @@ class AnthropicClient(LLMClient):
             cost_usd=tokens * 0.000075,  # Claude 3.5 Sonnet pricing
             tool_calls=tool_calls or None,
         )
+
+    async def list_models(self) -> list[str]:
+        headers = {
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+        }
+        resp = await self.client.get(f"{self.base_url}/models", headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
+        return [m["id"] for m in data["data"]]

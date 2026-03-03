@@ -15,11 +15,12 @@ from agent.executor import Executor
 from agent.policy import Policy
 from agent.progress import ProgressManager
 from agent.project import Project
+from agent.router import LLMRouter
 from agent.tasks import Task, TasksManager
+from agent.tooled import ToolHandler
 from cli import GitCLI
 from lib.gitignore import GitIgnore
-from llm import Journal, LLMRouter
-from llm.tooled import ToolHandler
+from llm import Journal
 
 
 class BlondieAgent:

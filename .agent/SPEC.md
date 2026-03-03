@@ -49,35 +49,57 @@ These are standalone test scenarios to verify the full product works. Implement 
 
 ```text
 blondie/
-├── .agent/                   # Self-config
-│   ├── POLICY.yaml           # Autonomy rules  
+├── .agent/                   # Blondie's own config (git-ignored secrets)
+│   ├── dev.yaml              # Development environment configuration
+│   ├── ISSUES.md             # Issues
+│   ├── llm_config.yaml       # LLM Models configuration
+│   ├── POLICY.yaml           # Autonomy rules
 │   ├── project.yaml          # Self-description
-│   ├── secrets.env.yaml      # LLM keys, tokens
-│   └── TASKS.md              # Bootstrap backlog
+│   ├── secrets.env.yaml      # LLM keys, tokens (mounted externally)
+│   ├── SPEC.md               # Project high-level specification
+│   └── TASKS.md              # Project backlog tasks
+├── blog/                     # Blog articles
+├── docker/
+│   ├── Dockerfile            # Python 3.12-slim
+│   ├── docker-entrypoint.sh  # Main runner `blondie run`
+│   └── systemd-install.sh    # Binary deploy helper
+├── docs/                     # Blondie self-docs
+│   ├── DEPLOY.md             # Deployment instructions
+│   ├── DEVELOP.md            # Development instructions
+│   └── ARCHITECTURE.md       # Module diagram
+├── scripts/                  # Dev scripts and utils
+├── skills/                   # Core SKILL files
 ├── src/                      # Core runtime
 │   ├── agent/                # Main runtime
-│   │   ├── loop.py           # Main task loop
+│   │   ├── context.py        # LLM Context gatherer
 │   │   ├── executor.py       # Shell/git/cli wrapper
+│   │   ├── llm_config.py     # llm_config.yaml parser
+│   │   ├── loop.py           # Main task loop
 │   │   ├── policy.py         # POLICY.yaml parser
-│   │   ├── project.py        # project.yaml parser
-│   │   └── tasks.py          # TASKS.md parser
-│   ├── loop.py               # Main loop
-│   ├── tasks.py              # TASKS.md parser
-│   ├── policy.py             # POLICY.yaml parser
-│   └── cli/                  # CLI wrappers
-│       ├── vercel.py         # vercel --prod wrapper
-│       ├── netlify.py        # netlify deploy wrapper
-│       └── git.py            # Git automation
-├── src/repo/                 # Repo management
-│   ├── scanner.py            # Multi-repo discovery
-│   └── adapter.py            # project.yaml parser
-├── src/llm/                  # Model routing
-│   ├── router.py             # OpenAI/Anthropic/generic
-│   └── client.py             # HTTP abstraction
-├── templates/                # Repo bootstrap
-│   ├── POLICY.yaml.template  # Default POLICY
-│   ├── project.yaml.template # Default project
-│   └── TASKS.md.template
+│   │   ├── progress.py       # progress.txt keeper
+│   │   ├── project.py        # project.yaml parser (also loads dev.yaml)
+│   │   ├── router.py         # LLM router - OpenAI/Anthropic/etc.
+│   │   ├── tasks.py          # TASKS.md parser
+│   │   └── tooled.py         # Tooled LLM calls
+│   ├── cli/                  # CLI Wrappers (no MCP servers)
+│   │   ├── vercel.py         # vercel --prod wrapper
+│   │   ├── netlify.py        # netlify deploy wrapper
+│   │   └── git.py            # Git automation
+│   ├── lib/                  # Utilities
+│   │   └── gitignore.py      # .gitignore file parser
+│   ├── llm/                  # Model routing
+│   │   ├── client.py         # HTTP abstraction
+│   │   ├── journal.py        # Journal keeper
+│   │   └── skill.py         # Skill files parser
+│   └── repo/                 # Multi-repo management
+│       ├── scanner.py        # Discover projects
+│       └── adapter.py        # project.yaml parser
+├── templates/                # Repo bootstrap templates {{Handlebars}}
+│   ├── llm_config.yaml       # Default llm_config
+│   ├── POLICY.yaml           # Default POLICY
+│   ├── project.yaml          # Default project
+│   ├── SPEC.md               # Default SPEC.md
+│   └── TASKS.md              # Default TASKS.md
 ├── tests/                    # Tests
 │   ├── agent/                # Unit tests
 │   │   ├── test_policy.py    #
@@ -87,13 +109,6 @@ blondie/
 │   │   ├── test_git.py       #
 │   ├── llm/                  # Unit tests
 │   │   ├── test_llm.py       #
-├── docs/                     # Blondie self-docs
-│   ├── DEPLOY.md             # Deployment instructions
-│   ├── DEVELOP.md            # Development instructions
-│   └── ARCHITECTURE.md       # Module diagram
-├── docker/
-│   ├── Dockerfile            # Python 3.12-slim
-│   └── docker-entrypoint.sh  # blondie run
 ├── pyproject.toml            # Poetry 2.0+
 ├── pytest.ini                # pythonpath=src
 └── README.md

@@ -42,6 +42,7 @@ Status: id | priority | title | depends_on
 - [x] 048 | P2 | Update Planning skill to use interactive tool loop for repo exploration (grep, find, read). |
 - [x] 049 | P5 | add number of tool requests in journal.log_chat
 - [x] 050 | P2 | Measure time of shell commands (both tools and yaml), show in journal
+- [x] 051 | P3 | Script in scripts/ to query available LLM models from API, save to file .agent/llm.yaml. Then use the file in client.py to select models.
 - [x] 053 | P1 | In SKILL plan_task prompt add after "Initialize project" "... and install packages" (so that section is meaningfull for more tasks) |
 - [x] 055 | P1 | Put journal files under `_tmp/log/task-ID/` dir. Make a script (in scripts/) and poe task to move/copy (argument choice) whole `_tmp/` to a dated `_tmp.YYYY-MMDD2-hhmm/` for saving complete trace/snapshot of interesting debug runs |
 
@@ -49,8 +50,7 @@ Status: id | priority | title | depends_on
 
 - [ ] 036 | P2 | In SKILL prompts Encourage use of grep to allow LLM finding all relevant source files |
 
-- [ ] 051 | P3 | Script to query available LLM models from API, save to file. Use the list in client.py.
-- [ ] 052 | P3 | Script to query LLM models cost (scrape vendor webpage if no API), save to file. Use the costs in client.py and router.py to track costs.
+- [ ] 052 | P3 | Script in scripts/ to query LLM models cost (scrape vendor webpage if no API), save to file .agent/llm.yaml. Use the file in client.py and use costs in router.py to track costs.
 - [ ] 027 | P3 | Connect stderr/stdout/stdin of shell commands interactively to LLM, so it could respond to prompts |
 - [ ] 028 | P3 | In shell command retry/debug loop - concern is the nested loops that may negate the higher-level loop plan and wipe the lower level loop fixes out. Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
 

@@ -4,6 +4,7 @@
 *.log
 *.py[cod]
 .agent/secrets.env.yaml
+.agent/llm.yaml
 .coverage
 .eggs/
 .mypy_cache/

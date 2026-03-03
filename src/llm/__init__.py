@@ -4,7 +4,6 @@
 
 from .client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
 from .journal import Journal
-from .router import LLMRouter
 from .skill import Skill
 
 __version__ = "0.1.0"
@@ -14,6 +13,5 @@ __all__ = [
     "LLMClient",
     "LLMResponse",
     "OpenAIClient",
-    "LLMRouter",
     "Skill",
 ]

@@ -10,7 +10,7 @@ import yaml
 
 from agent.context import ContextGatherer
 from agent.policy import Policy
-from llm.router import LLMResponse, LLMRouter
+from agent.router import LLMResponse, LLMRouter
 
 
 @pytest.fixture

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from agent.executor import Executor
     from agent.progress import ProgressManager
     from agent.project import Project
-    from llm.router import ChatSession
+    from agent.router import ChatSession
 
 
 TOOL_DEFINITIONS = {

@@ -14,10 +14,10 @@ from pydantic import ValidationError
 from agent.context import ContextGatherer
 from agent.llm_config import LLMConfig
 from agent.policy import Policy
+from agent.tooled import TOOL_DEFINITIONS
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
 from llm.journal import Journal
 from llm.skill import Skill
-from llm.tooled import TOOL_DEFINITIONS
 
 
 class ChatSession:
@@ -194,6 +194,7 @@ class LLMRouter:
         self.journal = journal or Journal()
         self.secrets = self._load_secrets(secrets_path)
         self.config = LLMConfig.from_file(config_path)
+        self.known_models = self._load_known_models(config_path.parent / "llm.yaml")
         self.clients: dict[str, LLMClient] = {}
         self.daily_cost = 0.0
         self.last_reset_date = datetime.date.today()
@@ -213,6 +214,17 @@ class LLMRouter:
 
         with secrets_path.open("r") as f:
             return yaml.safe_load(f) or {}
+
+    def _load_known_models(self, path: Path) -> dict[str, list[str]]:
+        """Load known models from llm.yaml."""
+        if not path.is_file():
+            return {}
+        try:
+            with path.open("r") as f:
+                return yaml.safe_load(f) or {}
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            self.journal.print(f"⚠️ Failed to load llm.yaml: {e}")
+            return {}
 
     def _load_skills(self, skills_dir: Path) -> dict[str, Skill]:
         skills: dict[str, Skill] = {}
@@ -265,6 +277,13 @@ class LLMRouter:
 
         for selection in selections:
             if selection.provider in self.clients:
+                # Validate model if known models are loaded
+                if selection.model and self.known_models:
+                    provider_models = self.known_models.get(selection.provider, [])
+                    if provider_models and selection.model not in provider_models:
+                        self.journal.print(
+                            f"⚠️ Model '{selection.model}' not found in known models for {selection.provider}"
+                        )
                 return selection.provider, selection.model
 
         # Fallback: return first available client
