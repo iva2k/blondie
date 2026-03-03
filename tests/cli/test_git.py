@@ -119,14 +119,17 @@ def test_create_pr_branch_already_on_branch_clean(git_cli):
 
 def test_configure_author(tmp_path, mock_policy):
     """Test that git author configuration runs git config commands."""
-    with patch("subprocess.run") as mock_run:
+    with patch("agent.executor.Executor.run") as mock_run:
+        mock_run.return_value = CommandResult("git config", 0, "", "")
         GitCLI(tmp_path, mock_policy, Journal(), user="Bot", email="bot@test.com")
 
         assert mock_run.call_count == 2
         # Check calls
         calls = mock_run.call_args_list
         # TODO: (when needed) Brittle test - order of calls is internal logic, could change.
-        args1, _ = calls[0]
-        args2, _ = calls[1]
+        args1, kwargs1 = calls[0]
+        args2, kwargs2 = calls[1]
         assert args1[0] == ["git", "config", "user.name", "Bot"]
+        assert kwargs1["gate"] == "git-config"
         assert args2[0] == ["git", "config", "user.email", "bot@test.com"]
+        assert kwargs2["gate"] == "git-config"

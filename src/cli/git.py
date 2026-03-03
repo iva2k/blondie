@@ -61,10 +61,9 @@ class GitCLI:
 
     def configure_author(self, user: str, email: str) -> None:
         """Set git user and email for this repo."""
-        # We use subprocess directly to bypass policy checks for configuration
         try:
-            subprocess.run(["git", "config", "user.name", user], cwd=self.repo_path, check=True, capture_output=True)
-            subprocess.run(["git", "config", "user.email", email], cwd=self.repo_path, check=True, capture_output=True)
+            self.run("config", "user.name", user, capture_output=True)
+            self.run("config", "user.email", email, capture_output=True)
         except subprocess.CalledProcessError as e:
             self.journal.print(f"⚠️ Failed to configure git author: {e}")
 
