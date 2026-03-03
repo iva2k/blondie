@@ -32,6 +32,7 @@ Status: id | priority | title | depends_on
 - [x] 037 | P1 | Inform LLM of python environment (conda/venv/poetry) via dev.yaml config and context injection. |
 - [x] 025 | P3 | Use router.py:LLMRouter.check_daily_limit() |
 - [x] 039 | P3 | refactor LLM router code - use common worker method, each existing method should call the worker with system prompt, user prompt, etc. |
+- [x] 040 | P1 | Agent uses its user/email (set in project.yaml) for git commits |
 - [x] 042 | P3 | Track task cost, When task is done, log to journal and console task cost |
 - [x] 043 | P3 | When exiting agent (even by keyboard interrupt), log to journal and console total daily cost |
 - [x] 044 | P1 | Remove gates copy from top level of Policy (conserve context) |
@@ -44,8 +45,6 @@ Status: id | priority | title | depends_on
 - [x] 055 | P1 | Put journal files under `_tmp/log/task-ID/` dir. Make a script (in scripts/) and poe task to move/copy (argument choice) whole `_tmp/` to a dated `_tmp.YYYY-MMDD2-hhmm/` for saving complete trace/snapshot of interesting debug runs |
 
 ## Todo
-
-- [ ] 040 | P1 | Agent should have its user/email set for git commits |
 
 - [ ] 036 | P2 | In SKILL prompts Encourage use of grep to allow LLM finding all relevant source files |
 - [ ] 050 | P2 | Measure time of shell commands (both tools and yaml), show in journal

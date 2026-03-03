@@ -1,6 +1,8 @@
 id: {{repo_name}}
 name: "{{repo_description}}"
 languages: [{{languages|default("typescript, svelte")}}]
+git_user: "Blondie Agent"
+git_email: "blondie@agent.local"
 main_branch: main
 task_source: TASKS.md
 commands:

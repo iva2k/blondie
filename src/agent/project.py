@@ -29,6 +29,8 @@ class Project(BaseModel):
     protected_files: list[str] = []
     dev_config: str = "dev.yaml"
     dev_env: dict[str, Any] = {}
+    git_user: str | None = None
+    git_email: str | None = None
 
     @classmethod
     def from_file(cls, path: Path, journal: Journal | None = None) -> Project:

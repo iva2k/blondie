@@ -24,6 +24,8 @@ policy: POLICY.yaml
 docs: [README.md]
 deploy:
   docker: docker build .
+git_user: "Test Bot"
+git_email: "bot@test.com"
 """
     f = tmp_path / "project.yaml"
     f.write_text(content, encoding="utf-8")
@@ -39,6 +41,8 @@ def test_project_parsing(sample_project_yaml: Path) -> None:
     assert project.languages == ["python", "rust"]
     assert project.commands["test"] == "pytest"
     assert project.deploy["docker"] == "docker build ."
+    assert project.git_user == "Test Bot"
+    assert project.git_email == "bot@test.com"
 
 
 def test_project_defaults(tmp_path: Path) -> None:
@@ -54,6 +58,8 @@ def test_project_defaults(tmp_path: Path) -> None:
     assert project.task_source == "TASKS.md"
     assert project.policy == "POLICY.yaml"
     assert project.commands == {}
+    assert project.git_user is None
+    assert project.git_email is None
 
 
 def test_file_not_found(tmp_path: Path) -> None:

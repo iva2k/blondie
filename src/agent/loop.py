@@ -38,7 +38,7 @@ class BlondieAgent:
         self.progress_path = self.agent_dir / "progress.txt"
 
         self.tasks = TasksManager(self.tasks_path, project_id=self.project.id.upper(), journal=self.journal)
-        self.git = GitCLI(self.repo_path, self.policy, self.journal)
+        self.git = GitCLI(self.repo_path, self.policy, self.journal, self.project.git_user, self.project.git_email)
         self.exec = Executor(self.repo_path, self.policy, self.journal)
         self.gitignore = GitIgnore(self.repo_path)
         self.progress = ProgressManager(self.progress_path)

@@ -1,6 +1,8 @@
 id: blondie
 name: "Blondie Autonomous Coding Agent"
 languages: [python]
+git_user: "Blondie Agent"
+git_email: "blondie@agent.local"
 main_branch: main
 task_source: TASKS.md
 commands:
