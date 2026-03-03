@@ -28,6 +28,7 @@ Status: id | priority | title | depends_on
 - [x] 031 | P2 | Put Journal files into log/\<project_id>/task\<id>/ subfolders |
 - [x] 033 | P1 | In journal, log complete untruncated messages. When passing messages to console, truncate these long ones. |
 - [x] 032 | P1 | Add a fixed files list (e.g. .agent/POLICY.yaml) to never list to LLM context and never allow editing (use gitignore.py mechanism) |
+- [x] 035 | P2 | Compose summary (progress.txt) of actions, so LLM could understand that it beats on the same problem and could try different approaches |
 - [x] 037 | P1 | Inform LLM of python environment (conda/venv/poetry) via dev.yaml config and context injection. |
 - [x] 025 | P3 | Use router.py:LLMRouter.check_daily_limit() |
 - [x] 039 | P3 | refactor LLM router code - use common worker method, each existing method should call the worker with system prompt, user prompt, etc. |
@@ -38,14 +39,21 @@ Status: id | priority | title | depends_on
 - [x] 046 | P1 | Implement ChatSession in LLMRouter to support multi-turn conversations with tool execution (REPL) for skills. |
 - [x] 047 | P1 | Add `tools` definition to Skill class and implement basic shell/file tools for the interactive session. |
 - [x] 048 | P2 | Update Planning skill to use interactive tool loop for repo exploration (grep, find, read). |
+- [x] 049 | P5 | add number of tool requests in journal.log_chat
 
 ## Todo
 
-- [ ] 027 | P1 | Connect stderr/stdout/stdin of shell commands interactively to LLM, so it could respond to prompts |
-- [ ] 028 | P2 | In shell command retry/debug loop - Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
+- [ ] 055 | P1 | Put journal files under _tmp dir. Make script to move/copy (argument option) `_tmp/` to a dated `_tmp.YYYY-MMDD2-hhmm/` for saving complete trace/snapshot of interesting debug runs |
+- [ ] 053 | P1 | In SKILL plan_task prompt add after "Initialize project" "... and install packages" (so that section is meaningfull for more tasks) |
+- [ ] 040 | P1 | Agent should have its user/email set for git commits |
 
-- [ ] 035 | P2 | compose summary and LLM notes of previous chat in debug-fix LLM loop, so LLM could understand that it beats on the same problem and could try different approaches | 037
-- [ ] 040 | P3 | Agent should have its user/email set for git commits |
+- [ ] 036 | P2 | In SKILL prompts Encourage use of grep to allow LLM finding all relevant source files |
+- [ ] 050 | P2 | Measure time of shell commands (both tools and yaml), show in journal
+
+- [ ] 051 | P3 | Script to query available LLM models from API, save to file. Use the list in client.py.
+- [ ] 052 | P3 | Script to query LLM models cost (scrape vendor webpage if no API), save to file. Use the costs in client.py and router.py to track costs.
+- [ ] 027 | P3 | Connect stderr/stdout/stdin of shell commands interactively to LLM, so it could respond to prompts |
+- [ ] 028 | P3 | In shell command retry/debug loop - concern is the nested loops that may negate the higher-level loop plan and wipe the lower level loop fixes out. Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
 
 - [ ] 015 | P4 | **DEPLOY!** Start self-editing | 025, 032, 037, 028, 035, 025, 039
 
@@ -56,11 +64,6 @@ Status: id | priority | title | depends_on
 - [ ] 018 | P4 | Tasks.py should pick blocking task first |
 - [ ] 019 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
 - [ ] 021 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
-- [ ] 036 | P5 | Use grep to allow LLM finding all relevant source files |
 - [ ] 038 | P5 | Allow multirepo - limit agent to a project subfolder inside a bigger repo |
 - [ ] 041 | P5 | Agent should communicate with external world: email, slack, twitter. Events: task queue stuck (all tasks blocked, can't finish blockers), Deploy triggered. Carefull as swarm will flood the channels. |
-- [ ] 049 | P5 | add number of tool requests in journal.log_chat
-- [ ] 050 | P5 | Measure time of shell commands (both tools and yaml), show in journal
-- [ ] 051 | P5 | Script to query available LLM models from API, save to file. Use the list in client.py.
-- [ ] 052 | P5 | Script to query LLM models cost (scrape vendor webpage if no API), save to file. Use the costs in client.py and router.py to track costs.
-- [ ] 053 | P1 | Add to SKILL plan_task after "Initialize project" "... and install packages" (so that section is meaningfull for more tasks)
+- [ ] 054 | P5 | Compose summary notes of LLM thinking findings in debug-fix LLM loop, so LLM could understand later that it beats on the same problem and could try different approaches |

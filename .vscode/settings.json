@@ -6,6 +6,7 @@
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
   "python.analysis.typeCheckingMode": "standard",
+  "python.useEnvironmentsExtension": true,
   "[markdown]": {
     //   "editor.defaultFormatter": "yzhang.markdown-all-in-one"
     "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
