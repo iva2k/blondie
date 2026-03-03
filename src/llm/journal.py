@@ -24,11 +24,11 @@ class Journal:
         if not self.root_dir:
             return
 
-        # Sanitize task ID for folder name (e.g. BLONDIE-020 -> task020)
-        safe_id = "".join(c for c in task_id if c.isalnum() or c in ("-", "_"))
+        # Sanitize task ID for folder name (e.g. "020" -> "task-020")
+        safe_id = "".join(c for c in task_id if c.isalnum() or c in ("-", "_", "="))
 
         if self.project_id:
-            safe_project_id = "".join(c for c in self.project_id if c.isalnum() or c in ("-", "_"))
+            safe_project_id = "".join(c for c in self.project_id if c.isalnum() or c in ("-", "_", "="))
             task_dir = self.root_dir / safe_project_id / f"task{safe_id}"
         else:
             task_dir = self.root_dir / f"task{safe_id}"
