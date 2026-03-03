@@ -102,7 +102,7 @@ class Journal:
             self.write_raw("\n==============================\n")
         self.print(f"📋 [{provider.upper()}] {operation}: {response.tokens_used}t")
 
-    def log_shell(self, command: str, returncode: int, stdout: str, stderr: str) -> None:
+    def log_shell(self, command: str, returncode: int, stdout: str, stderr: str, expect_error: bool = False) -> None:
         """Log shell command execution."""
 
         if self.current_log_file:
@@ -123,6 +123,8 @@ class Journal:
             self.print("✅ command ok")
         elif returncode == 124:  # Timeout
             self.print(f"⏱️ command {stderr}")
+        elif expect_error:
+            self.print(f"❌ command failed normally (was expected) (exit {returncode}) Error: {stderr or stdout}")
         else:
             self.print(f"❌ command failed (exit {returncode}) Error: {stderr or stdout}")
 

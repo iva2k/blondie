@@ -49,7 +49,7 @@ class Executor:
             return False
         return True
 
-    def run(self, command: str | list[str], *, gate: str | None = None, timeout: int = 120) -> CommandResult:
+    def run(self, command: str | list[str], *, gate: str | None = None, timeout: int = 120, expect_error: bool = False) -> CommandResult:
         """Run a shell command in repo, optionally gated by autonomy policy."""
         if sys.platform == "win32":
             command_str = subprocess.list2cmdline(command) if isinstance(command, list) else command
@@ -78,7 +78,7 @@ class Executor:
                 stdout, stderr = proc.communicate()
                 raise subprocess.TimeoutExpired(command, timeout, stdout, stderr) from ex
 
-            self.journal.log_shell(command_str, proc.returncode, stdout, stderr)
+            self.journal.log_shell(command_str, proc.returncode, stdout, stderr, expect_error)
             return CommandResult(
                 command=command_str,
                 returncode=proc.returncode,

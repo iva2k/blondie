@@ -20,13 +20,13 @@ class GitCLI:
         self.journal = journal or Journal()
         self.executor = Executor(repo_path, policy, self.journal)
 
-    def run(self, *args: str, check: bool = True, capture_output: bool = False) -> subprocess.CompletedProcess:
+    def run(self, *args: str, check: bool = True, capture_output: bool = False, expect_error: bool = False) -> subprocess.CompletedProcess:
         """Run git command with policy check."""
         cmd_list = ["git", *args]
         gate = f"git-{args[0]}"
 
         # We use a longer timeout (5 min) for git operations
-        result = self.executor.run(cmd_list, gate=gate, timeout=300)
+        result = self.executor.run(cmd_list, gate=gate, timeout=300, expect_error=expect_error)
 
         if result.stderr == "SKIPPED_BY_POLICY":
             raise PermissionError(f"Git action '{args[0]}' forbidden by POLICY.yaml")
@@ -106,7 +106,7 @@ class GitCLI:
 
     def is_clean(self) -> bool:
         """Check if working directory is clean."""
-        result = self.run("diff", "--quiet", "HEAD", capture_output=True, check=False)
+        result = self.run("diff", "--quiet", "HEAD", capture_output=True, check=False, expect_error=True)
         return result.returncode == 0
 
     def create_pr_branch(self, task_id: str) -> str:
