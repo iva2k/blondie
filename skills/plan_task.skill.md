@@ -56,7 +56,7 @@ You are at step 1 of AGENT FLOW.
 
 Format as clean Markdown with only these sections:
 
-1. **Initialize Commands**: List of commands to prepare project scaffolding.
+1. **Initialize Commands and Dependencies**: List of commands to prepare project scaffolding and add dependencies.
 2. **Files to Create/Modify**: List of files.
 3. **Shell Commands**: List of commands to run (install dependencies, etc).
 4. **Code Changes**: Detailed description of logic changes.
