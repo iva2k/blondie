@@ -7,6 +7,7 @@ from __future__ import annotations
 import shlex
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -61,6 +62,7 @@ class Executor:
             return CommandResult(command=command_str, returncode=125, stdout="", stderr="SKIPPED_BY_POLICY")
 
         self.journal.print(f"💻 [dim]{command}[/dim] (timeout: {timeout}s)")
+        start_time = time.perf_counter()
         try:
             proc = subprocess.Popen(
                 command,
@@ -80,7 +82,8 @@ class Executor:
                 stdout, stderr = proc.communicate()
                 raise subprocess.TimeoutExpired(command, timeout, stdout, stderr) from ex
 
-            self.journal.log_shell(command_str, proc.returncode, stdout, stderr, expect_error)
+            duration = time.perf_counter() - start_time
+            self.journal.log_shell(command_str, proc.returncode, stdout, stderr, duration, expect_error)
             return CommandResult(
                 command=command_str,
                 returncode=proc.returncode,
@@ -88,9 +91,10 @@ class Executor:
                 stderr=stderr,
             )
         except subprocess.TimeoutExpired as e:
+            duration = time.perf_counter() - start_time
             stdout = str(e.stdout or "")
             stderr = str(e.stderr or f"Timeout after {timeout}s")
-            self.journal.log_shell(command_str, 124, stdout, stderr)
+            self.journal.log_shell(command_str, 124, stdout, stderr, duration)
             return CommandResult(
                 command=command_str,
                 returncode=124,

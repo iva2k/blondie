@@ -41,13 +41,13 @@ Status: id | priority | title | depends_on
 - [x] 047 | P1 | Add `tools` definition to Skill class and implement basic shell/file tools for the interactive session. |
 - [x] 048 | P2 | Update Planning skill to use interactive tool loop for repo exploration (grep, find, read). |
 - [x] 049 | P5 | add number of tool requests in journal.log_chat
+- [x] 050 | P2 | Measure time of shell commands (both tools and yaml), show in journal
 - [x] 053 | P1 | In SKILL plan_task prompt add after "Initialize project" "... and install packages" (so that section is meaningfull for more tasks) |
 - [x] 055 | P1 | Put journal files under `_tmp/log/task-ID/` dir. Make a script (in scripts/) and poe task to move/copy (argument choice) whole `_tmp/` to a dated `_tmp.YYYY-MMDD2-hhmm/` for saving complete trace/snapshot of interesting debug runs |
 
 ## Todo
 
 - [ ] 036 | P2 | In SKILL prompts Encourage use of grep to allow LLM finding all relevant source files |
-- [ ] 050 | P2 | Measure time of shell commands (both tools and yaml), show in journal
 
 - [ ] 051 | P3 | Script to query available LLM models from API, save to file. Use the list in client.py.
 - [ ] 052 | P3 | Script to query LLM models cost (scrape vendor webpage if no API), save to file. Use the costs in client.py and router.py to track costs.
