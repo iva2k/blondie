@@ -49,7 +49,9 @@ class Executor:
             return False
         return True
 
-    def run(self, command: str | list[str], *, gate: str | None = None, timeout: int = 120, expect_error: bool = False) -> CommandResult:
+    def run(
+        self, command: str | list[str], *, gate: str | None = None, timeout: int = 120, expect_error: bool = False
+    ) -> CommandResult:
         """Run a shell command in repo, optionally gated by autonomy policy."""
         if sys.platform == "win32":
             command_str = subprocess.list2cmdline(command) if isinstance(command, list) else command

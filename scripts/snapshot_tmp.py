@@ -12,10 +12,11 @@ from datetime import datetime
 def parse_args():
     """Parse CLI arguments."""
     parser = argparse.ArgumentParser(description="Snapshot directory.")
-    parser.add_argument('src', nargs='?', default="_tmp", help="Source directory (default: _tmp)")
-    parser.add_argument('dst', nargs='?', help="Destination directory (optional)")
-    parser.add_argument('--move', action='store_true', help="Move instead of copy")
+    parser.add_argument("src", nargs="?", default="_tmp", help="Source directory (default: _tmp)")
+    parser.add_argument("dst", nargs="?", help="Destination directory (optional)")
+    parser.add_argument("--move", action="store_true", help="Move instead of copy")
     return parser.parse_args()
+
 
 def main():
     """CLI."""
@@ -30,7 +31,7 @@ def main():
     else:
         # Format: src.YYYY-MMDD-hhmm
         timestamp = datetime.now().strftime("%Y-%m%d-%H%M")
-        src_stripped = src.rstrip('/\\')
+        src_stripped = src.rstrip("/\\")
         dst = f"{src_stripped}.{timestamp}"
 
     if os.path.exists(dst):
@@ -51,6 +52,7 @@ def main():
         print(f"Error: Failed to snapshot {src} to {dst}. {e}")
         return 1
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

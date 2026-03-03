@@ -90,7 +90,9 @@ class Journal:
                 "endpoint": endpoint,
                 "tokens": tokens,
                 "cost": cost,
-                "tool_calls": len(response.tool_calls) if hasattr(response, "tool_calls") and response.tool_calls else 0,                
+                "tool_calls": len(response.tool_calls)
+                if hasattr(response, "tool_calls") and response.tool_calls
+                else 0,
                 "content": content,
                 "prompt": prompt,
                 "system_prompt": system_prompt,  # prompt[:1000] + "..." if len(prompt) > 1000 else prompt,
