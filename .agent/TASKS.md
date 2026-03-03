@@ -43,7 +43,7 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
-- [ ] 055 | P1 | Put journal files under _tmp dir. Make script to move/copy (argument option) `_tmp/` to a dated `_tmp.YYYY-MMDD2-hhmm/` for saving complete trace/snapshot of interesting debug runs |
+- [ ] 055 | P1 | Put journal files under `_tmp/log/task-ID/` dir. Make a script (in scripts/) and poe task to move/copy (argument choice) whole `_tmp/` to a dated `_tmp.YYYY-MMDD2-hhmm/` for saving complete trace/snapshot of interesting debug runs |
 - [ ] 053 | P1 | In SKILL plan_task prompt add after "Initialize project" "... and install packages" (so that section is meaningfull for more tasks) |
 - [ ] 040 | P1 | Agent should have its user/email set for git commits |
 
