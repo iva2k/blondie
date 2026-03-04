@@ -12,6 +12,7 @@ import yaml
 
 from agent.context import ContextGatherer
 from agent.executor import CommandTimeoutError, Executor
+from agent.interaction import ConsoleInteractionProvider
 from agent.policy import Policy
 from agent.progress import ProgressManager
 from agent.project import Project
@@ -40,7 +41,8 @@ class BlondieAgent:
 
         self.tasks = TasksManager(self.tasks_path, project_id=self.project.id.upper(), journal=self.journal)
         self.git = GitCLI(self.repo_path, self.policy, self.journal, self.project.git_user, self.project.git_email)
-        self.exec = Executor(self.repo_path, self.policy, self.journal)
+        interactor = ConsoleInteractionProvider(self.journal)
+        self.exec = Executor(self.repo_path, self.policy, self.journal, interactor)
         self.gitignore = GitIgnore(self.repo_path)
         self.progress = ProgressManager(self.progress_path)
         self.context_gatherer = ContextGatherer(
@@ -324,10 +326,7 @@ class BlondieAgent:
                     self.journal.print("⚠️  Missing command for shell action")
                     continue
 
-                # Heuristic: map install commands to 'add-package' gate
-                gate = (
-                    "add-package" if any(x in command for x in ["install", "add", "npm", "pip", "poetry"]) else "shell"
-                )
+                gate = "shell"
 
                 max_retries = self.policy.limits.get("max_shell_retries", 3)
                 cmd_success = False
