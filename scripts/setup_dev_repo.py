@@ -106,6 +106,14 @@ def main() -> None:
         else:
             print(f"Warning: Config path {args.agent_config} not found. Repo will lack .agent config.")
 
+    # Copy local llm.yaml if exists (contains cached models/costs)
+    local_llm_yaml = ROOT_DIR / ".agent" / "llm.yaml"
+    if local_llm_yaml.is_file():
+        target_agent_dir = repo_dir / ".agent"
+        target_agent_dir.mkdir(exist_ok=True)
+        print(f"Copying local llm.yaml from {local_llm_yaml}...")
+        shutil.copy2(local_llm_yaml, target_agent_dir / "llm.yaml")
+
     # 6. Initial Commit & Push
     run_command(["git", "checkout", "-b", "main"], cwd=repo_dir)
     run_command(["git", "add", "."], cwd=repo_dir)
