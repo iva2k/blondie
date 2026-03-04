@@ -62,7 +62,7 @@ class BlondieAgent:
             self.context_gatherer,
         )
 
-    def pick_task(self) -> Task | None:
+    async def _pick_task(self) -> Task | None:
         """Pick next task to run. Claims and starts the task."""
 
         # Check daily limit
@@ -71,7 +71,7 @@ class BlondieAgent:
 
         # 0. Handle uncommitted changes from previous run/crash
         try:
-            status = asyncio.run(asyncio.wait_for(self.exec.run("git status --porcelain"), timeout=120))
+            status = await asyncio.wait_for(self.exec.run("git status --porcelain"), timeout=120)
         except CommandTimeoutError as e:
             status = e.result
         if status.stdout.strip():
@@ -81,7 +81,7 @@ class BlondieAgent:
             if current_branch == self.project.main_branch:
                 self.journal.print("🧹 Stashing changes on main to allow pull...")
                 try:
-                    _res = asyncio.run(asyncio.wait_for(self.exec.run("git stash -u"), timeout=120))
+                    _res = await asyncio.wait_for(self.exec.run("git stash -u"), timeout=120)
                 except CommandTimeoutError:
                     pass
             else:
@@ -124,7 +124,7 @@ class BlondieAgent:
         if not self.llm.check_daily_limit():
             return False
 
-        task = self.pick_task()
+        task = await self._pick_task()
         if not task:
             return False
 
