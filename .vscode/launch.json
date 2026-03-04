@@ -58,6 +58,8 @@
             "request": "launch",
             "module": "scripts.setup_dev_repo",
             "args": [
+                "--repo", "_tmp/repo",
+                "--agent-config", "templates/project-calculator/.agent",
             ],
             "cwd": "${workspaceFolder}",
             "env": {
