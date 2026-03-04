@@ -15,7 +15,7 @@
 __pycache__/
 /_import/
 /_logs/
-/_tmp/
+/_tmp*/
 build/
 dist/
 env/
