@@ -181,14 +181,14 @@ def extract_structured_data(html: str, selector: str) -> list[list[dict[str, str
             # Look for h3/h4 or div with 'title' in class
             header = el.find(["h3", "h4"])
             if not header:
-                header = el.find(class_=lambda c: c and "title" in c)
+                header = el.find(class_=lambda c: c is not None and "title" in c)
 
             if header:
                 row_dict["Model"] = header.get_text(strip=True)
 
             # Heuristic: Find key-value pairs based on 'label' class
             # This matches Anthropic's structure: <div class="...label">Input</div> <div ...>Value</div>
-            labels = el.find_all(class_=lambda c: c and "label" in c)
+            labels = el.find_all(class_=lambda c: c is not None and "label" in c)
             for label in labels:
                 key = label.get_text(strip=True)
                 # Value is typically the next sibling
