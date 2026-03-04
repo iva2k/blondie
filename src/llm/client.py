@@ -26,11 +26,18 @@ class LLMClient:
 
     base_url_default: str = ""
 
-    def __init__(self, api_key: str, base_url: str, model: str):
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str,
+        model: str,
+        pricing: dict[str, dict[str, float]] | None = None,
+    ):
         self.api_key = api_key
         self.base_url = (base_url or self.base_url_default).rstrip("/")
         self.model = model
         self.client = httpx.AsyncClient(timeout=httpx.Timeout(120.0))
+        self.pricing = pricing or {}
 
     async def chat(self, messages: list[dict[str, Any]], **kwargs: Any) -> LLMResponse:
         """Send chat completion request."""
@@ -74,11 +81,19 @@ class OpenAIClient(LLMClient):
         choice = data["choices"][0]["message"]
         usage = data["usage"]
 
+        # Calculate cost
+        cost = 0.0
+        if self.model in self.pricing:
+            p = self.pricing[self.model]
+            input_cost = (usage.get("prompt_tokens", 0) / 1_000_000) * p.get("input", 0.0)
+            output_cost = (usage.get("completion_tokens", 0) / 1_000_000) * p.get("output", 0.0)
+            cost = input_cost + output_cost
+
         return LLMResponse(
             content=choice["content"] or "",
             model=self.model,
             tokens_used=usage["total_tokens"],
-            cost_usd=usage["total_tokens"] * 0.00002,  # GPT-4o-mini pricing
+            cost_usd=cost,
             tool_calls=choice.get("tool_calls"),
         )
 
@@ -194,11 +209,20 @@ class AnthropicClient(LLMClient):
 
         tokens = data.get("usage", {}).get("output_tokens", 0)
 
+        # Calculate cost
+        cost = 0.0
+        if self.model in self.pricing:
+            p = self.pricing[self.model]
+            input_tokens = data.get("usage", {}).get("input_tokens", 0)
+            input_cost = (input_tokens / 1_000_000) * p.get("input", 0.0)
+            output_cost = (tokens / 1_000_000) * p.get("output", 0.0)
+            cost = input_cost + output_cost
+
         return LLMResponse(
             content=content_text,
             model=self.model,
             tokens_used=tokens,
-            cost_usd=tokens * 0.000075,  # Claude 3.5 Sonnet pricing
+            cost_usd=cost,
             tool_calls=tool_calls or None,
         )
 

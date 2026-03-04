@@ -194,7 +194,7 @@ class LLMRouter:
         self.journal = journal or Journal()
         self.secrets = self._load_secrets(secrets_path)
         self.config = LLMConfig.from_file(config_path)
-        self.known_models = self._load_known_models(config_path.parent / "llm.yaml")
+        self.known_models, self.known_costs = self._load_known_models(config_path.parent / "llm.yaml")
         self.clients: dict[str, LLMClient] = {}
         self.daily_cost = 0.0
         self.last_reset_date = datetime.date.today()
@@ -215,16 +215,26 @@ class LLMRouter:
         with secrets_path.open("r") as f:
             return yaml.safe_load(f) or {}
 
-    def _load_known_models(self, path: Path) -> dict[str, list[str]]:
-        """Load known models from llm.yaml."""
+    def _load_known_models(self, path: Path) -> tuple[dict[str, list[str]], dict[str, dict[str, dict[str, float]]]]:
+        """Load known models and costs from llm.yaml."""
         if not path.is_file():
-            return {}
+            return {}, {}
         try:
             with path.open("r") as f:
-                return yaml.safe_load(f) or {}
+                data = yaml.safe_load(f) or {}
+                models = {}
+                costs = {}
+                for provider, content in data.items():
+                    if isinstance(content, list):
+                        models[provider] = content
+                    elif isinstance(content, dict):
+                        models[provider] = content.get("models", [])
+                        costs[provider] = content.get("costs", {})
+                return models, costs
+
         except Exception as e:  # pylint: disable=broad-exception-caught
             self.journal.print(f"⚠️ Failed to load llm.yaml: {e}")
-            return {}
+            return {}, {}
 
     def _load_skills(self, skills_dir: Path) -> dict[str, Skill]:
         skills: dict[str, Skill] = {}
@@ -254,17 +264,21 @@ class LLMRouter:
             if not api_key:
                 continue
 
+            pricing = self.known_costs.get(name, {})
+
             if provider_cfg.api_type == "openai":
                 self.clients[name] = OpenAIClient(
                     api_key=api_key,
                     base_url=provider_cfg.base_url or "https://api.openai.com/v1",
                     model=provider_cfg.default_model or "gpt-4o-mini",
+                    pricing=pricing,
                 )
             elif provider_cfg.api_type == "anthropic":
                 self.clients[name] = AnthropicClient(
                     api_key=api_key,
                     base_url=provider_cfg.base_url or "https://api.anthropic.com/v1",
                     model=provider_cfg.default_model or "claude-3-5-sonnet-20240620",
+                    pricing=pricing,
                 )
             else:
                 raise ValueError(f"Unknown LLM provider type: {provider_cfg.api_type}")

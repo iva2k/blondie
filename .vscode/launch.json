@@ -40,6 +40,45 @@
             "justMyCode": true
         },
         {
+            "name": "Python: scripts/fetch_models",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "scripts.fetch_models",
+            "args": [
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Python: scripts/setup_dev_repo",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "scripts.setup_dev_repo",
+            "args": [
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Python: scripts/snapshot_tmp",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "scripts.snapshot_tmp",
+            "args": [
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+            },
+            "justMyCode": true
+        },
+        {
             "name": "Blondie: Run Agent (_tmp/repo)",
             "type": "debugpy",
             "request": "launch",
@@ -50,7 +89,9 @@
             ],
             "cwd": "${workspaceFolder}",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}",
+                "MSYSTEM": "MSYS",
+                "VSCODE_SETTING": "launch.json",
             },
             "justMyCode": true
         }
