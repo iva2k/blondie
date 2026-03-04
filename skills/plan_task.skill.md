@@ -52,6 +52,7 @@ You are at step 1 of AGENT FLOW.
 - Use provided tools to verify package version availability, explore the available environment, the codebase and understand the context before generating the plan.
 - Use 'run_shell' tool with 'grep', 'find' (or similar) commands to search the codebase for relevant files, definitions, and usages to ensure the plan covers all necessary changes.
 - For shell commands, use flags for non-interactive execution (e.g. -y, --no-input).
+- When using 'run_shell' or planning shell commands, specify a conservative timeout (4x nominal time) to prevent partial execution and avoid project corruption.
 - Do NOT use shell commands to create or modify files (e.g. `echo`, `cat`, `printf` with redirection) unless the `shell-files` gate in **POLICY** is set to `allow`. If gate is 'forbid', they return `SKIPPED_BY_POLICY`. Plan file changes for the "Code Changes" section.
 - Probe with tools to understand existing code and environment and use already installed development environment versions (python, node, pnpm, npm, pip, etc.).
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"

@@ -54,5 +54,6 @@ You are at step 3 of AGENT FLOW.
 - Ensure code is syntactically correct.
 - Provide type hints and typings, meaningful comments and docstrings. In comments do not explain new additions and fixes, version control tracks that. Explain only non-obvious code aspects and reasons for the code.
 - Use 'run_shell' tool with 'grep', 'find' (or similar) commands to check external references or definitions if needed to ensure the generated code integrates correctly.
+- When using 'run_shell', specify a conservative timeout (4x nominal time) to prevent partial execution and avoid project corruption.
 - Do NOT use shell to modify files, regardless of `shell-files` gate in **POLICY**. Modify only the **FILENAME** by generating its new content.
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
