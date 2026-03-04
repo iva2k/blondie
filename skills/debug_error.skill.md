@@ -55,5 +55,6 @@ You are at step 5 of AGENT FLOW.
 - Do NOT provide human-centric instructions like "Open file", "Navigate to". Compose instructions either as shell commands, or as prompts for AI generated shell commands and code changes.
 - For shell commands, use flags for non-interactive execution (e.g. -y, --no-input).
 - Use provided tools to verify package version availability, explore the available environment, the codebase and understand the context before generating the plan.
+- Use 'run_shell' tool with 'grep', 'find' (or similar) commands to search the codebase for relevant files, definitions, and usages to find the code responsible for the error and identify all related files that might need fixing.
 - Probe with tools to understand existing code and environment and use already installed development environment versions (python, node, pnpm, npm, pip, etc.).
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"

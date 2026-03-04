@@ -63,6 +63,7 @@ Return ONLY a JSON object matching the schema.
 - For 'edit' actions, the instruction must be a clear directive for a code generator (e.g. "Add function X", "Update import Y").
 - Use provided tools to verify package version availability, explore the available environment, the codebase and understand the context before generating the plan.
 - Probe with tools to understand existing code and environment and use already installed development environment versions (python, node, pnpm, npm, pip, etc.).
+- Use 'run_shell' tool with 'grep', 'find' (or similar) commands to locate all relevant source files and verify references before specifying edits.
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
 
 ### Example
