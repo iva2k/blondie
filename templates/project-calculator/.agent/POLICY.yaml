@@ -2,9 +2,11 @@
 autonomy:
   gates:
     git-merge: allow
-    deploy-docker: allow     # Self-deploy OK
-    install-binary: prompt   # apt installs need review
-    add-package: allow       # pip requirements OK
+    deploy-docker: allow        # Self-deploy OK
+    install-binary: prompt      # apt installs need review
+    add-package: allow          # pip requirements OK
+    shell: allow                # use of shell
+    shell-files: allow          # direct change of files
   test_retries: 3
   coordination: git  # git | filelock | none
 

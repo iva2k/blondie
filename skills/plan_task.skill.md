@@ -49,9 +49,10 @@ You are at step 1 of AGENT FLOW.
 - Use specific file paths relative to repo root.
 - Do NOT use placeholders like <project_name> or <date>. Use actual values or sensible defaults.
 - Do NOT provide human-centric instructions like "Open file", "Navigate to". Compose instructions either as shell commands, or as prompts for AI generated shell commands and code changes.
-- For shell commands, use flags for non-interactive execution (e.g. -y, --no-input).
 - Use provided tools to verify package version availability, explore the available environment, the codebase and understand the context before generating the plan.
 - Use 'run_shell' tool with 'grep', 'find' (or similar) commands to search the codebase for relevant files, definitions, and usages to ensure the plan covers all necessary changes.
+- For shell commands, use flags for non-interactive execution (e.g. -y, --no-input).
+- Do NOT use shell commands to create or modify files (e.g. `echo`, `cat`, `printf` with redirection) unless the `shell-files` gate in **POLICY** is set to `allow`. If gate is 'forbid', they return `SKIPPED_BY_POLICY`. Plan file changes for the "Code Changes" section.
 - Probe with tools to understand existing code and environment and use already installed development environment versions (python, node, pnpm, npm, pip, etc.).
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
 

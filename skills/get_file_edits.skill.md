@@ -59,7 +59,8 @@ Return ONLY a JSON object matching the schema.
   - Rely on **OS**/**ARCH**/**SHELL** info.
   - Use flags for non-interactive execution (e.g. -y, --no-input, --batch, etc.).
   - Specify timeout in seconds.
-  - Standard bash tools (grep, find, cat) are allowed.
+  - Standard bash tools (grep, find, cat) are allowed for reading/exploration.
+  - Do NOT use shell commands to create or modify files (e.g. `echo`, `cat`, `printf` with redirection) unless the `shell-files` gate in **POLICY** is set to `allow`. If gate is `forbid`, they return `SKIPPED_BY_POLICY`. Use 'create' or 'edit' actions instead.
 - For 'edit' actions, the instruction must be a clear directive for a code generator (e.g. "Add function X", "Update import Y").
 - Use provided tools to verify package version availability, explore the available environment, the codebase and understand the context before generating the plan.
 - Probe with tools to understand existing code and environment and use already installed development environment versions (python, node, pnpm, npm, pip, etc.).

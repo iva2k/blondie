@@ -11,6 +11,8 @@ autonomy:
     deploy-preview: allow
     install-binary: forbid      # apt/yum/npm -g
     add-package: allow          # npm/pip project deps
+    shell: allow                # use of shell
+    shell-files: allow          # direct change of files
     file-delete: prompt
     terraform-apply: prompt
     deploy-*: prompt            # All deploy-* actions

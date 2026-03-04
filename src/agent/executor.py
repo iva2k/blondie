@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import re
 import shlex
 import subprocess
 import sys
@@ -74,6 +75,20 @@ class Executor:
             command_str = subprocess.list2cmdline(command) if isinstance(command, list) else command
         else:
             command_str = shlex.join(command) if isinstance(command, list) else command
+
+        # Check for blocked file write patterns (echo/printf/cat ... > or | tee)
+        if re.search(
+            r"(?:^|[;&|]\s*)(?:echo|printf|cat)\b.*?(?:>|\|\s*(?:sudo\s+)?tee\b)",
+            command_str,
+            re.IGNORECASE | re.DOTALL,
+        ) and not self._check_gate("shell-files"):
+            return CommandResult(
+                command=command_str,
+                returncode=125,
+                stdout="",
+                stderr="BLOCKED (use tool calls and plan actions to generate code)",
+            )
+
         if gate and not self._check_gate(gate):
             return CommandResult(command=command_str, returncode=125, stdout="", stderr="SKIPPED_BY_POLICY")
 
@@ -152,9 +167,11 @@ class Executor:
 
                                 if response:
                                     if response.strip().upper() == "^C":
+                                        self.journal.print("Interaction LLM response: ^C")
                                         process.kill()
                                         break
 
+                                    self.journal.print(f"Interaction LLM response: {response}")
                                     if process.stdin:
                                         input_bytes = (response + "\n").encode()
                                         process.stdin.write(input_bytes)
