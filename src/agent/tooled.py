@@ -21,7 +21,8 @@ if TYPE_CHECKING:
 TOOL_DEFINITIONS = {
     "run_shell": {
         "name": "run_shell",
-        "description": "Execute a shell command on the host machine. Use for exploration (ls, grep, find) or limited execution.",
+        "description": "Execute a shell command on the host machine."
+        " Use for exploration (ls, grep, find) or limited execution.",
         "parameters": {
             "type": "object",
             "properties": {"command": {"type": "string", "description": "The shell command to execute."}},

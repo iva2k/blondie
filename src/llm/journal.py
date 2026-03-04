@@ -105,7 +105,13 @@ class Journal:
         self.print(f"📋 [{provider.upper()}] {operation}: {response.tokens_used}t")
 
     def log_shell(
-        self, command: str, returncode: int, stdout: str, stderr: str, duration: float = 0.0, expect_error: bool = False
+        self,
+        command: str,
+        returncode: int,
+        stdout: str,
+        stderr: str,
+        duration: float = 0.0,
+        expect_error: bool = False,
     ) -> None:
         """Log shell command execution."""
 
@@ -130,7 +136,8 @@ class Journal:
             self.print(f"⏱️ command {stderr} ({duration:.2f}s)")
         elif expect_error:
             self.print(
-                f"❌ command failed normally (was expected) (exit {returncode}) Error: {stderr or stdout} ({duration:.2f}s)"
+                f"❌ command failed normally (was expected) (exit {returncode})"
+                f" Error: {stderr or stdout} ({duration:.2f}s)"
             )
         else:
             self.print(f"❌ command failed (exit {returncode}) Error: {stderr or stdout} ({duration:.2f}s)")
