@@ -11,7 +11,7 @@ import click
 import yaml
 
 from agent.context import ContextGatherer
-from agent.executor import Executor
+from agent.executor import CommandTimeoutError, Executor
 from agent.policy import Policy
 from agent.progress import ProgressManager
 from agent.project import Project
@@ -52,7 +52,15 @@ class BlondieAgent:
             self.progress,
         )
         self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal)
-        self.tool_handler = ToolHandler(self.repo_path, self.project, self.exec, self.journal, self.progress)
+        self.tool_handler = ToolHandler(
+            self.repo_path,
+            self.project,
+            self.exec,
+            self.journal,
+            self.progress,
+            self.llm,
+            self.context_gatherer,
+        )
 
     def pick_task(self) -> Task | None:
         """Pick next task to run. Claims and starts the task."""
@@ -62,14 +70,20 @@ class BlondieAgent:
             return None
 
         # 0. Handle uncommitted changes from previous run/crash
-        status = self.exec.run("git status --porcelain")
+        try:
+            status = asyncio.run(asyncio.wait_for(self.exec.run("git status --porcelain"), timeout=120))
+        except CommandTimeoutError as e:
+            status = e.result
         if status.stdout.strip():
             self.journal.print("⚠️  Found uncommitted changes from previous session.")
             current_branch = self.git.current_branch()
 
             if current_branch == self.project.main_branch:
                 self.journal.print("🧹 Stashing changes on main to allow pull...")
-                _res = self.exec.run("git stash -u")
+                try:
+                    _res = asyncio.run(asyncio.wait_for(self.exec.run("git stash -u"), timeout=120))
+                except CommandTimeoutError:
+                    pass
             else:
                 self.journal.print(f"💾 Saving WIP on {current_branch}...")
                 self._save_wip(current_branch, "WIP: Crash recovery")
@@ -129,7 +143,9 @@ class BlondieAgent:
                 "plan_task", self.context_gatherer, task_title=task.title, policy_summary=str(self.policy.model_dump())
             )
             plan_response = await session.send()
-            plan_response = await self.tool_handler.run_loop(session, plan_response)
+            plan_response = await self.tool_handler.run_loop(
+                session, plan_response, cmd_instruction="Plan task tool calls"
+            )
             plan = plan_response.content
 
             # self.journal.print(f"📋 [dim]Plan:[/dim]\n{plan}", truncate=500)
@@ -146,7 +162,7 @@ class BlondieAgent:
             tests_passed = False
 
             for attempt in range(max_retries):
-                test_result = self.exec.run_tests()
+                test_result = await self.exec.run_tests()
                 if test_result.returncode == 0:
                     tests_passed = True
                     break
@@ -173,7 +189,13 @@ class BlondieAgent:
                     error_log=error_log,
                 )
                 debug_response = await session.send()
-                debug_response = await self.tool_handler.run_loop(session, debug_response)
+                debug_response = await self.tool_handler.run_loop(
+                    session,
+                    debug_response,
+                    cmd_instruction=f"Debugging test failure\n"
+                    f"STDOUT:\n{test_result.stdout}\n"
+                    f"STDERR:\n{test_result.stderr}\n",
+                )
 
                 fix_plan = debug_response.content
                 self.journal.print(f"📋 [dim]Fix Plan:[/dim]\n{fix_plan}", truncate=500)
@@ -246,6 +268,19 @@ class BlondieAgent:
         except Exception as e:
             self.journal.print(f"⚠️ Failed to save WIP: {e}")
 
+    def _create_interaction_callback(self, task: Task, instruction: str):
+        """Create a callback for interactive shell commands."""
+
+        async def callback(command: str, stdout: str, stderr: str) -> str:
+            self.context_gatherer.add_task(task)
+            self.journal.print(f"🤖 LLM Interaction for: {command}")
+            response = await self.llm.interact_with_shell(
+                self.context_gatherer, instruction=instruction, command=command, stdout=stdout, stderr=stderr
+            )
+            return response.content.strip()
+
+        return callback
+
     async def _apply_llm_edits(self, task: Task, plan: str) -> bool:
         """Apply LLM-generated file edits."""
         self.journal.print("🤔 Identifying files to edit...")
@@ -298,7 +333,14 @@ class BlondieAgent:
                 cmd_success = False
 
                 for attempt in range(max_retries):
-                    result = self.exec.run(command, gate=gate, timeout=timeout)
+                    interaction = self._create_interaction_callback(task, instruction or command)
+                    try:
+                        result = await asyncio.wait_for(
+                            self.exec.run(command, gate=gate, interaction_callback=interaction),
+                            timeout=timeout,
+                        )
+                    except CommandTimeoutError as e:
+                        result = e.result
                     if result.returncode == 0:
                         cmd_success = True
                         self.progress.add_action("SHELL", command + f" # timeout={timeout}", "SUCCESS")
@@ -325,7 +367,13 @@ class BlondieAgent:
                         error_log=f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}",
                     )
                     debug_response = await session.send()
-                    debug_response = await self.tool_handler.run_loop(session, debug_response)
+                    debug_response = await self.tool_handler.run_loop(
+                        session,
+                        debug_response,
+                        cmd_instruction=instruction
+                        or f"Debugging command `{command}` failure\n"
+                        f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}\n",
+                    )
 
                     fix_plan = debug_response.content
                     self.journal.print(f"📋 [dim]Shell Fix Plan:[/dim]\n{fix_plan}", truncate=500)

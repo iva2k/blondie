@@ -5,7 +5,6 @@
 import subprocess
 from pathlib import Path
 
-from agent.executor import Executor
 from agent.policy import Policy
 from llm.journal import Journal
 
@@ -25,10 +24,25 @@ class GitCLI:
         self.policy = policy
         self._cwd = repo_path
         self.journal = journal or Journal()
-        self.executor = Executor(repo_path, policy, self.journal)
 
         if user and email:
             self.configure_author(user, email)
+
+    def _check_gate(self, action: str) -> bool:
+        """Return True if action is allowed to run, False if blocked."""
+        permission = self.policy.check_permission(action)
+        if permission == "allow":
+            return True
+        if permission == "forbid":
+            self.journal.print(f"⛔ Action '{action}' forbidden by POLICY.yaml")
+            return False
+        # prompt
+        self.journal.print(f"❓ Action '{action}' requires approval (POLICY.yaml)")
+        answer = self.journal.console.input("[Approve? (y/N)] ").strip().lower()
+        if not answer.startswith("y"):
+            self.journal.print("⏭️  Skipping command.")
+            return False
+        return True
 
     def run(
         self, *args: str, check: bool = True, capture_output: bool = False, expect_error: bool = False
@@ -37,13 +51,31 @@ class GitCLI:
         cmd_list = ["git", *args]
         gate = f"git-{args[0]}"
 
-        # We use a longer timeout (5 min) for git operations
-        result = self.executor.run(cmd_list, gate=gate, timeout=300, expect_error=expect_error)
-
-        if result.stderr == "SKIPPED_BY_POLICY":
+        if not self._check_gate(gate):
             raise PermissionError(f"Git action '{args[0]}' forbidden by POLICY.yaml")
 
+        if not capture_output:
+            self.journal.print(f"💻 [dim]{' '.join(cmd_list)}[/dim]")
+
+        try:
+            # We use a longer timeout (5 min) for git operations
+            result = subprocess.run(
+                cmd_list,
+                cwd=self.repo_path,
+                capture_output=True,
+                text=True,
+                timeout=300,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            self.journal.print(f"❌ Git command timed out: {' '.join(cmd_list)}")
+            raise
+
         if check and result.returncode != 0:
+            if not expect_error:
+                self.journal.print(f"❌ Git command failed: {result.stderr.strip()}")
             raise subprocess.CalledProcessError(result.returncode, cmd_list, output=result.stdout, stderr=result.stderr)
 
         if not capture_output:

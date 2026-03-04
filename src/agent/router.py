@@ -396,6 +396,20 @@ class LLMRouter:
             **kwargs,
         )
 
+    async def interact_with_shell(
+        self, context_gatherer: ContextGatherer, instruction: str, command: str, stdout: str, stderr: str, **kwargs: Any
+    ) -> LLMResponse:
+        """Provide input to interactive shell commands."""
+        return await self._execute_llm_skill(
+            "command_runner",
+            context_gatherer,
+            instruction=instruction,
+            command=command,
+            stdout=stdout,
+            stderr=stderr,
+            **kwargs,
+        )
+
     async def get_file_edits(
         self, context_gatherer: ContextGatherer, task_title: str, user_plan: str, **kwargs: Any
     ) -> LLMResponse:

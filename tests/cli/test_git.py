@@ -2,11 +2,11 @@
 
 """Unit tests for Git CLI wrapper."""
 
+import subprocess
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agent.executor import CommandResult
 from agent.policy import Policy
 from cli.git import GitCLI
 from llm.journal import Journal
@@ -28,22 +28,19 @@ def git_cli(mock_policy, tmp_path):
 
 def test_run_allow(git_cli, mock_policy):
     """Test allowed git command execution."""
-    git_cli.executor.run = MagicMock(return_value=CommandResult("git status", 0, "", ""))
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = subprocess.CompletedProcess(args=["git", "status"], returncode=0, stdout="", stderr="")
 
-    git_cli.run("status")
+        git_cli.run("status")
 
-    git_cli.executor.run.assert_called_once()
-    args, kwargs = git_cli.executor.run.call_args
-    assert "git" in args[0] and "status" in args[0]
-    assert kwargs["gate"] == "git-status"
+        mock_run.assert_called_once()
+        args, _ = mock_run.call_args
+        assert args[0] == ["git", "status"]
 
 
 def test_run_forbid(git_cli, mock_policy):
     """Test forbidden git command raises error."""
     mock_policy.check_permission.return_value = "forbid"
-
-    # Simulate Executor returning policy block
-    git_cli.executor.run = MagicMock(return_value=CommandResult("git push", 125, "", "SKIPPED_BY_POLICY"))
 
     with pytest.raises(PermissionError, match="forbidden by POLICY.yaml"):
         git_cli.run("push")
@@ -51,40 +48,44 @@ def test_run_forbid(git_cli, mock_policy):
 
 def test_run_prompt_approve(git_cli, mock_policy):
     """Test prompt approval flow."""
-    # GitCLI delegates to Executor. If Executor approves/runs, it returns success.
-    git_cli.executor.run = MagicMock(return_value=CommandResult("git merge", 0, "", ""))
+    mock_policy.check_permission.return_value = "prompt"
+    git_cli.journal.console.input = MagicMock(return_value="y")
 
-    git_cli.run("merge")
-    git_cli.executor.run.assert_called_once()
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = subprocess.CompletedProcess(args=["git", "merge"], returncode=0, stdout="", stderr="")
+        git_cli.run("merge")
+        mock_run.assert_called_once()
 
 
 def test_run_prompt_deny(git_cli, mock_policy):
     """Test prompt denial flow."""
-    # If Executor denies, it returns SKIPPED_BY_POLICY
-    git_cli.executor.run = MagicMock(return_value=CommandResult("git merge", 125, "", "SKIPPED_BY_POLICY"))
+    mock_policy.check_permission.return_value = "prompt"
+    git_cli.journal.console.input = MagicMock(return_value="n")
 
-    with pytest.raises(PermissionError, match="forbidden by POLICY.yaml"):
+    with pytest.raises(PermissionError):
         git_cli.run("merge")
 
 
 def test_current_branch(git_cli):
     """Test getting current branch."""
-    git_cli.executor.run = MagicMock(return_value=CommandResult("git branch", 0, "main\n", ""))
-    branch = git_cli.current_branch()
-    assert branch == "main"
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["git", "branch"], returncode=0, stdout="main\n", stderr=""
+        )
+        branch = git_cli.current_branch()
+        assert branch == "main"
 
 
 def test_is_clean(git_cli):
     """Test clean status check."""
-    git_cli.executor.run = MagicMock()
+    with patch("subprocess.run") as mock_run:
+        # Case 1: Clean (exit 0)
+        mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
+        assert git_cli.is_clean() is True
 
-    # Case 1: Clean (exit 0)
-    git_cli.executor.run.return_value = CommandResult("git diff", 0, "", "")
-    assert git_cli.is_clean() is True
-
-    # Case 2: Dirty (exit 1)
-    git_cli.executor.run.return_value = CommandResult("git diff", 1, "", "")
-    assert git_cli.is_clean() is False
+        # Case 2: Dirty (exit 1)
+        mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=1, stdout="", stderr="")
+        assert git_cli.is_clean() is False
 
 
 def test_create_pr_branch_switch(git_cli):
@@ -119,17 +120,13 @@ def test_create_pr_branch_already_on_branch_clean(git_cli):
 
 def test_configure_author(tmp_path, mock_policy):
     """Test that git author configuration runs git config commands."""
-    with patch("agent.executor.Executor.run") as mock_run:
-        mock_run.return_value = CommandResult("git config", 0, "", "")
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
         GitCLI(tmp_path, mock_policy, Journal(), user="Bot", email="bot@test.com")
 
         assert mock_run.call_count == 2
-        # Check calls
         calls = mock_run.call_args_list
-        # TODO: (when needed) Brittle test - order of calls is internal logic, could change.
-        args1, kwargs1 = calls[0]
-        args2, kwargs2 = calls[1]
+        args1, _ = calls[0]
+        args2, _ = calls[1]
         assert args1[0] == ["git", "config", "user.name", "Bot"]
-        assert kwargs1["gate"] == "git-config"
         assert args2[0] == ["git", "config", "user.email", "bot@test.com"]
-        assert kwargs2["gate"] == "git-config"

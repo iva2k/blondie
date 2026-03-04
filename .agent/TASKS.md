@@ -23,6 +23,7 @@ Status: id | priority | title | depends_on
 - [x] 024 | P5 | in router.py:LLMRouter._init_clients() raise error for not configured API endpoint |
 - [x] 025 | P3 | Use router.py:LLMRouter.check_daily_limit() |
 - [x] 026 | P0 | Timeout for shell commands and prompt instructions to use non-interactive options. |
+- [x] 027 | P3 | Connect stderr/stdout/stdin of shell commands in tools and planned actions interactively to LLM, so LLM could respond to shell command prompts. Use new SKILL `command_runner.skill.md`, and give it proper context - current command, task and action instruction. |
 - [x] 029 | P1 | In journal, add all shell commands, their return code and stdout/sterr |
 - [x] 030 | P1 | In journal, add system prompt, endpoint URL, and model name to LLM entries |
 - [x] 031 | P2 | Put Journal files into log/\<project_id>/task\<id>/ subfolders |
@@ -50,7 +51,6 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
-- [ ] 027 | P3 | Though SKILL prompts instruct LLM to use no interaction commands, it's possible some shell commands will still prompt the user. Connect stderr/stdout/stdin of shell commands in tools and planned actions interactively to LLM (perhaps collecting stdout until idle timeout), so LLM could respond to shell command prompts. Use new SKILL `command_runner.skill.md`, and give it proper context - current command, task and action instruction. |
 - [ ] 028 | P3 | In shell command retry/debug loop - concern is the nested loops that may negate the higher-level loop plan and wipe the lower level loop fixes out. Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
 
 - [ ] 015 | P4 | **DEPLOY!** Start self-editing | 025, 032, 037, 028, 035, 025, 039

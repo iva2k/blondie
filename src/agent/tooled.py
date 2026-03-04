@@ -4,18 +4,21 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from agent.executor import CommandTimeoutError
 from llm.client import LLMResponse
 from llm.journal import Journal
 
 if TYPE_CHECKING:
+    from agent.context import ContextGatherer
     from agent.executor import Executor
     from agent.progress import ProgressManager
     from agent.project import Project
-    from agent.router import ChatSession
+    from agent.router import ChatSession, LLMRouter
 
 
 TOOL_DEFINITIONS = {
@@ -67,14 +70,18 @@ class ToolHandler:
         executor: Executor,
         journal: Journal,
         progress: ProgressManager,
+        llm: LLMRouter,
+        context_gatherer: ContextGatherer,
     ):
         self.repo_path = repo_path
         self.project = project
         self.executor = executor
         self.journal = journal
         self.progress = progress
+        self.llm = llm
+        self.context_gatherer = context_gatherer
 
-    async def run_loop(self, session: ChatSession, initial_response: LLMResponse) -> LLMResponse:
+    async def run_loop(self, session: ChatSession, initial_response: LLMResponse, cmd_instruction: str) -> LLMResponse:
         """Handle interactive tool execution loop."""
         response = initial_response
         max_cycles = 15
@@ -110,8 +117,27 @@ class ToolHandler:
                                 if any(x in command for x in ["install", "add", "npm", "pip", "poetry"])
                                 else "shell"
                             )
+
+                            async def interaction_callback(
+                                cmd_input: str, stdout: str, stderr: str, cmd_ctx=command
+                            ) -> str:
+                                response = await self.llm.interact_with_shell(
+                                    self.context_gatherer,
+                                    instruction=cmd_instruction,
+                                    command=cmd_input,
+                                    stdout=stdout,
+                                    stderr=stderr,
+                                )
+                                return response.content.strip()
+
                             # Use executor with high timeout for exploration
-                            res = self.executor.run(command, gate=gate, timeout=120)
+                            try:
+                                res = await asyncio.wait_for(
+                                    self.executor.run(command, gate=gate, interaction_callback=interaction_callback),
+                                    timeout=120,
+                                )
+                            except CommandTimeoutError as e:
+                                res = e.result
                             output = f"Exit Code: {res.returncode}\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
                             status = "SUCCESS" if res.returncode == 0 else f"FAILED RC:{res.returncode}"
                             self.progress.add_action("SHELL", command, status)
@@ -155,7 +181,10 @@ class ToolHandler:
                                 cmd = f"npm view {pkg} versions"
 
                             if cmd:
-                                res = self.executor.run(cmd, gate="shell", timeout=30)
+                                try:
+                                    res = await asyncio.wait_for(self.executor.run(cmd, gate="shell"), timeout=30)
+                                except CommandTimeoutError as e:
+                                    res = e.result
                                 if res.returncode == 0:
                                     output = res.stdout[:2000] + ("..." if len(res.stdout) > 2000 else "")
                                     self.progress.add_action("FIND_PKG", f"{eco}:{pkg}", "SUCCESS")
