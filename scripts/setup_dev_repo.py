@@ -78,6 +78,7 @@ def main() -> None:
     for path in [repo_dir, remote_dir]:
         if path.exists():
             print(f"Cleaning {path}...")
+            # TODO: (now) The function "rmtree" is deprecated. The `onerror` parameter is deprecated. Use `onexc` instead.
             shutil.rmtree(path, onerror=handle_remove_readonly)
 
     # 2. Create Bare Remote
