@@ -18,8 +18,10 @@ docs:
 deploy:
   docker: docker build -t blondie:v1 .
 protected_files:
+  - .agent/llm.yaml
   - .agent/POLICY.yaml
   - .agent/project.yaml
   - .agent/secrets.env.yaml
   - .agent/dev.yaml
   - .venv
+  - poetry.lock
