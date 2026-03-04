@@ -15,6 +15,7 @@ from agent.context import ContextGatherer
 from agent.llm_config import LLMConfig
 from agent.policy import Policy
 from agent.tooled import TOOL_DEFINITIONS
+from lib.webscrape import KNOWN_COSTS
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
 from llm.journal import Journal
 from llm.skill import Skill
@@ -265,6 +266,12 @@ class LLMRouter:
                 continue
 
             pricing = self.known_costs.get(name, {})
+
+            # Fallback to KNOWN_COSTS if model not in scraped data
+            fallback = KNOWN_COSTS.get(name, {})
+            for model, costs in fallback.items():
+                if model not in pricing:
+                    pricing[model] = costs
 
             if provider_cfg.api_type == "openai":
                 self.clients[name] = OpenAIClient(

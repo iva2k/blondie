@@ -25,6 +25,9 @@ class LLMClient:
     """Abstract base HTTP LLM client."""
 
     base_url_default: str = ""
+    pricing_url: str = ""
+    pricing_selector: str = ""
+    pricing_hint: str = ""
 
     def __init__(
         self,
@@ -56,6 +59,11 @@ class OpenAIClient(LLMClient):
     """OpenAI / OpenAI-compatible (GPT, Ollama, vLLM, etc.)."""
 
     base_url_default: str = "https://api.openai.com/v1"
+    pricing_url: str = "https://developers.openai.com/api/docs/pricing?latest-pricing=standard"
+    pricing_selector: str = (
+        "#content-switcher-latest-pricing > div.content-switcher-panes.astro-cr4aci74 > div:nth-child(3) > table"
+    )
+    pricing_hint: str = '{"model": "Model", "input": "Input", "output": "Output"}'
 
     async def chat(self, messages: list[dict[str, Any]], **kwargs: Any) -> LLMResponse:
         payload = {
@@ -112,6 +120,15 @@ class AnthropicClient(LLMClient):
     """Anthropic Claude API."""
 
     base_url_default: str = "https://api.anthropic.com/v1"
+    # Simple page, some models, cards layout of data:
+    # pricing_url: str = "https://claude.com/pricing#api"
+    # pricing_selector: str = ".card_pricing_api_wrap"
+    # pricing_hint: str = '{"model": "Model", "input": "Input", "output": "Output"}'
+
+    # Detailed pricing page:
+    pricing_url: str = "https://platform.claude.com/docs/en/about-claude/pricing"
+    pricing_selector: str = "article table"  # Selects tables within the main article content
+    pricing_hint: str = '{"model": "Model", "input": "Base Input Tokens", "output": "Output Tokens"}'
 
     async def chat(self, messages: list[dict[str, Any]], **kwargs: Any) -> LLMResponse:
         # Convert OpenAI messages to Anthropic format
