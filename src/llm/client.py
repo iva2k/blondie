@@ -24,9 +24,11 @@ class LLMResponse:
 class LLMClient:
     """Abstract base HTTP LLM client."""
 
+    base_url_default: str = ""
+
     def __init__(self, api_key: str, base_url: str, model: str):
         self.api_key = api_key
-        self.base_url = base_url.rstrip("/")
+        self.base_url = (base_url or self.base_url_default).rstrip("/")
         self.model = model
         self.client = httpx.AsyncClient(timeout=httpx.Timeout(120.0))
 
@@ -45,6 +47,8 @@ class LLMClient:
 
 class OpenAIClient(LLMClient):
     """OpenAI / OpenAI-compatible (GPT, Ollama, vLLM, etc.)."""
+
+    base_url_default: str = "https://api.openai.com/v1"
 
     async def chat(self, messages: list[dict[str, Any]], **kwargs: Any) -> LLMResponse:
         payload = {
@@ -91,6 +95,8 @@ class OpenAIClient(LLMClient):
 
 class AnthropicClient(LLMClient):
     """Anthropic Claude API."""
+
+    base_url_default: str = "https://api.anthropic.com/v1"
 
     async def chat(self, messages: list[dict[str, Any]], **kwargs: Any) -> LLMResponse:
         # Convert OpenAI messages to Anthropic format
@@ -206,3 +212,10 @@ class AnthropicClient(LLMClient):
         resp.raise_for_status()
         data = resp.json()
         return [m["id"] for m in data["data"]]
+
+
+LLM_CLIENTS: dict[str, type[LLMClient]] = {
+    "OpenAI": OpenAIClient,
+    "Anthropic": AnthropicClient,
+    # Add more clients here
+}

@@ -1,5 +1,7 @@
 # Issues
 
+- [ ] Installation issue: SSL_CERT_FILE env var is not defined. It should be taken from certifi python package.
+
 - [ ] Python env is 3.11, poetry is installed under mingw64 and it hitches a different python, lower version. Poetry install fails due to python version mismatch to one specified in `pyproject.toml`.
 
 - [ ] LLM misses that dev.yaml file exists in get_file_edits. It is NOT given in files list, but PROJECT section mentions it in protected files. To close, verify protected files are listed in context.

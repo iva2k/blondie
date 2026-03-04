@@ -12,7 +12,7 @@ import yaml
 sys.path.append(str(Path(__file__).parents[1] / "src"))
 
 # pylint: disable=wrong-import-position
-from llm.client import AnthropicClient, LLMClient, OpenAIClient
+from llm.client import LLM_CLIENTS
 
 
 async def main() -> None:
@@ -35,38 +35,22 @@ async def main() -> None:
     llm_secrets = secrets.get("llm", {})
     models_data: dict[str, list[str]] = {}
 
-    client: LLMClient | None = None
-
-    # OpenAI
-    openai_secret = llm_secrets.get("openai")
-    if openai_secret and openai_secret.get("api_key"):
-        print("Fetching OpenAI models...")
-        client = OpenAIClient(
-            api_key=openai_secret["api_key"],
-            base_url=openai_secret.get("api_base") or "https://api.openai.com/v1",
-            model="gpt-4o-mini",  # Dummy model for init
+    for name, client_cls in LLM_CLIENTS.items():
+        title, name = name, name.lower().replace(" ", "_")
+        if name not in llm_secrets:
+            continue
+        secret = llm_secrets.get(name)
+        if not secret.get("api_key"):
+            continue
+        print(f"Fetching {title} models...")
+        client = client_cls(
+            api_key=secret["api_key"],
+            base_url=secret.get("api_base", ""),
+            model="dummy",
         )
         try:
             models = await client.list_models()
-            models_data["openai"] = sorted(models)
-            print(f"  ✅ Found {len(models)} models")
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            print(f"  ❌ Failed: {e}")
-        finally:
-            await client.close()
-
-    # Anthropic
-    anthropic_secret = llm_secrets.get("anthropic")
-    if anthropic_secret and anthropic_secret.get("api_key"):
-        print("Fetching Anthropic models...")
-        client = AnthropicClient(
-            api_key=anthropic_secret["api_key"],
-            base_url=anthropic_secret.get("api_base") or "https://api.anthropic.com/v1",
-            model="claude-3-5-sonnet-20240620",  # Dummy model for init
-        )
-        try:
-            models = await client.list_models()
-            models_data["anthropic"] = sorted(models)
+            models_data[name] = sorted(models)
             print(f"  ✅ Found {len(models)} models")
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"  ❌ Failed: {e}")
