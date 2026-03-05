@@ -6,7 +6,7 @@ autonomy:
     install-binary: prompt      # apt installs need review
     add-package: allow          # pip requirements OK
     shell: allow                # use of shell
-    shell-files: allow          # direct change of files
+    shell-files: forbid         # direct change of files
   test_retries: 3
   coordination: git  # git | filelock | none
 
