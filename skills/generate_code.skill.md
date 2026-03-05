@@ -41,7 +41,7 @@ You are provided with the following context sections:
 - **FILENAME**: The path of the file to generate or edit.
 - **INSTRUCTION**: The specific change or implementation detail requested.
 - **EXISTING**: The current content of the file (if it exists).
-- **TASK**: The current sprint task description, title, and priority.
+- **TASK**: The current sprint task id, title, priority, and description.
 - **PROJECT**: Project configuration, languages, coding standards, and development guidelines.
 - **FILES**: The list of existing files in the repository.
 - **PROGRESS**: History of previous attempts and actions on this task with their outcome.

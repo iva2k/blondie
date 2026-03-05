@@ -5,7 +5,7 @@ user-invocable: false
 operation: "planning"
 temperature: 0.1
 max-tokens: 2000
-user-content: "## TASK\n{task_id} {task_title}\n"
+user-content: ""
 context:
   task: True
   policy: True
@@ -37,7 +37,7 @@ You are at step 1 of AGENT FLOW.
 
 You are provided with the following context sections:
 
-- **TASK**: The current sprint task description, title, and priority.
+- **TASK**: The current sprint task id, title, priority, and description.
 - **POLICY**: The agent's autonomy rules and allowed actions.
 - **PROJECT**: Project configuration, languages, coding standards, and development guidelines.
 - **FILES**: The list of existing files in the repository.

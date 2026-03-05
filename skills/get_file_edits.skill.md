@@ -5,7 +5,7 @@ user-invocable: false
 operation: "planning"
 temperature: 0.1
 max-tokens: 1000
-user-content: "## TASK\n{task_id} {task_title}\n## USER_PLAN\n{user_plan}\n"
+user-content: "## USER_PLAN\n{user_plan}\n"
 log-title: "Task: {task_title}"
 context:
   os: True
@@ -42,7 +42,7 @@ You are at step 2 of **AGENT FLOW**.
 
 You are provided with the following context sections:
 
-- **TASK**: The current sprint task description, title, and priority.
+- **TASK**: The current sprint task id, title, priority, and description.
 - **USER_PLAN**: The high-level plan generated in the previous step.
 - **OS**: The current operating system environment.
 - **ARCH**: The current hardware environment.

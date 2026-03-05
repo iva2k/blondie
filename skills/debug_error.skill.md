@@ -41,7 +41,7 @@ You are at step 5 of AGENT FLOW.
 
 You are provided with the following context sections:
 
-- **TASK**: The current sprint task description, title, and priority.
+- **TASK**: The current sprint task id, title, priority, and description.
 - **ERROR**: The error log or failure message to be analyzed.
 - **COMMAND**: The shell command that produced the error.
 - **OS**: The current operating system environment.
