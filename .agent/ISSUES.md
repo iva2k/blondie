@@ -1,5 +1,9 @@
 # Issues
 
+This file contains topics to be pondered on and should produce entries in TASKS.md.
+
+- [ ] plan_task.skill.md has "## TASK" section twice - once in system prompt context, another in user prompt
+
 - [ ] Installation issue: SSL_CERT_FILE env var is not defined. It should be taken from certifi python package.
 
 - [ ] Python env is 3.11, poetry is installed under mingw64 and it hitches a different python, lower version. Poetry install fails due to python version mismatch to one specified in `pyproject.toml`.
