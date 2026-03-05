@@ -39,6 +39,7 @@ class ChatSession:
         response_schema: Any | None = None,
         response_format: Literal["json", "yaml"] | None = None,
         tools: list[dict[str, Any]] | None = None,
+        user_content: str | None = None,
     ):
         self.client = client
         self.provider_name = provider_name
@@ -53,6 +54,7 @@ class ChatSession:
         self.response_schema = response_schema
         self.response_format = response_format
         self.tools = tools
+        self.user_content = user_content
 
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": self.system_prompt}]
 
@@ -346,6 +348,7 @@ class LLMRouter:
             log_title=log_title,
             response_schema=response_schema,
             response_format=response_format,
+            user_content=user_prompt,
         )
 
         return await session.send(prompt=user_prompt)
@@ -482,6 +485,10 @@ class LLMRouter:
                 else:
                     self.journal.print(f"⚠️ Unknown tool '{tool_name}' in skill '{skill.name}'")
 
+        user_content = None
+        if skill.user_content:
+            user_content = skill.user_content.format(**kwargs)
+
         session = ChatSession(
             client=self.clients[provider],
             provider_name=provider,
@@ -496,11 +503,8 @@ class LLMRouter:
             response_schema=skill.response_schema,
             response_format=skill.response_format,
             tools=tools,
+            user_content=user_content,
         )
-
-        if skill.user_content:
-            user_content = skill.user_content.format(**kwargs)
-            session.messages.append({"role": "user", "content": user_content})
 
         return session
 

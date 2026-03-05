@@ -121,14 +121,18 @@ class ContextGatherer:
 
     def _get_task_context(self) -> dict[str, str] | str | None:
         # return f"{self.task.id} {self.task.title}" if self.task else None
-        return yaml.safe_dump(
-            {
-                "id": self.task.id,
-                "priority": self.task.priority or "",
-                "title": self.task.title,
-                "full_id": self.task.full_id,
-            }            
-        ) if self.task else None
+        return (
+            yaml.safe_dump(
+                {
+                    "id": self.task.id,
+                    "priority": self.task.priority or "",
+                    "title": self.task.title,
+                    "full_id": self.task.full_id,
+                }
+            )
+            if self.task
+            else None
+        )
 
     def _get_command_context(self) -> dict[str, str] | str | None:
         return self.command

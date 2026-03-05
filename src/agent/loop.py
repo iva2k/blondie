@@ -144,7 +144,7 @@ class BlondieAgent:
             session = self.llm.start_chat(
                 "plan_task", self.context_gatherer, task_title=task.title, policy_summary=str(self.policy.model_dump())
             )
-            plan_response = await session.send()
+            plan_response = await session.send(prompt=session.user_content)
             plan_response = await self.tool_handler.run_loop(
                 session, plan_response, cmd_instruction="Plan task tool calls"
             )
@@ -190,7 +190,7 @@ class BlondieAgent:
                     task_title=task.title,
                     error_log=error_log,
                 )
-                debug_response = await session.send()
+                debug_response = await session.send(prompt=session.user_content)
                 debug_response = await self.tool_handler.run_loop(
                     session,
                     debug_response,
@@ -365,7 +365,7 @@ class BlondieAgent:
                         task_title=task.title,
                         error_log=f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}",
                     )
-                    debug_response = await session.send()
+                    debug_response = await session.send(prompt=session.user_content)
                     debug_response = await self.tool_handler.run_loop(
                         session,
                         debug_response,

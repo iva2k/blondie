@@ -48,7 +48,7 @@ You are provided with the following context sections:
 
 ## GOAL
 
-Your goal is to follow the **INSTRUCTIONS** and to generate or modify content of the file specified in the **FILENAME** based on the user **INSTRUCTION**.
+Your goal is to follow the **INSTRUCTIONS** and to generate or modify **EXISTING** content of the file specified in the **FILENAME** based on the user **INSTRUCTION**.
 
 Your output will be used in **AGENT FLOW** step 4 to run the tests and verify if the **TASK** has been achieved.
 

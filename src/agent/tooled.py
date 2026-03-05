@@ -119,7 +119,7 @@ class ToolHandler:
                             )
 
                             async def interaction_callback(
-                                cmd_input: str, stdout: str, stderr: str, cmd_ctx=command
+                                cmd_input: str, stdout: str, stderr: str, _cmd_ctx=command
                             ) -> str:
                                 response = await self.llm.interact_with_shell(
                                     self.context_gatherer,
