@@ -12,7 +12,7 @@ autonomy:
 
 commands:
   install: poetry install
-  test: pytest tests/
+  test: poetry run pytest tests/
   build: python -m build
   lint: ruff check .
 

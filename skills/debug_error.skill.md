@@ -82,5 +82,6 @@ Your output will be used in **AGENT FLOW** step 2 by another LLM to generate spe
 - Use 'run_shell' tool with 'grep', 'find' (or similar) commands to search the codebase for relevant files, definitions, and usages to find the code responsible for the error and identify all related files that might need fixing.
 - For shell commands, use flags for non-interactive execution (e.g. -y, --no-input).
 - When using 'run_shell' or planning shell commands, specify a conservative timeout (4x nominal time) to prevent partial execution and avoid project corruption.
+- When investigating timeout errors - ask if command is supposed to finish on its own, or could it wait for user input. Is it a GUI app that needs to be explicitly closed?
 - Do NOT use shell commands to create or modify files (e.g. `echo`, `cat`, `printf` with redirection) unless the `shell-files` gate in **POLICY** is set to `allow`. If gate is `forbid`, they return `SKIPPED_BY_POLICY`. If the error is `SKIPPED_BY_POLICY`, replace the shell command with a file edit action.
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"

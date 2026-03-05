@@ -134,7 +134,7 @@ add-package: allow
 
 ## Commands
 install: poetry install
-test: pytest tests/
+test: poetry run pytest tests/
 build: python -m build
 ```
 
@@ -146,7 +146,7 @@ languages: [python]
 task_source: TASKS.md
 commands:
   install: poetry install
-  test: pytest tests/
+  test: poetry run pytest tests/
   build: python -m build
 policy: POLICY.yaml
 docs: [README.md, docs/]

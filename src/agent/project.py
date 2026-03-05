@@ -56,3 +56,7 @@ class Project(BaseModel):
                 journal.print(f"❌ Failed to load dev_config {dev_path}: {e}")
         del project.dev_config  # Do not show it after loading
         return project
+
+    def get_command(self, command: str) -> str | None:
+        """Get command template for named operation."""
+        return self.commands.get(command)

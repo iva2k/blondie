@@ -75,12 +75,12 @@ Your output will be used in **AGENT FLOW** step 2 by another LLM to generate spe
 
 Format as clean Markdown with only these sections:
 
-1. **Success Criteria**: Define how the success of achieving the **TASK** can be verified.
+1. **Success Criteria**: Define how the success of achieving the **TASK** can be verified with automated tests.
 2. **Initialize Commands and Dependencies**: List of commands to prepare project scaffolding and add dependencies.
 3. **Files to Create/Modify**: List of files.
 4. **Shell Commands**: List of commands to run (install dependencies, etc).
 5. **Code Changes**: Detailed description of logic changes.
-6. **Verification**: Automated tests to run (e.g. `pytest tests/test_foo.py`). Do not list manual steps.
+6. **Verification Plan**: Automated tests to create and run (e.g. `pytest tests/test_foo.py`). Do not list manual steps.
 7. **Risks**: Potential risks + mitigations.
 
 Do not add any other sections or a title.

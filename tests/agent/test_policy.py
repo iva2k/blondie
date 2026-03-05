@@ -20,9 +20,6 @@ autonomy:
     git-merge: prompt
     deploy-prod: prompt
     install-binary: forbid
-commands:
-  test: "npm test"
-  build: "npm run build"
 docs:
   always-update:
     - README.md
@@ -39,7 +36,6 @@ def test_policy_yaml_parsing(sample_policy_file: Path) -> None:
     assert policy.check_permission("git-merge") == "prompt"
     assert policy.check_permission("deploy-prod") == "prompt"
     assert policy.check_permission("install-binary") == "forbid"
-    assert policy.get_command("test") == "npm test"
     assert policy.docs["always-update"] == ["README.md"]
 
 

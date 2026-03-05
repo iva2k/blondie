@@ -16,6 +16,7 @@ from pathlib import Path
 
 from agent.interaction import InteractionProvider
 from agent.policy import Policy
+from agent.project import Project
 from agent.shell_cmd_policy import ShellCommandPolicy
 from llm.journal import Journal
 
@@ -41,9 +42,12 @@ class CommandTimeoutError(Exception):
 class Executor:
     """Shell command executor obeying POLICY.yaml autonomy gates."""
 
-    def __init__(self, repo_path: Path, policy: Policy, journal: Journal, interactor: InteractionProvider):
+    def __init__(
+        self, repo_path: Path, policy: Policy, project: Project, journal: Journal, interactor: InteractionProvider
+    ):
         self.repo_path = repo_path
         self.policy = policy
+        self.project = project
         self.journal = journal or Journal()
         self.cmd_policy = ShellCommandPolicy(self.policy, self.journal, interactor)
 
@@ -202,7 +206,7 @@ class Executor:
 
     async def run_install(self) -> CommandResult:
         """Run install command."""
-        cmd = self.policy.commands.get("install")
+        cmd = self.project.commands.get("install")
         if not cmd:
             self.journal.print("ℹ️  No 'install' command configured, skipping.")
             return CommandResult("install (skipped)", 0, "", "")
@@ -214,7 +218,7 @@ class Executor:
 
     async def run_tests(self) -> CommandResult:
         """Run tests command."""
-        cmd = self.policy.commands.get("test")
+        cmd = self.project.commands.get("test")
         if not cmd:
             self.journal.print("ℹ️  No 'test' command configured, skipping.")
             return CommandResult("test (skipped)", 0, "", "")
@@ -227,7 +231,7 @@ class Executor:
 
     async def run_build(self) -> CommandResult:
         """Run build command."""
-        cmd = self.policy.commands.get("build")
+        cmd = self.project.commands.get("build")
         if not cmd:
             self.journal.print("ℹ️  No 'build' command configured, skipping.")
             return CommandResult("build (skipped)", 0, "", "")

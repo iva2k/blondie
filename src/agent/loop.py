@@ -42,7 +42,7 @@ class BlondieAgent:
         self.tasks = TasksManager(self.tasks_path, project_id=self.project.id.upper(), journal=self.journal)
         self.git = GitCLI(self.repo_path, self.policy, self.journal, self.project.git_user, self.project.git_email)
         interactor = ConsoleInteractionProvider(self.journal)
-        self.exec = Executor(self.repo_path, self.policy, self.journal, interactor)
+        self.exec = Executor(self.repo_path, self.policy, self.project, self.journal, interactor)
         self.gitignore = GitIgnore(self.repo_path)
         self.progress = ProgressManager(self.progress_path)
         self.context_gatherer = ContextGatherer(

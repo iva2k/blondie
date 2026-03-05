@@ -7,8 +7,9 @@ main_branch: main
 task_source: TASKS.md
 commands:
   install: poetry install
-  test: pytest tests/
+  test: poetry run pytest tests/
   build: python -m build
+  lint: ruff check .
 policy: POLICY.yaml
 dev_config: dev.yaml
 docs:

@@ -19,11 +19,10 @@ class AutonomyRule(BaseModel):
 
 
 class Policy(BaseModel):
-    """Parsed POLICY.yaml configuration for repo autonomy and commands."""
+    """Parsed POLICY.yaml configuration for agent autonomy."""
 
     autonomy: dict[str, Any] = {}
     limits: dict[str, Any] = {}
-    commands: dict[str, str] = {}
     git_strategy: dict[str, str] = {}
     docs: dict[str, list[str]] = {}
 
@@ -50,10 +49,6 @@ class Policy(BaseModel):
 
         # Default: fully autonomous
         return "allow"
-
-    def get_command(self, command: str) -> str | None:
-        """Get command template for named operation."""
-        return self.commands.get(command)
 
 
 if __name__ == "__main__":

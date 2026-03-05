@@ -40,6 +40,7 @@ def test_project_parsing(sample_project_yaml: Path) -> None:
     assert project.name == "Test Project"
     assert project.languages == ["python", "rust"]
     assert project.commands["test"] == "pytest"
+    assert project.get_command("test") == "pytest"
     assert project.deploy["docker"] == "docker build ."
     assert project.git_user == "Test Bot"
     assert project.git_email == "bot@test.com"
