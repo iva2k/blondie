@@ -70,7 +70,7 @@ Your output will be used in **AGENT FLOW** step 2 by another LLM to generate spe
   - **COMMAND**: Understand the intent of the failed operation.
   - **OS**/**ARCH**/**SHELL**: Ensure proposed shell commands are compatible with the environment.
   - **POLICY**: Respect allowed actions, such as `shell-files` in the gates to determine if file creation via shell is allowed.
-  - **PROJECT**: Use project-specific commands (e.g., `npm install`, `poetry add`) defined in configuration. Adhere to dev.guidelines, project structure, and preferred tools.
+  - **PROJECT**: Use project-specific commands (e.g., `npm install`, `poetry add`) defined in configuration. Adhere to dev.guidelines, project structure, and preferred tools. Use dev.debug_hints for ideas.
   - **FILES**: Identify which files to review using 'read_file' tool. Identify which files need to be created, modified, or deleted.
   - **PROGRESS**: Ensure actions do not repeat previously failed attempts without modification, understand the issue in depth from all the previous actions.
 - Focus on specific files to edit.

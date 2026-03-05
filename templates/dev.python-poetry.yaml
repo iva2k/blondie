@@ -26,3 +26,7 @@ guidelines:
   - "Use `#!/usr/bin/env python3` shebang in files with main() function."
   - "Ensure shell commands are compatible with the current **OS**/**ARCH**/**SHELL**."
   - "Ensure all code is compatible with Windows/Linux/MacOS"
+debugging_hints:
+  - "Are you using poetry environment? Always use `poetry run ...` to execute commands."
+  - "If `ModuleNotFoundError` occurs after installation, check if you are running the command inside the same environment (e.g. `poetry run pytest` vs `pytest`)."
+  - "If a GUI app test times out, ensure you are not waiting for `mainloop()` to finish. Use `subprocess.Popen` and kill the process after verification."

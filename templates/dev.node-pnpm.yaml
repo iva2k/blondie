@@ -1,0 +1,19 @@
+environment:
+  language: typescript
+  manager: pnpm
+  node_version: ">=18"
+  linter: eslint
+  formatter: prettier
+  types:
+  scripts: package.json
+  bundler: vite
+  unit_test: vitest
+  e2e: playwright
+  gui: react
+  env: nodenv
+guidelines:
+  - "Use pnpm for dependency management"
+  - "Use pnpm test"
+  - "Ensure shell commands are compatible with the current **OS**/**ARCH**/**SHELL**."
+  - "Ensure all code is compatible with Windows/Linux/MacOS"
+debugging_hints:

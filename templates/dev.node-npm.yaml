@@ -1,9 +1,0 @@
-environment:
-  language: typescript
-  manager: npm
-  node_version: ">=18"
-  linter: eslint
-  formatter: prettier
-guidelines:
-  - "Use npm for dependency management"
-  - "Use npm test"
