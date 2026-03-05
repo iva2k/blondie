@@ -25,6 +25,12 @@ def test_gate_detection_shell_files():
     # Basic redirection
     assert ShellCommandParser.detect_gate("echo hello > world.txt") == "shell-files"
     assert ShellCommandParser.detect_gate("cat file >> append.txt") == "shell-files"
+    assert (
+        ShellCommandParser.detect_gate(
+            'echo \'[[tool.poetry.source]]\nname = "pypi"\nurl = "https://pypi.org/simple"\' >> pyproject.toml'
+        )
+        == "shell-files"
+    )
 
     # Tee
     assert ShellCommandParser.detect_gate("cat file | tee -a append.txt") == "shell-files"
