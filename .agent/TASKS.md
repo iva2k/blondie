@@ -54,6 +54,7 @@ Status: id | priority | title | depends_on
 
 - [ ] 015 | P4 | **DEPLOY!** Start self-editing | 025, 032, 037, 028, 035, 025, 039
 
+- [ ] 058 | P5 | Add toolify to skills - use frontmatter data to compose tool definition for the skill, add to tooled.py roster of tools. (with that, skills could chain each other by pure declaration of the available tools in frontmatter.tools ) |
 - [ ] 028 | P5 | In shell command retry/debug loop - concern is the nested loops that may negate the higher-level loop plan and wipe the lower level loop fixes out. Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. This is philosophical. | 056, 057
 - [ ] 056 | P5 | Philosophical: [solve 028] Should we micro-manage the agent (rigidly chain the steps), or let it choose what to do and when? Decide its workflow, pick next skill. Skills could have required inputs, and agent can call skills as tools. **BIG IDEA**: wrap skills as tools and add to a collection of tools that includes (current) hard-coded ones. The agent will be able to orchestrate itself. Further, the agent will be able to create its own tool-skills.
 - [ ] 057 | [for 028] Fight context rot and endless loops: Use 1. continuation (nested tool calls) and 2. "restart itself" - with summarized knowledge call itself as a tool, but for breaking the loop it can replace self chat history in the tool call chain. | 054
