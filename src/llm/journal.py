@@ -151,3 +151,13 @@ class Journal:
             # pylint: disable-next=broad-exception-caught
             except Exception as e:
                 self.console.print(f"[red]Journal write failed: {e}[/red]")
+
+    def get_archive_path(self, filename: str) -> Path | None:
+        """Get path for an archive file in the current log directory."""
+        if not self.current_log_file:
+            return None
+
+        if filename.startswith("."):
+            return self.current_log_file.with_suffix(filename)
+
+        return self.current_log_file.parent / filename

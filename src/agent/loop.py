@@ -251,6 +251,11 @@ class BlondieAgent:
             self.journal.print("Leaving task In Progress for review...")
             return False
         finally:
+            # Archive progress log
+            archive_path = self.journal.get_archive_path(".progress.txt")
+            if archive_path:
+                self.progress.archive(archive_path)
+
             # 042: Log task cost
             task_cost = self.llm.daily_cost - start_cost
             self.journal.print(f"💰 Task cost: ${task_cost:.4f}")

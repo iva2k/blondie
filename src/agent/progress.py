@@ -3,6 +3,7 @@
 """Progress manager for tracking agent actions."""
 
 import datetime
+import shutil
 from pathlib import Path
 
 
@@ -34,3 +35,16 @@ class ProgressManager:
         """Clear progress history."""
         if self.path.exists():
             self.path.write_text("", encoding="utf-8")
+
+    def archive(self, destination: Path) -> None:
+        """Copy progress file to destination."""
+        if not self.path.exists():
+            return
+
+        # Ensure destination directory exists
+        if destination.suffix:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            destination.mkdir(parents=True, exist_ok=True)
+
+        shutil.copy2(self.path, destination)
