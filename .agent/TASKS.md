@@ -51,17 +51,20 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
-- [ ] 028 | P3 | In shell command retry/debug loop - concern is the nested loops that may negate the higher-level loop plan and wipe the lower level loop fixes out. Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. | 027
 
 - [ ] 015 | P4 | **DEPLOY!** Start self-editing | 025, 032, 037, 028, 035, 025, 039
 
-- [ ] 013 | P3 | Vercel/Netlify CLI wrappers |
-- [ ] 014 | P3 | Docker build + e2e tests |
-- [ ] 016 | P4 | Multi-repo scanner + project.yaml |
-- [ ] 017 | P4 | Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" |
-- [ ] 018 | P4 | Tasks.py should pick blocking task first |
-- [ ] 019 | P4 | Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
-- [ ] 021 | P5 | Add "details" field to TASKS.md, so title could be short, similar to most bug trackers |
-- [ ] 038 | P5 | Allow multirepo - limit agent to a project subfolder inside a bigger repo |
-- [ ] 041 | P5 | Agent should communicate with external world: email, slack, twitter. Events: task queue stuck (all tasks blocked, can't finish blockers), Deploy triggered. Carefull as swarm will flood the channels. |
+- [ ] 028 | P5 | In shell command retry/debug loop - concern is the nested loops that may negate the higher-level loop plan and wipe the lower level loop fixes out. Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. This is philosophical. | 056, 057
+- [ ] 056 | P5 | Philosophical: [solve 028] Should we micro-manage the agent (rigidly chain the steps), or let it choose what to do and when? Decide its workflow, pick next skill. Skills could have required inputs, and agent can call skills as tools. **BIG IDEA**: wrap skills as tools and add to a collection of tools that includes (current) hard-coded ones. The agent will be able to orchestrate itself. Further, the agent will be able to create its own tool-skills.
+- [ ] 057 | [for 028] Fight context rot and endless loops: Use 1. continuation (nested tool calls) and 2. "restart itself" - with summarized knowledge call itself as a tool, but for breaking the loop it can replace self chat history in the tool call chain. | 054
 - [ ] 054 | P5 | Compose summary notes of LLM thinking findings in debug-fix LLM loop, so LLM could understand later that it beats on the same problem and could try different approaches |
+
+- [ ] 013 | P5 | [FEATURE] Vercel/Netlify CLI wrappers |
+- [ ] 014 | P5 | [FEATURE] Docker build + e2e tests |
+- [ ] 016 | P5 | [FEATURE] Multi-repo scanner + project.yaml | 038
+- [ ] 038 | P5 | [for 016] Allow multirepo - limit agent to a project subfolder inside a bigger repo |
+- [ ] 017 | P5 | [FEATURE] Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" |
+- [ ] 018 | P5 | [FEATURE] Tasks.py should pick blocking task first |
+- [ ] 019 | P5 | [FEATURE] Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
+- [ ] 021 | P5 | [FEATURE] Add "details" field to TASKS.md, so title could be short, similar to most bug trackers. Prompts bigger rethink - how TASKS.md is best structured? BugTrackers usually have discussions pre- and post- implementation.  |
+- [ ] 041 | P5 | [FEATURE] Agent should communicate with external world: email, slack, twitter. Events: task queue stuck (all tasks blocked, can't finish blockers), Deploy triggered. Carefull as swarm will flood the channels. |
