@@ -14,5 +14,7 @@
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
-  "editor.rulers": [120]
+  "editor.rulers": [
+    120
+  ]
 }
