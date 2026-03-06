@@ -28,6 +28,7 @@ markdown = "^3.7"
 python-dotenv = "^1.0.1"
 playwright = "^1.42.0"
 beautifulsoup4 = "^4.12.3"
+jsonschema = "^4.26.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"

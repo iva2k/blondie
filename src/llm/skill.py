@@ -2,6 +2,7 @@
 
 """Skill module for parsing LLM skills from markdown files."""
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -99,9 +100,15 @@ class Skill:
     def render_system_prompt(self, **kwargs: Any) -> str:
         """Render the system prompt with context variables."""
         try:
-            return self.system_prompt.format(**kwargs)
+            rendered = self.system_prompt.format(**kwargs)
         except KeyError as e:
             raise ValueError(f"Missing context variable for skill {self.name}: {e}") from e
+
+        if self.output_schema:
+            schema_str = json.dumps(self.output_schema, indent=2)
+            rendered += f"\n\n## Output Format\n\nYou must output a valid JSON object matching this schema:\n```json\n{schema_str}\n```\n"
+
+        return rendered
 
     def to_tool_definition(self) -> dict[str, Any]:
         """Convert skill to OpenAI/Anthropic tool definition."""

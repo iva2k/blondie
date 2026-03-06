@@ -8,6 +8,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal
 
+import jsonschema
 import yaml
 from pydantic import ValidationError
 
@@ -40,6 +41,7 @@ class ChatSession:
         response_format: Literal["json", "yaml"] | None = None,
         tools: list[dict[str, Any]] | None = None,
         user_content: str | None = None,
+        output_schema: dict[str, Any] | None = None,
     ):
         self.client = client
         self.provider_name = provider_name
@@ -55,6 +57,7 @@ class ChatSession:
         self.response_format = response_format
         self.tools = tools
         self.user_content = user_content
+        self.output_schema = output_schema
 
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": self.system_prompt}]
 
@@ -63,6 +66,7 @@ class ChatSession:
         prompt: str | None = None,
         response_schema: Any | None = None,
         response_format: Literal["json", "yaml"] | None = None,
+        output_schema: dict[str, Any] | None = None,
     ) -> LLMResponse:
         """Send message to LLM and get response."""
         if prompt:
@@ -71,8 +75,13 @@ class ChatSession:
         # Defaults from session if not provided
         use_response_schema = response_schema or self.response_schema
         use_response_format = response_format or self.response_format
+        use_output_schema = output_schema or self.output_schema
 
-        max_retries = 3 if use_response_schema else 0
+        # Default to JSON if output_schema is present
+        if use_output_schema and not use_response_format:
+            use_response_format = "json"
+
+        max_retries = 3 if (use_response_schema or use_output_schema) else 0
         attempts = 0
 
         while True:
@@ -122,7 +131,7 @@ class ChatSession:
                 return response
 
             # If no validation needed, we are done
-            if not use_response_schema and not use_response_format:
+            if not use_response_schema and not use_response_format and not use_output_schema:
                 self.messages.append({"role": "assistant", "content": response.content})
                 return response
 
@@ -151,10 +160,14 @@ class ChatSession:
                     validated = use_response_schema.model_validate(data)
                     response.parsed = validated
 
+                if use_output_schema:
+                    jsonschema.validate(instance=data, schema=use_output_schema)
+                    # response.parsed is already data
+
                 self.messages.append({"role": "assistant", "content": response.content})
                 return response
 
-            except (json.JSONDecodeError, yaml.YAMLError, ValidationError) as e:
+            except (json.JSONDecodeError, yaml.YAMLError, ValidationError, jsonschema.ValidationError) as e:
                 if attempts > max_retries:
                     self.journal.print(f"❌ Validation failed after {max_retries} retries: {e}")
                     self.messages.append({"role": "assistant", "content": response.content})
@@ -329,6 +342,7 @@ class LLMRouter:
         log_title: str,
         response_schema: Any | None = None,
         response_format: Literal["json", "yaml"] | None = None,
+        output_schema: dict[str, Any] | None = None,
     ) -> LLMResponse:
         """Execute LLM task with common logging and cost tracking."""
         provider, model = self.select_model(operation)
@@ -349,6 +363,7 @@ class LLMRouter:
             response_schema=response_schema,
             response_format=response_format,
             user_content=user_prompt,
+            output_schema=output_schema,
         )
 
         return await session.send(prompt=user_prompt)
@@ -362,6 +377,7 @@ class LLMRouter:
         skill = self.skills[skill_name]
         response_schema = kwargs.pop("response_schema", None) or skill.response_schema
         response_format = kwargs.pop("response_format", None) or skill.response_format
+        output_schema = kwargs.pop("output_schema", None) or skill.output_schema
         kwargs = kwargs or {}
         if context_gatherer:
             context_str, context_parts = context_gatherer.gather(skill.context)
@@ -380,6 +396,7 @@ class LLMRouter:
             log_title=log_title,
             response_schema=response_schema,
             response_format=response_format,
+            output_schema=output_schema,
         )
 
         if "Missing CONTEXT sections:" in response.content:
@@ -502,6 +519,7 @@ class LLMRouter:
             log_title=log_title,
             response_schema=skill.response_schema,
             response_format=skill.response_format,
+            output_schema=skill.output_schema,
             tools=tools,
             user_content=user_content,
         )
