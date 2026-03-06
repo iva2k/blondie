@@ -27,7 +27,8 @@ blondie/
 ├── docs/                     # Blondie self-docs
 │   ├── DEPLOY.md             # Deployment instructions
 │   ├── DEVELOP.md            # Development instructions
-│   └── ARCHITECTURE.md       # Module diagram
+│   ├── ARCHITECTURE1.md      # v1 Architecture (Procedural)
+│   └── ARCHITECTURE2.md      # v2 Architecture (Recursive)
 ├── scripts/                  # Dev scripts and utils
 ├── skills/                   # Core SKILL files
 ├── src/                      # Core runtime
@@ -74,6 +75,19 @@ blondie/
 ├── pytest.ini                # pythonpath=src
 └── README.md
 ```
+
+## Architecture
+
+Blondie is evolving from a procedural script in [Architecture v1](docs/ARCHITECTURE1.md) to a recursive AI agent in [Architecture v2](docs/ARCHITECTURE2.md).
+  
+| Feature       | v1: Procedural Loop    | v2: Recursive Orchestrator         |
+| :------------ | :--------------------- | :--------------------------------- |
+| Status        | Current (Stable)       | Next-Gen (In Development)          |
+| Control Flow  | Python Code (loop.py)  | LLM (loop2.py orchestrator skill)  |
+| Context       | Shared/Global          | Stacked/Isolated                   |
+| Tooling       | Hardcoded (Shell/File) | Dynamic (Skills Primitives)        |
+| Debugging     | Linear Retry Loop      | Intelligent Sub-Agent Call         |
+| Extensibility | Modify Python Code     | Add .skill.md file                 |
 
 ## Development and Debugging
 
