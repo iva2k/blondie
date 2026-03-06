@@ -62,6 +62,8 @@ class BlondieAgent:
             self.progress,
             self.llm,
             self.context_gatherer,
+            self.tasks,
+            self.git,
         )
 
     async def _pick_task(self) -> Task | None:

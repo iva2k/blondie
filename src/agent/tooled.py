@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from agent.progress import ProgressManager
     from agent.project import Project
     from agent.router import ChatSession, LLMRouter
+    from agent.tasks import TasksManager
+    from cli import GitCLI
 
 
 TOOL_DEFINITIONS = {
@@ -70,6 +72,29 @@ TOOL_DEFINITIONS = {
             "required": ["package_name", "ecosystem"],
         },
     },
+    "get_next_task": {
+        "name": "get_next_task",
+        "description": "Get the next high-priority task from the backlog.",
+        "parameters": {"type": "object", "properties": {}},
+    },
+    "claim_task": {
+        "name": "claim_task",
+        "description": "Claim a task to start working on it. Creates a git branch.",
+        "parameters": {
+            "type": "object",
+            "properties": {"task_id": {"type": "string", "description": "The ID of the task to claim."}},
+            "required": ["task_id"],
+        },
+    },
+    "complete_task": {
+        "name": "complete_task",
+        "description": "Mark a task as completed in TASKS.md.",
+        "parameters": {
+            "type": "object",
+            "properties": {"task_id": {"type": "string", "description": "The ID of the task to complete."}},
+            "required": ["task_id"],
+        },
+    },
 }
 
 
@@ -85,6 +110,8 @@ class ToolHandler:
         progress: ProgressManager,
         llm: LLMRouter,
         context_gatherer: ContextGatherer,
+        tasks_manager: TasksManager,
+        git: GitCLI,
     ):
         self.repo_path = repo_path
         self.project = project
@@ -93,12 +120,17 @@ class ToolHandler:
         self.progress = progress
         self.llm = llm
         self.context_gatherer = context_gatherer
+        self.tasks_manager = tasks_manager
+        self.git = git
         self.tool_definitions = TOOL_DEFINITIONS.copy()
         self.tool_implementations: dict[str, Callable] = {
             "run_shell": self._run_shell,
             "read_file": self._read_file,
             "write_file": self._write_file,
             "find_package": self._find_package,
+            "get_next_task": self._get_next_task,
+            "claim_task": self._claim_task,
+            "complete_task": self._complete_task,
         }
 
     def register(self, name: str, definition: dict, implementation: Callable):
@@ -215,6 +247,45 @@ class ToolHandler:
             output = f"Error finding package: {res.stderr or res.stdout}"
             self.progress.add_action("FIND_PKG", f"{ecosystem}:{package_name}", "FAILED")
         return output
+
+    async def _get_next_task(self, **_kwargs) -> str:
+        """Get the next high-priority task."""
+        task = self.tasks_manager.get_next_task()
+        if not task:
+            return "No tasks available."
+        return f"Task ID: {task.id}\nTitle: {task.title}\nPriority: {task.priority}"
+
+    async def _claim_task(self, task_id: str, **_kwargs) -> str:
+        """Claim a task."""
+        if not task_id:
+            return "Error: Missing task_id"
+
+        try:
+            success = self.tasks_manager.claim_task(task_id, self.git)
+            if success:
+                self.progress.add_action("CLAIM_TASK", task_id, "SUCCESS")
+                return f"Successfully claimed task {task_id}."
+            else:
+                self.progress.add_action("CLAIM_TASK", task_id, "FAILED")
+                return f"Failed to claim task {task_id}. It might be already claimed or branch exists."
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return f"Error claiming task: {e}"
+
+    async def _complete_task(self, task_id: str, **_kwargs) -> str:
+        """Complete a task."""
+        if not task_id:
+            return "Error: Missing task_id"
+
+        try:
+            success = self.tasks_manager.complete_task(task_id)
+            if success:
+                self.progress.add_action("COMPLETE_TASK", task_id, "SUCCESS")
+                return f"Successfully completed task {task_id}."
+            else:
+                self.progress.add_action("COMPLETE_TASK", task_id, "FAILED")
+                return f"Failed to complete task {task_id}. Task not found or update failed."
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return f"Error completing task: {e}"
 
     async def run_loop(self, session: ChatSession, initial_response: LLMResponse, cmd_instruction: str) -> LLMResponse:
         """Handle interactive tool execution loop."""

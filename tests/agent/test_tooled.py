@@ -23,6 +23,8 @@ def tool_handler(tmp_path):
     progress = MagicMock()
     llm = MagicMock()
     context_gatherer = MagicMock()
+    tasks_manager = MagicMock()
+    git = MagicMock()
 
     return ToolHandler(
         repo_path=repo_path,
@@ -32,6 +34,8 @@ def tool_handler(tmp_path):
         progress=progress,
         llm=llm,
         context_gatherer=context_gatherer,
+        tasks_manager=tasks_manager,
+        git=git,
     )
 
 
@@ -281,3 +285,40 @@ async def test_run_loop_json_error(tool_handler):
 
     args, _ = session.add_tool_result.call_args
     assert "Error: Invalid JSON" in args[1]
+
+
+@pytest.mark.asyncio
+async def test_get_next_task(tool_handler):
+    """Test get_next_task tool."""
+    mock_task = MagicMock()
+    mock_task.id = "001"
+    mock_task.title = "Test Task"
+    mock_task.priority = "P0"
+    tool_handler.tasks_manager.get_next_task.return_value = mock_task
+
+    # pylint: disable=protected-access
+    result = await tool_handler._get_next_task()
+    assert "Task ID: 001" in result
+    assert "Title: Test Task" in result
+
+
+@pytest.mark.asyncio
+async def test_claim_task(tool_handler):
+    """Test claim_task tool."""
+    tool_handler.tasks_manager.claim_task.return_value = True
+
+    # pylint: disable=protected-access
+    result = await tool_handler._claim_task("001")
+    assert "Successfully claimed" in result
+    tool_handler.tasks_manager.claim_task.assert_called_with("001", tool_handler.git)
+
+
+@pytest.mark.asyncio
+async def test_complete_task(tool_handler):
+    """Test complete_task tool."""
+    tool_handler.tasks_manager.complete_task.return_value = True
+
+    # pylint: disable=protected-access
+    result = await tool_handler._complete_task("001")
+    assert "Successfully completed" in result
+    tool_handler.tasks_manager.complete_task.assert_called_with("001")
