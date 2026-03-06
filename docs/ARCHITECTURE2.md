@@ -52,6 +52,17 @@ If a Sub-Agent hits a token limit or gets stuck:
 2. The system condenses the current session history into a "Knowledge Summary".
 3. The session is wiped, and a new session starts with the original System Prompt + Knowledge Summary.
 
+### 2.4. Data Flow & Side Effects (Optimization)
+
+To prevent context bloat in the Orchestrator, we adopt an **"Action over Data Transfer"** principle.
+
+*   **Problem**: If `generate_code` returns the full file content to the Orchestrator, the Orchestrator's context fills up with code it doesn't need to read, just to pass it to a `write_file` tool.
+*   **Solution**: Skills should be side-effect heavy. The `generate_code` skill should use a `write_file` tool *internally* to apply changes and return a concise summary (e.g., "Updated src/main.py") to the Orchestrator.
+*   **Implication**:
+    *   We need a primitive `write_file` tool available to Sub-Agents.
+    *   Skill prompts must be updated to prefer tool usage over returning content.
+    *   The Orchestrator acts as a manager (delegating tasks), not a pipe (moving data).
+
 ## 3. Component Architecture
 
 ### 3.1. Enhanced Skill Definition (`src/llm/skill.py`)
@@ -88,7 +99,7 @@ user-content: ""  # Legacy user prompt template
 
 **Strategy**: Incremental Edit.
 
-The `ToolHandler` will be updated to support a dynamic registry of tools, merging the existing hardcoded primitives (`run_shell`, `read_file`) with dynamically loaded Skill-Tools.
+The `ToolHandler` will be updated to support a dynamic registry of tools, merging the existing hardcoded primitives (`run_shell`, `read_file`, `write_file`) with dynamically loaded Skill-Tools.
 
 - **Registry**: A dynamic dictionary mapping `tool_name` → `Executable`.
 - **Skill Adapter**: A wrapper that converts a `Skill` object into a callable tool that spawns a `ChatSession`.

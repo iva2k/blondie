@@ -59,14 +59,20 @@ Status: id | priority | title | depends_on
 - [ ] 069 | P2 | [Phase 1] Implement `output_schema` logic: Auto-inject "## Output Format" in `Skill.render_system_prompt` and add JSON schema validation to `ChatSession.send`. | 058
 - [ ] 070 | P2 | [Phase 1] Cleanup Skill Prompts: Remove redundant output format instructions from `.skill.md` files in favor of auto-injected schema. | 069
 - [ ] 059 | P2 | [Phase 1] Update `ToolHandler` in `src/agent/tooled.py` to allow registering dynamic tools (callables) alongside hardcoded definitions. |
+- [ ] 073 | P2 | [Phase 1] Implement `write_file` primitive tool in `tooled.py` to allow Skills to perform side effects directly. |
+- [ ] 071 | P2 | [Quality] Update existing unit tests affected by Skill/Tool changes (e.g. `test_llm.py`, `test_tooled.py`). |
 - [ ] 060 | P2 | [Phase 2] Create `src/agent/loop2.py` skeleton (Orchestrator entry point). |
 - [ ] 061 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Task Management (`get_next_task`, `claim_task`, `complete_task`). |
 - [ ] 062 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Git Operations (`git_checkout`, `git_commit`, `git_push`, `git_merge`). |
 - [ ] 063 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Execution & State (`run_tests`, `check_daily_limit`). |
 - [ ] 064 | P2 | [Phase 2] Create `skills/orchestrator.skill.md` defining the root agent persona and available tools. |
+- [ ] 074 | P2 | [Phase 2] Refactor `generate_code` skill to use `write_file` tool and return summary instead of content (Side-Effect Pattern). | 073
+- [ ] 072 | P2 | [Quality] Add unit tests for new modules (`loop2.py`, recursive `router.py` logic). |
 - [ ] 065 | P2 | [Phase 3] Enhance `LLMRouter` in `src/agent/router.py` to handle recursive tool execution (Skill-as-Tool). |
-- [ ] 066 | P2 | [Phase 3] Implement Context Stack in `router.py` to ensure sub-agent context isolation. |
-- [ ] 067 | P2 | [Phase 3] Implement `summarize_and_restart` logic for long-running sub-agents (replaces 054, 057). |
+- [ ] 066 | P2 | [Phase 3] Implement Context Stack in `router.py` to ensure sub-agent context isolation. | 065
+- [ ] 067 | P2 | [Phase 3] Implement `summarize_and_restart` logic for long-running sub-agents (replaces 054, 057). | 065
+- [ ] 075 | P3 | [Phase 3] Implement Context Refresh: Orchestrator needs to re-read file list/status after sub-agent execution to stay synced. |
+- [ ] 076 | P3 | [Observability] Implement hierarchical logging in Journal to visualize recursive tool calls (Tree View). |
 - [ ] 068 | P2 | [Integration] Add CLI switch to run v2 loop (`loop2.py`). |
 
 ### Future
