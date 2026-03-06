@@ -12,7 +12,7 @@ context:
   project: True
   files: True
   progress: True
-input_schema:
+input-schema:
   type: object
   properties:
     task_title: {type: string}
@@ -20,7 +20,7 @@ input_schema:
     instruction: {type: string}
     existing_content: {type: string}
   required: [filename, instruction]
-output_schema:
+output-schema:
   type: object
   properties:
     file_content: {type: string}

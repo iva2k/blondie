@@ -18,13 +18,13 @@ tools:
   - run_shell
   - read_file
   - find_package
-input_schema:
+input-schema:
   type: object
   properties:
     task_title: {type: string}
     user_plan: {type: string}
   required: [task_title, user_plan]
-output_schema:
+output-schema:
   type: object
   properties:
     edits:

@@ -12,7 +12,7 @@ context:
   project: True
   files: True
   progress: True
-input_schema:
+input-schema:
   type: object
   properties:
     instruction: {type: string}
@@ -20,7 +20,7 @@ input_schema:
     stdout: {type: string}
     stderr: {type: string}
   required: [instruction, command, stdout, stderr]
-output_schema:
+output-schema:
   type: object
   properties:
     stdin_input: {type: string}

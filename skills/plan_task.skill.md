@@ -12,13 +12,13 @@ context:
   project: True
   files: True
   progress: True
-input_schema:
+input-schema:
   type: object
   properties:
     task_title: {type: string}
     policy_summary: {type: string}
   required: [task_title]
-output_schema:
+output-schema:
   type: object
   properties:
     implementation_plan: {type: string}

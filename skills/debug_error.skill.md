@@ -15,13 +15,13 @@ context:
   task: True
   command: True
   progress: True
-input_schema:
+input-schema:
   type: object
   properties:
     task_title: {type: string}
     error_log: {type: string}
   required: [task_title, error_log]
-output_schema:
+output-schema:
   type: object
   properties:
     fix_plan: {type: string}
