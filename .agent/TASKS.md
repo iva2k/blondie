@@ -68,7 +68,7 @@ Status: id | priority | title | depends_on
 - [x] 063 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Execution & State (`run_tests`, `check_daily_limit`). |
 - [x] 064 | P2 | [Phase 2] Create `skills/orchestrator.skill.md` defining the root agent persona and available tools (`plan_task2`, etc). |
 - [ ] 074 | P2 | [Phase 2] Create `generate_code2` skill to use `write_file` tool and return summary instead of content (Side-Effect Pattern). | 073
-- [ ] 065 | P2 | [Phase 2] Enhance `LLMRouter` in `src/agent/router.py` to handle recursive tool execution (Skill-as-Tool) and automatic Context Injection for sub-agents. |
+- [x] 065 | P2 | [Phase 2] Enhance `LLMRouter` in `src/agent/router.py` to handle recursive tool execution (Skill-as-Tool) and automatic Context Injection for sub-agents. |
 - [ ] 072 | P2 | [Quality] Add unit tests for new modules (`loop2.py`, recursive `router.py` logic). |
 - [ ] 067 | P2 | [Phase 3] Implement `summarize_and_restart` logic for long-running sub-agents (replaces 054, 057). | 065
 - [ ] 075 | P2 | [Phase 3] Implement Context Refresh: `ContextGatherer` needs a refresh method; Router calls it after tool execution to sync file lists. |

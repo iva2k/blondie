@@ -6,7 +6,7 @@ import datetime
 import json
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import jsonschema
 import yaml
@@ -20,6 +20,9 @@ from lib.webscrape import KNOWN_COSTS
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
 from llm.journal import Journal
 from llm.skill import Skill
+
+if TYPE_CHECKING:
+    from agent.tooled import ToolHandler
 
 
 class ChatSession:
@@ -473,6 +476,37 @@ class LLMRouter:
             error_log=error_log,
             **kwargs,
         )
+
+    async def execute_skill_as_tool(
+        self, skill_name: str, context_gatherer: ContextGatherer, tool_handler: "ToolHandler", **kwargs: Any
+    ) -> str:
+        """Execute a skill as a tool (recursive agent)."""
+        # 1. Start session (gathers context, renders prompts)
+        session = self.start_chat(skill_name, context_gatherer, **kwargs)
+
+        # 2. Send initial user message
+        response = await session.send(prompt=session.user_content)
+
+        # 3. Run tool loop (recursive execution)
+        # The sub-agent might call tools, which ToolHandler executes.
+        response = await tool_handler.run_loop(
+            session, response, cmd_instruction=f"Executing skill {skill_name} with args: {kwargs}"
+        )
+
+        # 4. Return result
+        return response.content
+
+    def register_skills(self, tool_handler: "ToolHandler", context_gatherer: ContextGatherer) -> None:
+        """Register v2 skills as tools in the tool handler."""
+        for skill_name, skill in self.skills.items():
+            # Only register skills that have an input schema (v2 skills)
+            if not skill.input_schema:
+                continue
+
+            async def skill_tool_impl(s_name=skill_name, **kwargs):
+                return await self.execute_skill_as_tool(s_name, context_gatherer, tool_handler, **kwargs)
+
+            tool_handler.register(skill_name, skill.to_tool_definition(), skill_tool_impl)
 
     def start_chat(
         self, skill_name: str, context_gatherer: ContextGatherer | None = None, **kwargs: Any

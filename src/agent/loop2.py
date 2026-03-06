@@ -67,6 +67,9 @@ class BlondieOrchestrator:
             self.git,
         )
 
+        # Register v2 skills as tools to enable recursive execution
+        self.llm.register_skills(self.tool_handler, self.context_gatherer)
+
     async def run(self) -> None:
         """Start the orchestrator loop."""
         self.journal.print("🚀 Starting Blondie v2 Orchestrator...")
