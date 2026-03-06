@@ -59,6 +59,7 @@ If a Sub-Agent hits a token limit or gets stuck:
 **Strategy**: Incremental Edit.
 
 Skills will use extended Frontmatter to define their tool interface. Existing `Skill` class will be updated to parse these new fields without breaking existing skills.
+If `output_schema` is present, `Skill.render_system_prompt` will automatically append a `## Output Format` section containing the JSON schema and instructions, ensuring consistent LLM output without manual prompt engineering.
 
 ```yaml
 ---
@@ -99,6 +100,7 @@ The `ToolHandler` will be updated to support a dynamic registry of tools, mergin
 The `LLMRouter` will be enhanced to support nested sessions. This allows a `ChatSession` to pause, execute a Skill-Tool (which spins up a child `ChatSession`), and resume with the result.
 
 - execute_tool_call(call):
+  - **Validation**: If the skill has an `output_schema`, the router validates the final response against this JSON schema before returning.
   - If tool is "primitive" (shell, file): Execute directly.
   - If tool is "skill" (planner, coder):
     1. Instantiate new ChatSession with that Skill's prompt.

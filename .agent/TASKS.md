@@ -56,6 +56,8 @@ Status: id | priority | title | depends_on
 ### [Current Sprint] Next-Gen Architecture (v2) - Recursive Skill Orchestration
 
 - [x] 058 | P2 | [Phase 1] Update `Skill` class in `src/llm/skill.py` to parse `input_schema` and `output_schema` from frontmatter. |
+- [ ] 069 | P2 | [Phase 1] Implement `output_schema` logic: Auto-inject "## Output Format" in `Skill.render_system_prompt` and add JSON schema validation to `ChatSession.send`. | 058
+- [ ] 070 | P2 | [Phase 1] Cleanup Skill Prompts: Remove redundant output format instructions from `.skill.md` files in favor of auto-injected schema. | 069
 - [ ] 059 | P2 | [Phase 1] Update `ToolHandler` in `src/agent/tooled.py` to allow registering dynamic tools (callables) alongside hardcoded definitions. |
 - [ ] 060 | P2 | [Phase 2] Create `src/agent/loop2.py` skeleton (Orchestrator entry point). |
 - [ ] 061 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Task Management (`get_next_task`, `claim_task`, `complete_task`). |
