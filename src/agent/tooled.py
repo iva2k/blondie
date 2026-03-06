@@ -42,6 +42,18 @@ TOOL_DEFINITIONS = {
             "required": ["path"],
         },
     },
+    "write_file": {
+        "name": "write_file",
+        "description": "Write content to a file. Overwrites existing content.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Path to the file relative to repo root."},
+                "content": {"type": "string", "description": "Full content to write to the file."},
+            },
+            "required": ["path", "content"],
+        },
+    },
     "find_package": {
         "name": "find_package",
         "description": "Find available versions for a package. Supported ecosystems: python (pypi), node (npm).",
@@ -85,6 +97,7 @@ class ToolHandler:
         self.tool_implementations: dict[str, Callable] = {
             "run_shell": self._run_shell,
             "read_file": self._read_file,
+            "write_file": self._write_file,
             "find_package": self._find_package,
         }
 
@@ -151,6 +164,31 @@ class ToolHandler:
         output = await asyncio.to_thread(full_path.read_text, encoding="utf-8")
         self.progress.add_action("READ", path, "SUCCESS")
         return output
+
+    async def _write_file(self, path: str, content: str, **_kwargs) -> str:
+        """Write content to a file."""
+        if not path:
+            return "Error: Missing path argument"
+
+        full_path = (self.repo_path / path).resolve()
+        # Security check: ensure inside repo
+        if not full_path.is_relative_to(self.repo_path.resolve()):
+            self.progress.add_action("WRITE", path, "FAILED: Access Denied")
+            return f"Error: Access denied. Path {path} is outside repository."
+        if full_path.relative_to(self.repo_path.resolve()).as_posix() in self.project.protected_files:
+            self.progress.add_action("WRITE", path, "FAILED: Protected File")
+            return f"Error: Access denied. File {path} is protected."
+        if full_path.exists() and full_path.is_dir():
+            self.progress.add_action("WRITE", path, "FAILED: Is Directory")
+            return f"Error: {path} is a directory."
+
+        # Ensure directory exists
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write content (async to avoid blocking event loop)
+        await asyncio.to_thread(full_path.write_text, content, encoding="utf-8")
+        self.progress.add_action("WRITE", path, "SUCCESS")
+        return f"Successfully wrote to {path}"
 
     async def _find_package(self, package_name: str, ecosystem: str, **_kwargs) -> str:
         """Find available package versions."""
