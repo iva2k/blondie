@@ -322,3 +322,53 @@ async def test_complete_task(tool_handler):
     result = await tool_handler._complete_task("001")
     assert "Successfully completed" in result
     tool_handler.tasks_manager.complete_task.assert_called_with("001")
+
+
+@pytest.mark.asyncio
+async def test_git_checkout(tool_handler):
+    """Test git_checkout tool."""
+    # pylint: disable=protected-access
+    result = await tool_handler._git_checkout("feature-branch")
+    assert "Checked out branch feature-branch" in result
+    tool_handler.git.checkout_branch.assert_called_with("feature-branch")
+
+
+@pytest.mark.asyncio
+async def test_git_commit(tool_handler):
+    """Test git_commit tool."""
+    # pylint: disable=protected-access
+    result = await tool_handler._git_commit("Initial commit")
+    assert "Committed with message: Initial commit" in result
+    tool_handler.git.add_all.assert_called_once()
+    tool_handler.git.commit.assert_called_with("Initial commit")
+
+
+@pytest.mark.asyncio
+async def test_git_push(tool_handler):
+    """Test git_push tool."""
+    # Case 1: Explicit branch
+    # pylint: disable=protected-access
+    result = await tool_handler._git_push("feature-branch")
+    assert "Pushed branch feature-branch" in result
+    tool_handler.git.push.assert_called_with("feature-branch")
+
+    # Case 2: Current branch
+    tool_handler.git.current_branch.return_value = "main"
+    result = await tool_handler._git_push()
+    assert "Pushed branch main" in result
+    tool_handler.git.push.assert_called_with("main")
+
+
+@pytest.mark.asyncio
+async def test_git_merge(tool_handler):
+    """Test git_merge tool."""
+    # pylint: disable=protected-access
+    result = await tool_handler._git_merge("feature", "main")
+    assert "Merged feature into main" in result
+
+    tool_handler.git.checkout.assert_called_with("main")
+    tool_handler.git.pull.assert_called_with("main")
+    tool_handler.git.run.assert_called_with("merge", "feature")
+
+    # Error case
+    assert "Error: Missing" in await tool_handler._git_merge("", "main")

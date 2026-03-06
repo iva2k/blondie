@@ -95,6 +95,47 @@ TOOL_DEFINITIONS = {
             "required": ["task_id"],
         },
     },
+    "git_checkout": {
+        "name": "git_checkout",
+        "description": "Checkout a git branch (creates it if it doesn't exist).",
+        "parameters": {
+            "type": "object",
+            "properties": {"branch_name": {"type": "string", "description": "Name of the branch."}},
+            "required": ["branch_name"],
+        },
+    },
+    "git_commit": {
+        "name": "git_commit",
+        "description": "Stage all files and commit.",
+        "parameters": {
+            "type": "object",
+            "properties": {"message": {"type": "string", "description": "Commit message."}},
+            "required": ["message"],
+        },
+    },
+    "git_push": {
+        "name": "git_push",
+        "description": "Push current branch to remote.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "branch_name": {"type": "string", "description": "Branch to push (optional, defaults to current)."}
+            },
+            "required": [],
+        },
+    },
+    "git_merge": {
+        "name": "git_merge",
+        "description": "Merge a branch into another.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "source_branch": {"type": "string", "description": "Branch to merge from."},
+                "target_branch": {"type": "string", "description": "Branch to merge into."},
+            },
+            "required": ["source_branch", "target_branch"],
+        },
+    },
 }
 
 
@@ -131,6 +172,10 @@ class ToolHandler:
             "get_next_task": self._get_next_task,
             "claim_task": self._claim_task,
             "complete_task": self._complete_task,
+            "git_checkout": self._git_checkout,
+            "git_commit": self._git_commit,
+            "git_push": self._git_push,
+            "git_merge": self._git_merge,
         }
 
     def register(self, name: str, definition: dict, implementation: Callable):
@@ -286,6 +331,53 @@ class ToolHandler:
                 return f"Failed to complete task {task_id}. Task not found or update failed."
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error completing task: {e}"
+
+    async def _git_checkout(self, branch_name: str, **_kwargs) -> str:
+        """Checkout a git branch."""
+        if not branch_name:
+            return "Error: Missing branch_name"
+        try:
+            await asyncio.to_thread(self.git.checkout_branch, branch_name)
+            self.progress.add_action("GIT_CHECKOUT", branch_name, "SUCCESS")
+            return f"Checked out branch {branch_name}"
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return f"Error checking out branch: {e}"
+
+    async def _git_commit(self, message: str, **_kwargs) -> str:
+        """Commit changes."""
+        if not message:
+            return "Error: Missing message"
+        try:
+            await asyncio.to_thread(self.git.add_all)
+            await asyncio.to_thread(self.git.commit, message)
+            self.progress.add_action("GIT_COMMIT", message, "SUCCESS")
+            return f"Committed with message: {message}"
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return f"Error committing: {e}"
+
+    async def _git_push(self, branch_name: str | None = None, **_kwargs) -> str:
+        """Push branch."""
+        try:
+            if not branch_name:
+                branch_name = await asyncio.to_thread(self.git.current_branch)
+            await asyncio.to_thread(self.git.push, branch_name)
+            self.progress.add_action("GIT_PUSH", branch_name, "SUCCESS")
+            return f"Pushed branch {branch_name}"
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return f"Error pushing: {e}"
+
+    async def _git_merge(self, source_branch: str, target_branch: str, **_kwargs) -> str:
+        """Merge branches."""
+        if not source_branch or not target_branch:
+            return "Error: Missing branch names"
+        try:
+            await asyncio.to_thread(self.git.checkout, target_branch)
+            await asyncio.to_thread(self.git.pull, target_branch)
+            await asyncio.to_thread(self.git.run, "merge", source_branch)
+            self.progress.add_action("GIT_MERGE", f"{source_branch} -> {target_branch}", "SUCCESS")
+            return f"Merged {source_branch} into {target_branch}"
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return f"Error merging: {e}"
 
     async def run_loop(self, session: ChatSession, initial_response: LLMResponse, cmd_instruction: str) -> LLMResponse:
         """Handle interactive tool execution loop."""
