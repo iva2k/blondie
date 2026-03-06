@@ -54,11 +54,21 @@ Status: id | priority | title | depends_on
 
 - [ ] 015 | P4 | **DEPLOY!** Start self-editing | 025, 032, 037, 028, 035, 025, 039
 
-- [ ] 058 | P5 | Add toolify to skills - use frontmatter data to compose tool definition for the skill, add to tooled.py roster of tools. (with that, skills could chain each other by pure declaration of the available tools in frontmatter.tools ) |
-- [ ] 028 | P5 | In shell command retry/debug loop - concern is the nested loops that may negate the higher-level loop plan and wipe the lower level loop fixes out. Flatten the errors up to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits or the higher plan is derailed. This is philosophical. | 056, 057
-- [ ] 056 | P5 | Philosophical: [solve 028] Should we micro-manage the agent (rigidly chain the steps), or let it choose what to do and when? Decide its workflow, pick next skill. Skills could have required inputs, and agent can call skills as tools. **BIG IDEA**: wrap skills as tools and add to a collection of tools that includes (current) hard-coded ones. The agent will be able to orchestrate itself. Further, the agent will be able to create its own tool-skills.
-- [ ] 057 | [for 028] Fight context rot and endless loops: Use 1. continuation (nested tool calls) and 2. "restart itself" - with summarized knowledge call itself as a tool, but for breaking the loop it can replace self chat history in the tool call chain. | 054
-- [ ] 054 | P5 | Compose summary notes of LLM thinking findings in debug-fix LLM loop, so LLM could understand later that it beats on the same problem and could try different approaches |
+### [Current Sprint] Next-Gen Architecture (v2) - Recursive Skill Orchestration
+
+- [ ] 058 | P2 | [Phase 1] Update `Skill` class in `src/llm/skill.py` to parse `input_schema` and `output_schema` from frontmatter. |
+- [ ] 059 | P2 | [Phase 1] Update `ToolHandler` in `src/agent/tooled.py` to allow registering dynamic tools (callables) alongside hardcoded definitions. |
+- [ ] 060 | P2 | [Phase 2] Create `src/agent/loop2.py` skeleton (Orchestrator entry point). |
+- [ ] 061 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Task Management (`get_next_task`, `claim_task`, `complete_task`). |
+- [ ] 062 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Git Operations (`git_checkout`, `git_commit`, `git_push`, `git_merge`). |
+- [ ] 063 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Execution & State (`run_tests`, `check_daily_limit`). |
+- [ ] 064 | P2 | [Phase 2] Create `skills/orchestrator.skill.md` defining the root agent persona and available tools. |
+- [ ] 065 | P2 | [Phase 3] Enhance `LLMRouter` in `src/agent/router.py` to handle recursive tool execution (Skill-as-Tool). |
+- [ ] 066 | P2 | [Phase 3] Implement Context Stack in `router.py` to ensure sub-agent context isolation. |
+- [ ] 067 | P2 | [Phase 3] Implement `summarize_and_restart` logic for long-running sub-agents (replaces 054, 057). |
+- [ ] 068 | P2 | [Integration] Add CLI switch to run v2 loop (`loop2.py`). |
+
+### Future
 
 - [ ] 013 | P5 | [FEATURE] Vercel/Netlify CLI wrappers |
 - [ ] 014 | P5 | [FEATURE] Docker build + e2e tests |
