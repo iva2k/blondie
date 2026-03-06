@@ -288,6 +288,50 @@ async def test_run_loop_json_error(tool_handler):
 
 
 @pytest.mark.asyncio
+async def test_run_loop_max_cycles(tool_handler):
+    """Test that the tool loop exits after max_cycles."""
+    session = MagicMock()
+    session.send = AsyncMock()
+    session.add_tool_result = MagicMock()
+
+    # Mock a response that always has a tool call
+    looping_response = MagicMock(spec=LLMResponse)
+    looping_response.tool_calls = [
+        {"id": "call_1", "function": {"name": "run_shell", "arguments": '{"command": "loop"}'}}
+    ]
+    session.send.return_value = looping_response
+
+    # Mock the tool implementation
+    tool_handler.tool_implementations["run_shell"] = AsyncMock(return_value="Looping")
+
+    final_response = await tool_handler.run_loop(session, looping_response, "")
+
+    # Should be the last response from the LLM after hitting the limit
+    assert final_response == looping_response
+    # Default max_cycles is 15
+    assert session.send.call_count == 15
+
+
+@pytest.mark.asyncio
+async def test_run_loop_tool_exception(tool_handler):
+    """Test that the loop handles exceptions within tool implementations."""
+    session = MagicMock()
+    session.send = AsyncMock(return_value=MagicMock(tool_calls=[]))  # Stop after one loop
+    session.add_tool_result = MagicMock()
+
+    initial_response = MagicMock(spec=LLMResponse)
+    initial_response.tool_calls = [{"id": "call_1", "function": {"name": "failing_tool", "arguments": "{}"}}]
+
+    # Register a tool that will raise an exception
+    failing_impl = AsyncMock(side_effect=ValueError("Tool failed!"))
+    tool_handler.register("failing_tool", {}, failing_impl)
+
+    await tool_handler.run_loop(session, initial_response, "")
+
+    session.add_tool_result.assert_called_with("call_1", "Error executing tool: Tool failed!")
+
+
+@pytest.mark.asyncio
 async def test_get_next_task(tool_handler):
     """Test get_next_task tool."""
     mock_task = MagicMock()

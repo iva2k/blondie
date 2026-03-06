@@ -154,3 +154,60 @@ Prompt
         assert response.parsed is not None
         assert response.parsed["plan"] == "Fixed"
         assert mock_instance.post.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_json_schema_validation_failure(mock_policy, tmp_path: Path):
+    """Test retry on valid JSON that fails schema validation."""
+    # Setup
+    secrets_file = tmp_path / "secrets.env.yaml"
+    secrets_file.write_text("llm:\n  openai:\n    api_key: sk-test", encoding="utf-8")
+    config_file = tmp_path / "llm_config.yaml"
+    config_file.write_text(
+        yaml.dump(
+            {"providers": {"openai": {"api_type": "openai"}}, "operations": {"planning": [{"provider": "openai"}]}}
+        ),
+        encoding="utf-8",
+    )
+    skills_dir = tmp_path / "skills"
+    skills_dir.mkdir()
+    (skills_dir / "schema_skill.skill.md").write_text(
+        """---
+name: schema_skill
+operation: "planning"
+output-schema:
+  type: object
+  properties:
+    required_field: {type: string}
+  required: [required_field]
+---
+Prompt
+""",
+        encoding="utf-8",
+    )
+
+    with patch("httpx.AsyncClient") as mock_client:
+        mock_instance = mock_client.return_value
+        # First response: valid JSON, but missing the required field
+        bad_response = MagicMock()
+        bad_response.json.return_value = {
+            "choices": [{"message": {"content": '{"wrong_field": "value"}'}}],
+            "usage": {"total_tokens": 10},
+        }
+        # Second response: valid JSON that matches the schema
+        good_response = MagicMock()
+        good_response.json.return_value = {
+            "choices": [{"message": {"content": '{"required_field": "correct"}'}}],
+            "usage": {"total_tokens": 10},
+        }
+        mock_instance.post = AsyncMock(side_effect=[bad_response, good_response])
+
+        router = LLMRouter(secrets_file, config_file, mock_policy, skills_dir=skills_dir)
+        context_gatherer = MagicMock(spec=ContextGatherer)
+        context_gatherer.gather.return_value = ("", {})
+
+        # pylint: disable-next=protected-access
+        response = await router._execute_llm_skill("schema_skill", context_gatherer)
+        assert response.parsed is not None
+        assert response.parsed["required_field"] == "correct"
+        assert mock_instance.post.call_count == 2
