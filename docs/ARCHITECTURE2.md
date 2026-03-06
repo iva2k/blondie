@@ -77,6 +77,8 @@ Skills will use extended Frontmatter to define their tool interface. Existing `S
 
 To preserve v1 functionality, we will create **v2 skills** with a `2` suffix (e.g., `plan_task2.skill.md`).
 
+We will implement `Skill.to_tool_definition()` to dynamically generate the tool JSON schema (name, description, parameters) required by the LLM provider from the `input_schema`.
+
 If `output_schema` is present (as in v2 skills), `Skill.render_system_prompt` will automatically append a `## Output Format` section containing the JSON schema and instructions, ensuring consistent LLM output without manual prompt engineering.
 
 ```yaml

@@ -56,6 +56,7 @@ Status: id | priority | title | depends_on
 ### [Current Sprint] Next-Gen Architecture (v2) - Recursive Skill Orchestration
 
 - [x] 058 | P2 | [Phase 1] Update `Skill` class in `src/llm/skill.py` to parse `input_schema` and `output_schema` from frontmatter. |
+- [ ] 078 | P2 | [Phase 1] Implement `Skill.to_tool_definition()` in `src/llm/skill.py` to generate OpenAI/Anthropic tool schemas from `input_schema`. | 058
 - [ ] 069 | P2 | [Phase 1] Implement `output_schema` logic: Auto-inject "## Output Format" in `Skill.render_system_prompt` and add JSON schema validation to `ChatSession.send`. | 058
 - [ ] 070 | P2 | [Phase 1] Create v2 skills (`plan_task2`, `debug_error2`, `command_runner2`, `get_file_edits2`) copying v1. Remove redundant output instructions in favor of `output_schema`. | 069
 - [ ] 059 | P2 | [Phase 1] Update `ToolHandler` in `src/agent/tooled.py` to allow registering dynamic tools (callables) alongside hardcoded definitions. |
@@ -75,6 +76,7 @@ Status: id | priority | title | depends_on
 - [ ] 076 | P2 | [Observability] Implement hierarchical logging in `Journal` (spans/indentation) to visualize recursive tool calls. |
 - [ ] 077 | P2 | [Observability] Update `LLMRouter` and `ToolHandler` to track execution depth and pass it to `Journal` methods for indentation. | 076
 - [ ] 068 | P2 | [Integration] Add CLI switch to run v2 loop (`loop2.py`). |
+- [ ] 079 | P2 | [Integration] Create a simple "Hello World" task in `TASKS.md` and verify v2 loop completes it (E2E test). | 068
 
 ### Future
 
