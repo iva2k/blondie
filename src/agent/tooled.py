@@ -136,6 +136,16 @@ TOOL_DEFINITIONS = {
             "required": ["source_branch", "target_branch"],
         },
     },
+    "run_tests": {
+        "name": "run_tests",
+        "description": "Run the project's test suite.",
+        "parameters": {"type": "object", "properties": {}},
+    },
+    "check_daily_limit": {
+        "name": "check_daily_limit",
+        "description": "Check if the daily cost limit has been exceeded.",
+        "parameters": {"type": "object", "properties": {}},
+    },
 }
 
 
@@ -176,6 +186,8 @@ class ToolHandler:
             "git_commit": self._git_commit,
             "git_push": self._git_push,
             "git_merge": self._git_merge,
+            "run_tests": self._run_tests,
+            "check_daily_limit": self._check_daily_limit,
         }
 
     def register(self, name: str, definition: dict, implementation: Callable):
@@ -295,7 +307,7 @@ class ToolHandler:
 
     async def _get_next_task(self, **_kwargs) -> str:
         """Get the next high-priority task."""
-        task = self.tasks_manager.get_next_task()
+        task = await asyncio.to_thread(self.tasks_manager.get_next_task)
         if not task:
             return "No tasks available."
         return f"Task ID: {task.id}\nTitle: {task.title}\nPriority: {task.priority}"
@@ -306,7 +318,7 @@ class ToolHandler:
             return "Error: Missing task_id"
 
         try:
-            success = self.tasks_manager.claim_task(task_id, self.git)
+            success = await asyncio.to_thread(self.tasks_manager.claim_task, task_id, self.git)
             if success:
                 self.progress.add_action("CLAIM_TASK", task_id, "SUCCESS")
                 return f"Successfully claimed task {task_id}."
@@ -322,7 +334,7 @@ class ToolHandler:
             return "Error: Missing task_id"
 
         try:
-            success = self.tasks_manager.complete_task(task_id)
+            success = await asyncio.to_thread(self.tasks_manager.complete_task, task_id)
             if success:
                 self.progress.add_action("COMPLETE_TASK", task_id, "SUCCESS")
                 return f"Successfully completed task {task_id}."
@@ -378,6 +390,25 @@ class ToolHandler:
             return f"Merged {source_branch} into {target_branch}"
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error merging: {e}"
+
+    async def _run_tests(self, **_kwargs) -> str:
+        """Run project tests."""
+        try:
+            res = await self.executor.run_tests()
+            status = "SUCCESS" if res.returncode == 0 else f"FAILED RC:{res.returncode}"
+            output = f"Exit Code: {res.returncode}\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
+            self.progress.add_action("RUN_TESTS", "all", status)
+            return output
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return f"Error running tests: {e}"
+
+    async def _check_daily_limit(self, **_kwargs) -> str:
+        """Check daily cost limit."""
+        try:
+            is_within_limit = await asyncio.to_thread(self.llm.check_daily_limit)
+            return "WITHIN_LIMIT" if is_within_limit else "LIMIT_EXCEEDED"
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return f"Error checking limit: {e}"
 
     async def run_loop(self, session: ChatSession, initial_response: LLMResponse, cmd_instruction: str) -> LLMResponse:
         """Handle interactive tool execution loop."""

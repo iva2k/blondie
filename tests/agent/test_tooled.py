@@ -372,3 +372,32 @@ async def test_git_merge(tool_handler):
 
     # Error case
     assert "Error: Missing" in await tool_handler._git_merge("", "main")
+
+
+@pytest.mark.asyncio
+async def test_run_tests(tool_handler):
+    """Test run_tests tool."""
+    mock_res = MagicMock()
+    mock_res.returncode = 0
+    mock_res.stdout = "tests passed"
+    mock_res.stderr = ""
+    tool_handler.executor.run_tests = AsyncMock(return_value=mock_res)
+
+    # pylint: disable=protected-access
+    result = await tool_handler._run_tests()
+    assert "Exit Code: 0" in result
+    assert "tests passed" in result
+    tool_handler.executor.run_tests.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_check_daily_limit(tool_handler):
+    """Test check_daily_limit tool."""
+    tool_handler.llm.check_daily_limit.return_value = True
+    # pylint: disable=protected-access
+    result = await tool_handler._check_daily_limit()
+    assert "WITHIN_LIMIT" in result
+
+    tool_handler.llm.check_daily_limit.return_value = False
+    result = await tool_handler._check_daily_limit()
+    assert "LIMIT_EXCEEDED" in result
