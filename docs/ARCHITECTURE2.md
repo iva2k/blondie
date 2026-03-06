@@ -74,7 +74,10 @@ To prevent context bloat in the Orchestrator, we adopt an **"Action over Data Tr
 **Strategy**: Incremental Edit.
 
 Skills will use extended Frontmatter to define their tool interface. Existing `Skill` class will be updated to parse these new fields without breaking existing skills.
-If `output_schema` is present, `Skill.render_system_prompt` will automatically append a `## Output Format` section containing the JSON schema and instructions, ensuring consistent LLM output without manual prompt engineering.
+
+To preserve v1 functionality, we will create **v2 skills** with a `2` suffix (e.g., `plan_task2.skill.md`).
+
+If `output_schema` is present (as in v2 skills), `Skill.render_system_prompt` will automatically append a `## Output Format` section containing the JSON schema and instructions, ensuring consistent LLM output without manual prompt engineering.
 
 ```yaml
 ---
@@ -160,7 +163,7 @@ Recursive execution requires hierarchical logging.
 
 - Create `src/agent/loop2.py` implementing the Orchestrator pattern.
 - **Implement System Tools**: Wrap `TasksManager`, `GitCLI`, and `Executor` methods into tools in `tooled.py`.
-- Create `orchestrator.skill.md` with access to `plan_task`, `generate_code`, `debug_error` as tools.
+- Create `orchestrator.skill.md` with access to `plan_task2`, `generate_code2`, `debug_error2` as tools.
 
 ### Phase 3: Recursive Runtime (Incremental)
 
