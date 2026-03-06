@@ -41,13 +41,14 @@ poethepoet = "^0.42.0"
 types-pygments = "^2.19.0"
 types-colorama = "^0.4.15"
 types-pexpect = "^4.9.0"
+pytest-cov = "^7.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-blondie = "agent.loop:entry_point"
+blondie = "agent.cli:entry_point"
 
 [tool.poe.tasks]
 test = "pytest"
@@ -55,6 +56,10 @@ lint = "ruff check ."
 format = "ruff format ."
 typecheck = "mypy ."
 check = ["format", "lint", "typecheck", "test"]
+coverage = "pytest --cov=src --cov-report=term-missing --cov-report=html"
+run = "python -m agent.cli _tmp/repo --journal-dir _tmp/logs --v2"
+run-v1 = "python -m agent.cli _tmp/repo --journal-dir _tmp/logs"
+run-v2 = "python -m agent.cli _tmp/repo --journal-dir _tmp/logs --v2"
 setup-dev = "python scripts/setup_dev_repo.py --repo _tmp/repo --agent-config templates/project-calculator/.agent"
 snapshot-dev = "python scripts/snapshot_tmp.py _tmp"
 fetch-models = "python scripts/fetch_models.py"
