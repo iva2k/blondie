@@ -1,5 +1,5 @@
 ---
-name: debug_error
+name: debug_error2
 description: Suggest fix for test failures.
 user-invocable: false
 operation: "debugging"
@@ -15,6 +15,16 @@ context:
   task: True
   command: True
   progress: True
+input-schema:
+  type: object
+  properties:
+    task_title: {type: string}
+    error_log: {type: string}
+  required: [task_title, error_log]
+output-schema:
+  type: object
+  properties:
+    fix_plan: {type: string}
 tools:
   - run_shell
   - read_file

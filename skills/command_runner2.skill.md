@@ -1,5 +1,5 @@
 ---
-name: command_runner
+name: command_runner2
 description: Provide input to interactive shell commands.
 user-invocable: false
 operation: "execution"
@@ -12,6 +12,18 @@ context:
   project: True
   files: True
   progress: True
+input-schema:
+  type: object
+  properties:
+    instruction: {type: string}
+    command: {type: string}
+    stdout: {type: string}
+    stderr: {type: string}
+  required: [instruction, command, stdout, stderr]
+output-schema:
+  type: object
+  properties:
+    stdin_input: {type: string}
 tools: []
 ---
 # COMMAND RUNNER
@@ -55,7 +67,6 @@ Your goal is to determine if command is prompting for input and provide the text
   - **PROGRESS**: Ensure the response does not repeat previous failed attempts.
 - Ensure the command is actually waiting for response entry.
 - Use appropriate context details in the response (name, version, etc.) if requested by the command.
-- Return ONLY the text to be sent to command's stdin.
-- Do not include markdown formatting.
+- Provide the text input to satisfy the command prompt.
 - If the prompt is a yes/no question, answer 'y' or 'n' (usually 'y' for automated tasks unless dangerous).
 - If the command is stuck or should be aborted, return `^C`.

@@ -1,5 +1,5 @@
 ---
-name: generate_code
+name: generate_code2
 description: Generate/edit single file.
 user-invocable: false
 operation: "coding"
@@ -12,6 +12,18 @@ context:
   project: True
   files: True
   progress: True
+input-schema:
+  type: object
+  properties:
+    task_title: {type: string}
+    filename: {type: string}
+    instruction: {type: string}
+    existing_content: {type: string}
+  required: [filename, instruction]
+output-schema:
+  type: object
+  properties:
+    file_content: {type: string}
 tools:
   - run_shell
   - read_file
@@ -66,7 +78,6 @@ Your output will be used in **AGENT FLOW** step 4 to run the tests and verify if
   - **PROJECT**: Use project-specific commands (e.g., `npm install`, `poetry add`) defined in configuration. Adhere to dev.guidelines, project structure, and preferred tools.
   - **FILES**: Identify which files to review using 'read_file' tool. Verify file paths and existence before specifying edits. Check for correct imports and references to other files.
   - **PROGRESS**: Ensure actions do not repeat previously failed attempts without modification, understand the issue in depth from all the previous actions. Avoid re-introducing previously fixed errors.
-- Return ONLY the file content. No markdown fences, no explanations.
 - If creating a new file, provide complete implementation.
 - If editing, you must output the COMPLETE file with changes applied.
 - CRITICAL: You must output the ENTIRE file content. Do not omit any parts. Do not use comments like `# ... existing code ...`.

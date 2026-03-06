@@ -1,5 +1,5 @@
 ---
-name: get_file_edits
+name: get_file_edits2
 description: Identify files to edit from plan.
 user-invocable: false
 operation: "planning"
@@ -18,8 +18,25 @@ tools:
   - run_shell
   - read_file
   - find_package
-response-schema: FileEdits
-response-format: yaml
+input-schema:
+  type: object
+  properties:
+    task_title: {type: string}
+    user_plan: {type: string}
+  required: [task_title, user_plan]
+output-schema:
+  type: object
+  properties:
+    edits:
+      type: array
+      items:
+        type: object
+        properties:
+          path: {type: string}
+          action: {type: string, enum: [create, edit, delete, shell]}
+          instruction: {type: string}
+          command: {type: string}
+          timeout: {type: integer}
 ---
 # FILE EDITS PLANNER
 
@@ -64,8 +81,6 @@ Your output will be used in **AGENT FLOW** step 3 by another LLM to generate fil
 
 ## INSTRUCTIONS
 
-Return ONLY a JSON object matching the schema.
-
 - Generate actions plan.
 - Analyze the provided context:
   - **USER_PLAN**: Convert the plan steps into specific file operations and shell commands.
@@ -89,24 +104,3 @@ Return ONLY a JSON object matching the schema.
 - When using 'run_shell' tool, specify a conservative timeout (4x nominal time) to prevent partial execution and avoid project corruption.
 - Use 'run_shell' tool with 'grep', 'find' (or similar) commands to locate all relevant source files and verify references before specifying edits.
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
-
-### Example
-
-```yaml
-edits:
-  - path: src/main.py
-    action: edit
-    instruction: Add login function
-  - path: tests/test_main.py
-    action: create
-    instruction: Add unit tests for login
-  - action: shell
-    command: npm install axios
-    timeout: 300
-  - path: old_file.py
-    action: delete
-```
-
-Valid actions: create, edit, delete, shell.
-
-Do not include any explanations. Do not use markdown formatting (like ```yaml), output ONLY the raw YAML text.
