@@ -59,7 +59,7 @@ Status: id | priority | title | depends_on
 - [x] 078 | P2 | [Phase 1] Implement `Skill.to_tool_definition()` in `src/llm/skill.py` to generate OpenAI/Anthropic tool schemas from `input_schema`. | 058
 - [x] 069 | P2 | [Phase 1] Implement `output_schema` logic: Auto-inject "## Output Format" in `Skill.render_system_prompt` and add JSON schema validation to `ChatSession.send`. | 058
 - [x] 070 | P2 | [Phase 1] Create v2 skills (`plan_task2`, `debug_error2`, `command_runner2`, `get_file_edits2`) copying v1. Remove redundant output instructions in favor of `output_schema`. | 069
-- [ ] 059 | P2 | [Phase 1] Update `ToolHandler` in `src/agent/tooled.py` to allow registering dynamic tools (callables) alongside hardcoded definitions. |
+- [x] 059 | P2 | [Phase 1] Update `ToolHandler` in `src/agent/tooled.py` to allow registering dynamic tools (callables) alongside hardcoded definitions. |
 - [ ] 073 | P2 | [Phase 1] Implement `write_file` primitive tool in `tooled.py` to allow Skills to perform side effects directly. |
 - [ ] 071 | P2 | [Quality] Update existing unit tests affected by Skill/Tool changes (e.g. `test_llm.py`, `test_tooled.py`). |
 - [ ] 060 | P2 | [Phase 2] Create `src/agent/loop2.py` skeleton (Orchestrator entry point). |
