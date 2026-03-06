@@ -12,6 +12,18 @@ context:
   project: True
   files: True
   progress: True
+input_schema:
+  type: object
+  properties:
+    instruction: {type: string}
+    command: {type: string}
+    stdout: {type: string}
+    stderr: {type: string}
+  required: [instruction, command, stdout, stderr]
+output_schema:
+  type: object
+  properties:
+    stdin_input: {type: string}
 tools: []
 ---
 # COMMAND RUNNER

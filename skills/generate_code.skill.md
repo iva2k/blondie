@@ -12,6 +12,18 @@ context:
   project: True
   files: True
   progress: True
+input_schema:
+  type: object
+  properties:
+    task_title: {type: string}
+    filename: {type: string}
+    instruction: {type: string}
+    existing_content: {type: string}
+  required: [filename, instruction]
+output_schema:
+  type: object
+  properties:
+    file_content: {type: string}
 tools:
   - run_shell
   - read_file

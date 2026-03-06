@@ -48,6 +48,8 @@ class Skill:
     response_schema: Any | None = None
     response_format: Literal["json", "yaml"] | None = None
     tools: list[str] | None = None
+    input_schema: dict[str, Any] | None = None
+    output_schema: dict[str, Any] | None = None
 
     @classmethod
     def from_file(cls, path: Path) -> "Skill":
@@ -90,6 +92,8 @@ class Skill:
             response_schema=response_schema,
             response_format=frontmatter.get("response-format", None),
             tools=frontmatter.get("tools", None),
+            input_schema=frontmatter.get("input-schema", None),
+            output_schema=frontmatter.get("output-schema", None),
         )
 
     def render_system_prompt(self, **kwargs: Any) -> str:

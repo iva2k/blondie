@@ -18,6 +18,25 @@ tools:
   - run_shell
   - read_file
   - find_package
+input_schema:
+  type: object
+  properties:
+    task_title: {type: string}
+    user_plan: {type: string}
+  required: [task_title, user_plan]
+output_schema:
+  type: object
+  properties:
+    edits:
+      type: array
+      items:
+        type: object
+        properties:
+          path: {type: string}
+          action: {type: string, enum: [create, edit, delete, shell]}
+          instruction: {type: string}
+          command: {type: string}
+          timeout: {type: integer}
 response-schema: FileEdits
 response-format: yaml
 ---
