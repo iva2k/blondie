@@ -102,3 +102,11 @@ class Skill:
             return self.system_prompt.format(**kwargs)
         except KeyError as e:
             raise ValueError(f"Missing context variable for skill {self.name}: {e}") from e
+
+    def to_tool_definition(self) -> dict[str, Any]:
+        """Convert skill to OpenAI/Anthropic tool definition."""
+        return {
+            "name": self.name,
+            "description": self.description,
+            "parameters": self.input_schema or {"type": "object", "properties": {}},
+        }
