@@ -51,6 +51,12 @@ class ContextGatherer:
         """Add command to context."""
         self.command = command
 
+    def refresh(self) -> None:
+        """Refresh context state (e.g. clear caches)."""
+        # Currently no explicit caching is implemented in gather(), but this is the hook for it.
+        # Future optimization: clear file tree cache here.
+        pass
+
     def gather(
         self,
         items: dict[str, bool] | None = None,

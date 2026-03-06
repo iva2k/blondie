@@ -45,6 +45,9 @@ class ChatSession:
         tools: list[dict[str, Any]] | None = None,
         user_content: str | None = None,
         output_schema: dict[str, Any] | None = None,
+        skill: Skill | None = None,
+        context_gatherer: ContextGatherer | None = None,
+        render_kwargs: dict[str, Any] | None = None,
     ):
         self.client = client
         self.provider_name = provider_name
@@ -61,6 +64,9 @@ class ChatSession:
         self.tools = tools
         self.user_content = user_content
         self.output_schema = output_schema
+        self.skill = skill
+        self.context_gatherer = context_gatherer
+        self.render_kwargs = render_kwargs or {}
 
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": self.system_prompt}]
 
@@ -207,6 +213,22 @@ class ChatSession:
             self.messages.append(system_msg)
 
         self.messages.append({"role": "user", "content": f"Context summary of previous actions:\n{summary}\n"})
+
+    def refresh_context(self) -> None:
+        """Refresh system prompt with latest context."""
+        if not self.skill or not self.context_gatherer:
+            return
+
+        self.context_gatherer.refresh()
+        context_str, context_parts = self.context_gatherer.gather(self.skill.context)
+
+        self.render_kwargs["context"] = context_str
+        self.render_kwargs.update(context_parts)
+
+        self.system_prompt = self.skill.render_system_prompt(**self.render_kwargs)
+
+        if self.messages and self.messages[0]["role"] == "system":
+            self.messages[0]["content"] = self.system_prompt
 
 
 class LLMRouter:
@@ -504,6 +526,9 @@ class LLMRouter:
             session, response, cmd_instruction=f"Executing skill {skill_name} with args: {kwargs}"
         )
 
+        # 4. Refresh context (files might have changed)
+        context_gatherer.refresh()
+
         # 4. Return result
         return response.content
 
@@ -514,8 +539,11 @@ class LLMRouter:
             if not skill.input_schema:
                 continue
 
-            async def skill_tool_impl(s_name=skill_name, **kwargs):
-                return await self.execute_skill_as_tool(s_name, context_gatherer, tool_handler, **kwargs)
+            async def skill_tool_impl(session: ChatSession | None = None, s_name=skill_name, **kwargs):
+                result = await self.execute_skill_as_tool(s_name, context_gatherer, tool_handler, **kwargs)
+                if session:
+                    session.refresh_context()
+                return result
 
             tool_handler.register(skill_name, skill.to_tool_definition(), skill_tool_impl)
 
@@ -527,12 +555,13 @@ class LLMRouter:
             raise ValueError(f"Skill not found: {skill_name}")
         skill = self.skills[skill_name]
 
+        render_kwargs = kwargs.copy()
         if context_gatherer:
             context_str, context_parts = context_gatherer.gather(skill.context)
-            kwargs["context"] = context_str
-            kwargs.update(context_parts)
+            render_kwargs["context"] = context_str
+            render_kwargs.update(context_parts)
 
-        system_prompt = skill.render_system_prompt(**kwargs)
+        system_prompt = skill.render_system_prompt(**render_kwargs)
         provider, model = self.select_model(skill.operation)
         if provider not in self.clients:
             raise ValueError(f"Provider '{provider}' not configured")
@@ -567,6 +596,9 @@ class LLMRouter:
             output_schema=skill.output_schema,
             tools=tools,
             user_content=user_content,
+            skill=skill,
+            context_gatherer=context_gatherer,
+            render_kwargs=render_kwargs,
         )
 
         return session
