@@ -240,7 +240,7 @@ async def test_run_loop(tool_handler):
 
     assert final_response == second_response
     tool_handler.tool_implementations["run_shell"].assert_called_with(
-        command="echo test", cmd_instruction="instruction"
+        command="echo test", cmd_instruction="instruction", session=session
     )
     session.add_tool_result.assert_called_with("call_1", "Shell Output")
     session.send.assert_called_once()

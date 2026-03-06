@@ -70,7 +70,7 @@ Status: id | priority | title | depends_on
 - [x] 074 | P2 | [Phase 2] Create `generate_code2` skill to use `write_file` tool and return summary instead of content (Side-Effect Pattern). | 073
 - [x] 065 | P2 | [Phase 2] Enhance `LLMRouter` in `src/agent/router.py` to handle recursive tool execution (Skill-as-Tool) and automatic Context Injection for sub-agents. |
 - [x] 072 | P2 | [Quality] Add unit tests for new modules (`loop2.py`, recursive `router.py` logic). |
-- [ ] 067 | P2 | [Phase 3] Implement `summarize_and_restart` logic for long-running sub-agents (replaces 054, 057). | 065
+- [x] 067 | P2 | [Phase 3] Implement `summarize_and_restart` logic for long-running sub-agents (replaces 054, 057). | 065
 - [ ] 075 | P2 | [Phase 3] Implement Context Refresh: `ContextGatherer` needs a refresh method; Router calls it after tool execution to sync file lists. |
 - [ ] 076 | P2 | [Observability] Implement hierarchical logging in `Journal` (spans/indentation) to visualize recursive tool calls. |
 - [ ] 077 | P2 | [Observability] Update `LLMRouter` and `ToolHandler` to track execution depth and pass it to `Journal` methods for indentation. | 076

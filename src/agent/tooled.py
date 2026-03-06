@@ -24,6 +24,13 @@ if TYPE_CHECKING:
     from cli import GitCLI
 
 
+class RestartSession(Exception):
+    """Signal to restart the session with a summary."""
+
+    def __init__(self, summary: str):
+        self.summary = summary
+
+
 TOOL_DEFINITIONS = {
     "run_shell": {
         "name": "run_shell",
@@ -146,6 +153,15 @@ TOOL_DEFINITIONS = {
         "description": "Check if the daily cost limit has been exceeded.",
         "parameters": {"type": "object", "properties": {}},
     },
+    "summarize_and_restart": {
+        "name": "summarize_and_restart",
+        "description": "Summarize the current session and restart to clear context window. Use this when the conversation gets too long or you are stuck.",
+        "parameters": {
+            "type": "object",
+            "properties": {"summary": {"type": "string", "description": "Summary of the conversation so far."}},
+            "required": ["summary"],
+        },
+    },
 }
 
 
@@ -188,6 +204,7 @@ class ToolHandler:
             "git_merge": self._git_merge,
             "run_tests": self._run_tests,
             "check_daily_limit": self._check_daily_limit,
+            "summarize_and_restart": self._summarize_and_restart,
         }
 
     def register(self, name: str, definition: dict, implementation: Callable):
@@ -410,6 +427,11 @@ class ToolHandler:
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error checking limit: {e}"
 
+    async def _summarize_and_restart(self, summary: str, **_kwargs) -> str:
+        """Summarize and restart session."""
+        # This raises an exception to be caught by run_loop
+        raise RestartSession(summary)
+
     async def run_loop(self, session: ChatSession, initial_response: LLMResponse, cmd_instruction: str) -> LLMResponse:
         """Handle interactive tool execution loop."""
         response = initial_response
@@ -439,8 +461,13 @@ class ToolHandler:
                 else:
                     try:
                         # Pass cmd_instruction for tools that might need it, others will ignore it via **_kwargs
-                        output = await implementation(cmd_instruction=cmd_instruction, **args)
+                        output = await implementation(cmd_instruction=cmd_instruction, session=session, **args)
                     # pylint: disable-next=broad-exception-caught
+                    except RestartSession as e:
+                        self.journal.print("🔄 Restarting session with summary...")
+                        session.restart_with_summary(e.summary)
+                        # Break inner tool loop to trigger a fresh send() with the new summary
+                        break
                     except Exception as e:
                         output = f"Error executing tool: {e}"
                         self.progress.add_action("TOOL_ERROR", fn_name, f"FAILED: {e}")

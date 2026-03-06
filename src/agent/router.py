@@ -197,6 +197,17 @@ class ChatSession:
             }
         )
 
+    def restart_with_summary(self, summary: str) -> None:
+        """Restart session with a summary of previous context."""
+        # Keep system prompt (first message)
+        system_msg = self.messages[0] if self.messages and self.messages[0]["role"] == "system" else None
+
+        self.messages.clear()
+        if system_msg:
+            self.messages.append(system_msg)
+
+        self.messages.append({"role": "user", "content": f"Context summary of previous actions:\n{summary}\n"})
+
 
 class LLMRouter:
     """Smart LLM router with cost tracking and policy gating."""
