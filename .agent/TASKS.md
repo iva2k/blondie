@@ -71,8 +71,9 @@ Status: id | priority | title | depends_on
 - [ ] 065 | P2 | [Phase 3] Enhance `LLMRouter` in `src/agent/router.py` to handle recursive tool execution (Skill-as-Tool). |
 - [ ] 066 | P2 | [Phase 3] Implement Context Stack in `router.py` to ensure sub-agent context isolation. | 065
 - [ ] 067 | P2 | [Phase 3] Implement `summarize_and_restart` logic for long-running sub-agents (replaces 054, 057). | 065
-- [ ] 075 | P3 | [Phase 3] Implement Context Refresh: Orchestrator needs to re-read file list/status after sub-agent execution to stay synced. |
-- [ ] 076 | P3 | [Observability] Implement hierarchical logging in Journal to visualize recursive tool calls (Tree View). |
+- [ ] 075 | P2 | [Phase 3] Implement Context Refresh: `ContextGatherer` needs a refresh method; Router calls it after tool execution to sync file lists. |
+- [ ] 076 | P2 | [Observability] Implement hierarchical logging in `Journal` (spans/indentation) to visualize recursive tool calls. |
+- [ ] 077 | P2 | [Observability] Update `LLMRouter` and `ToolHandler` to track execution depth and pass it to `Journal` methods for indentation. | 076
 - [ ] 068 | P2 | [Integration] Add CLI switch to run v2 loop (`loop2.py`). |
 
 ### Future

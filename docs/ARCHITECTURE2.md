@@ -56,12 +56,16 @@ If a Sub-Agent hits a token limit or gets stuck:
 
 To prevent context bloat in the Orchestrator, we adopt an **"Action over Data Transfer"** principle.
 
-*   **Problem**: If `generate_code` returns the full file content to the Orchestrator, the Orchestrator's context fills up with code it doesn't need to read, just to pass it to a `write_file` tool.
-*   **Solution**: Skills should be side-effect heavy. The `generate_code` skill should use a `write_file` tool *internally* to apply changes and return a concise summary (e.g., "Updated src/main.py") to the Orchestrator.
-*   **Implication**:
-    *   We need a primitive `write_file` tool available to Sub-Agents.
-    *   Skill prompts must be updated to prefer tool usage over returning content.
-    *   The Orchestrator acts as a manager (delegating tasks), not a pipe (moving data).
+- **Problem**: If `generate_code` returns the full file content to the Orchestrator, the Orchestrator's context fills up with code it doesn't need to read, just to pass it to a `write_file` tool.
+- **Solution**: Skills should be side-effect heavy. The `generate_code` skill should use a `write_file` tool *internally* to apply changes and return a concise summary (e.g., "Updated src/main.py") to the Orchestrator.
+- **Pattern - Pass References, Not Values**:
+  - Large Data (Code, Plans) -> File System.
+  - Small Data (Status, Paths) -> LLM Context.
+  - *Example*: `plan_task` writes `docs/plan.md` and returns "Plan saved to docs/plan.md". The Orchestrator passes that path to `generate_code`.
+- **Implication**:
+  - We need a primitive `write_file` tool available to Sub-Agents.
+  - Skill prompts must be updated to prefer tool usage over returning content.
+  - The Orchestrator acts as a manager (delegating tasks), not a pipe (moving data).
 
 ## 3. Component Architecture
 
@@ -118,6 +122,7 @@ The `LLMRouter` will be enhanced to support nested sessions. This allows a `Chat
     2. Inject arguments from the tool call into the session context.
     3. Run the session until it produces a "Final Answer" or "Return" signal.
     4. Return that result to the parent session.
+    5. **Context Refresh**: Upon return, the parent session triggers a refresh of its `ContextGatherer` (e.g., re-listing files) to reflect changes made by the child.
 
 ### 3.4. The Orchestrator (`src/agent/loop2.py`)
 
@@ -135,6 +140,14 @@ To allow the Orchestrator to manage the lifecycle without reimplementing logic i
 - **State**: `check_daily_limit` (wraps `LLMRouter`).
 
 These tools allow the Orchestrator to say (by tool calls) "I am done, mark task complete" or "I need to start working on task X".
+
+### 3.6. Observability
+
+Recursive execution requires hierarchical logging.
+
+- **Journal**: Needs to support `start_span(name)` and `end_span()`.
+- **Router/ToolHandler**: Must track execution depth/parent ID and pass it to the Journal to maintain the trace tree.
+- **Output**: Logs should be indented or visually grouped to distinguish between the Orchestrator's thoughts and a Sub-Agent's thoughts, and sub-sub-agents.
 
 ## 4. Migration Strategy
 
