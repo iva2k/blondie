@@ -6,9 +6,9 @@
 
 ## 1. Executive Summary
 
-Current Blondie architecture relies on a rigid, procedural state machine (Plan → Architect → Code → Verify). While effective for linear tasks, this approach struggles with complex debugging loops, context rot, and adaptability.
+Current Blondie architecture (v1) relies on a rigid, procedural state machine (`src/agent/loop.py`) implementing the Plan → Architect → Code → Verify cycle. While effective for linear tasks, this approach struggles with complex debugging loops, context rot, and adaptability.
 
-The Next-Gen architecture proposes a **"Skills as Tools"** paradigm. Instead of a hard-coded loop, the main agent acts as an **Orchestrator** that calls other Skills (Planner, Coder, Debugger) as **Tools**.
+The Next-Gen architecture (v2) proposes a **"Skills as Tools"** paradigm implemented in a new module `src/agent/loop2.py`. Instead of a hard-coded loop, the main agent acts as an **Orchestrator** that calls other Skills (Planner, Coder, Debugger) as **Tools**.
 
 This enables:
 
@@ -56,7 +56,9 @@ If a Sub-Agent hits a token limit or gets stuck:
 
 ### 3.1. Enhanced Skill Definition (`src/llm/skill.py`)
 
-Skills will use extended Frontmatter to define their tool interface.
+**Strategy**: Incremental Edit.
+
+Skills will use extended Frontmatter to define their tool interface. Existing `Skill` class will be updated to parse these new fields without breaking existing skills.
 
 ```yaml
 ---
@@ -81,16 +83,20 @@ user-content: ""  # Legacy user prompt template
 # ... the system prompt template
 ```
 
-### 3.2. Dynamic Tool Registry (src/agent/tooled.py)
+### 3.2. Dynamic Tool Registry (`src/agent/tooled.py`)
 
-The `ToolHandler` will no longer rely solely on hardcoded `TOOL_DEFINITIONS`.
+**Strategy**: Incremental Edit.
+
+The `ToolHandler` will be updated to support a dynamic registry of tools, merging the existing hardcoded primitives (`run_shell`, `read_file`) with dynamically loaded Skill-Tools.
 
 - **Registry**: A dynamic dictionary mapping `tool_name` → `Executable`.
 - **Skill Adapter**: A wrapper that converts a `Skill` object into a callable tool that spawns a `ChatSession`.
 
-### 3.3. Recursive Router (src/agent/router.py)
+### 3.3. Recursive Router (`src/agent/router.py`)
 
-The `LLMRouter` needs to support nested sessions.
+**Strategy**: Incremental Edit.
+
+The `LLMRouter` will be enhanced to support nested sessions. This allows a `ChatSession` to pause, execute a Skill-Tool (which spins up a child `ChatSession`), and resume with the result.
 
 - execute_tool_call(call):
   - If tool is "primitive" (shell, file): Execute directly.
@@ -100,28 +106,46 @@ The `LLMRouter` needs to support nested sessions.
     3. Run the session until it produces a "Final Answer" or "Return" signal.
     4. Return that result to the parent session.
 
+### 3.4. The Orchestrator (`src/agent/loop2.py`)
+
+**Strategy**: New Module.
+
+A new entry point that replaces `loop.py` for v2 execution. It initializes the root `orchestrator` skill and manages the top-level execution flow, delegating actual work to the recursive router.
+
+### 3.5. System Tools (Hardcoded)
+
+To allow the Orchestrator to manage the lifecycle without reimplementing logic in prompts, we will expose existing Python logic as tools. These remain hardcoded in Python but are callable by the LLM:
+
+- **Task Management**: `get_next_task`, `claim_task`, `complete_task` (wraps `TasksManager`).
+- **Git Operations**: `git_checkout`, `git_commit`, `git_push`, `git_merge` (wraps `GitCLI`).
+- **Execution**: `run_tests` (wraps `Executor.run_tests`).
+- **State**: `check_daily_limit` (wraps `LLMRouter`).
+
+These tools allow the Orchestrator to say (by tool calls) "I am done, mark task complete" or "I need to start working on task X".
+
 ## 4. Migration Strategy
 
-### Phase 1: Toolify Skills (Task 058)
+### Phase 1: Infrastructure Enhancements (Incremental)
 
-- Update `Skill` class to parse `input_schema`.
-- Generate OpenAI/Anthropic tool definitions from `Skill` objects.
+- Update `Skill` class in `skill.py` to parse `input_schema`.
+- Update `ToolHandler` in `tooled.py` to support dynamic tool registration.
 
-### Phase 2: The Orchestrator
+### Phase 2: The Orchestrator (New Module)
 
-- Create a new root skill: `orchestrator.skill.md`.
-- Give it access to `plan_task`, `generate_code`, `debug_error` as tools.
+- Create `src/agent/loop2.py` implementing the Orchestrator pattern.
+- **Implement System Tools**: Wrap `TasksManager`, `GitCLI`, and `Executor` methods into tools in `tooled.py`.
+- Create `orchestrator.skill.md` with access to `plan_task`, `generate_code`, `debug_error` as tools.
 
-### Phase 3: Recursive Runtime
+### Phase 3: Recursive Runtime (Incremental)
 
-- Refactor `router.py` to handle the "Skill-as-Tool" execution flow.
+- Enhance `router.py` to handle the "Skill-as-Tool" execution flow via recursion.
 - Implement the Context Stack.
 
 ## 5. Workflow Comparison
 
 | Feature       | Current (v1)            | Next-Gen (v2)                 |
 |---------------|-------------------------|-------------------------------|
-| Control Flow  | Python Code (`loop.py`) | LLM (`orchestrator` skill)    |
+| Control Flow  | Python Code (`loop.py`) | LLM (`loop2.py` + `orchestrator` skill) |
 | Context       | Shared/Global           | Stacked/Isolated              |
 | Tooling       | Hardcoded (Shell/File)  | Dynamic (Skills + Primitives) |
 | Debugging     | Linear Retry Loop       | Intelligent Sub-Agent Call    |
