@@ -178,13 +178,13 @@ Recursive execution requires hierarchical logging.
 
 ## 5. Workflow Comparison
 
-| Feature       | Current (v1)            | Next-Gen (v2)                 |
-|---------------|-------------------------|-------------------------------|
+| Feature       | Architecture v1         | Architecture v2                         |
+|---------------|-------------------------|-----------------------------------------|
 | Control Flow  | Python Code (`loop.py`) | LLM (`loop2.py` + `orchestrator` skill) |
-| Context       | Shared/Global           | Stacked/Isolated              |
-| Tooling       | Hardcoded (Shell/File)  | Dynamic (Skills + Primitives) |
-| Debugging     | Linear Retry Loop       | Intelligent Sub-Agent Call    |
-| Extensibility | Modify Python Code      | Add `.skill.md` file          |
+| Context       | Shared/Global           | Stacked/Isolated                        |
+| Tooling       | Hardcoded (Shell/File)  | Dynamic (Skills + Primitives)           |
+| Debugging     | Linear Retry Loop       | Intelligent Sub-Agent Call              |
+| Extensibility | Modify Python Code      | Add `.skill.md` file                    |
 
 ## 6. Open Questions
 
