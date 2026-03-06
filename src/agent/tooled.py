@@ -155,7 +155,8 @@ TOOL_DEFINITIONS = {
     },
     "summarize_and_restart": {
         "name": "summarize_and_restart",
-        "description": "Summarize the current session and restart to clear context window. Use this when the conversation gets too long or you are stuck.",
+        "description": "Summarize the current session and restart to clear context window."
+        " Use this when the conversation gets too long or you are stuck.",
         "parameters": {
             "type": "object",
             "properties": {"summary": {"type": "string", "description": "Summary of the conversation so far."}},
@@ -443,36 +444,40 @@ class ToolHandler:
 
             self.journal.print(f"🛠️  Processing {len(response.tool_calls)} tool calls...")
 
-            for tool in response.tool_calls:
-                fn_name = tool["function"]["name"]
-                try:
-                    args = json.loads(tool["function"]["arguments"])
-                except json.JSONDecodeError as e:
-                    session.add_tool_result(tool["id"], f"Error: Invalid JSON arguments - {e}")
-                    continue
-
-                tool_id = tool["id"]
-                output = ""
-                self.journal.print(f"🔧 Executing {fn_name}: {args}")
-
-                implementation = self.tool_implementations.get(fn_name)
-                if not implementation:
-                    output = f"Error: Unknown tool '{fn_name}'"
-                else:
+            self.journal.indent()
+            try:
+                for tool in response.tool_calls:
+                    fn_name = tool["function"]["name"]
                     try:
-                        # Pass cmd_instruction for tools that might need it, others will ignore it via **_kwargs
-                        output = await implementation(cmd_instruction=cmd_instruction, session=session, **args)
-                    # pylint: disable-next=broad-exception-caught
-                    except RestartSession as e:
-                        self.journal.print("🔄 Restarting session with summary...")
-                        session.restart_with_summary(e.summary)
-                        # Break inner tool loop to trigger a fresh send() with the new summary
-                        break
-                    except Exception as e:
-                        output = f"Error executing tool: {e}"
-                        self.progress.add_action("TOOL_ERROR", fn_name, f"FAILED: {e}")
+                        args = json.loads(tool["function"]["arguments"])
+                    except json.JSONDecodeError as e:
+                        session.add_tool_result(tool["id"], f"Error: Invalid JSON arguments - {e}")
+                        continue
 
-                session.add_tool_result(tool_id, output)
+                    tool_id = tool["id"]
+                    output = ""
+                    self.journal.print(f"🔧 Executing {fn_name}: {args}")
+
+                    implementation = self.tool_implementations.get(fn_name)
+                    if not implementation:
+                        output = f"Error: Unknown tool '{fn_name}'"
+                    else:
+                        try:
+                            # Pass cmd_instruction for tools that might need it, others will ignore it via **_kwargs
+                            output = await implementation(cmd_instruction=cmd_instruction, session=session, **args)
+                        # pylint: disable-next=broad-exception-caught
+                        except RestartSession as e:
+                            self.journal.print("🔄 Restarting session with summary...")
+                            session.restart_with_summary(e.summary)
+                            # Break inner tool loop to trigger a fresh send() with the new summary
+                            break
+                        except Exception as e:  # pylint: disable=broad-exception-caught
+                            output = f"Error executing tool: {e}"
+                            self.progress.add_action("TOOL_ERROR", fn_name, f"FAILED: {e}")
+
+                    session.add_tool_result(tool_id, output)
+            finally:
+                self.journal.dedent()
 
             # Get next response from LLM
             response = await session.send()

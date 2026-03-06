@@ -514,23 +514,24 @@ class LLMRouter:
         self, skill_name: str, context_gatherer: ContextGatherer, tool_handler: "ToolHandler", **kwargs: Any
     ) -> str:
         """Execute a skill as a tool (recursive agent)."""
-        # 1. Start session (gathers context, renders prompts)
-        session = self.start_chat(skill_name, context_gatherer, **kwargs)
+        with self.journal.span(f"🤖 Skill: {skill_name}"):
+            # 1. Start session (gathers context, renders prompts)
+            session = self.start_chat(skill_name, context_gatherer, **kwargs)
 
-        # 2. Send initial user message
-        response = await session.send(prompt=session.user_content)
+            # 2. Send initial user message
+            response = await session.send(prompt=session.user_content)
 
-        # 3. Run tool loop (recursive execution)
-        # The sub-agent might call tools, which ToolHandler executes.
-        response = await tool_handler.run_loop(
-            session, response, cmd_instruction=f"Executing skill {skill_name} with args: {kwargs}"
-        )
+            # 3. Run tool loop (recursive execution)
+            # The sub-agent might call tools, which ToolHandler executes.
+            response = await tool_handler.run_loop(
+                session, response, cmd_instruction=f"Executing skill {skill_name} with args: {kwargs}"
+            )
 
-        # 4. Refresh context (files might have changed)
-        context_gatherer.refresh()
+            # 4. Refresh context (files might have changed)
+            context_gatherer.refresh()
 
-        # 4. Return result
-        return response.content
+            # 4. Return result
+            return response.content
 
     def register_skills(self, tool_handler: "ToolHandler", context_gatherer: ContextGatherer) -> None:
         """Register v2 skills as tools in the tool handler."""
