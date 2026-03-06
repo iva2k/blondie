@@ -74,7 +74,7 @@ Status: id | priority | title | depends_on
 - [x] 075 | P2 | [Phase 3] Implement Context Refresh: `ContextGatherer` needs a refresh method; Router calls it after tool execution to sync file lists. |
 - [x] 076 | P2 | [Observability] Implement hierarchical logging in `Journal` (spans/indentation) to visualize recursive tool calls. |
 - [x] 077 | P2 | [Observability] Update `LLMRouter` and `ToolHandler` to track execution depth and pass it to `Journal` methods for indentation. | 076
-- [ ] 068 | P2 | [Integration] Add CLI switch to run v2 loop (`loop2.py`). |
+- [x] 068 | P2 | [Integration] Add CLI switch to run v2 loop (`loop2.py`). |
 - [ ] 079 | P2 | [Integration] Create a simple "Hello World" task in `TASKS.md` and verify v2 loop completes it (E2E test). | 068
 
 ### Future

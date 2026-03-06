@@ -97,10 +97,28 @@
             "name": "Blondie: Run Agent (_tmp/repo)",
             "type": "debugpy",
             "request": "launch",
-            "module": "src.agent.loop",
+            "module": "src.agent.cli",
             "args": [
                 "${workspaceFolder}/_tmp/repo",
                 "--journal-dir", "${workspaceFolder}/_tmp/logs",
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "MSYSTEM": "MSYS",
+                "VSCODE_SETTING": "launch.json",
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Blondie: Run Orchestrator (_tmp/repo)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.agent.cli",
+            "args": [
+                "${workspaceFolder}/_tmp/repo",
+                "--journal-dir", "${workspaceFolder}/_tmp/logs",
+                "--v2",
             ],
             "cwd": "${workspaceFolder}",
             "env": {

@@ -2,11 +2,8 @@
 
 """Blondie v2 Orchestrator Loop."""
 
-import asyncio
 import traceback
 from pathlib import Path
-
-import click
 
 from agent.context import ContextGatherer
 from agent.executor import Executor
@@ -99,26 +96,3 @@ class BlondieOrchestrator:
         finally:
             self.journal.print(f"💰 Total session cost: ${self.llm.daily_cost:.4f}")
             await self.llm.close()
-
-
-async def main(repo_path: str, journal_dir: str | None = None) -> None:
-    """CLI entry point."""
-    orchestrator = BlondieOrchestrator(repo_path, journal_dir)
-    await orchestrator.run()
-
-
-@click.command()
-@click.argument("repo_path", default=".", type=click.Path(exists=True, file_okay=False, dir_okay=True))
-@click.option(
-    "--journal-dir",
-    default=None,
-    help="Directory to store journal logs",
-    type=click.Path(file_okay=False, dir_okay=True),
-)
-def entry_point(repo_path: str = ".", journal_dir: str | None = None) -> None:
-    """Blondie v2 Orchestrator CLI."""
-    asyncio.run(main(repo_path, journal_dir))
-
-
-if __name__ == "__main__":
-    entry_point()

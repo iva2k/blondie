@@ -7,7 +7,6 @@ import shutil
 import traceback
 from pathlib import Path
 
-import click
 import yaml
 
 from agent.context import ContextGatherer
@@ -545,26 +544,3 @@ class BlondieAgent:
         finally:
             # 043: Log daily cost on exit
             self.journal.print(f"💰 Total session cost: ${self.llm.daily_cost:.4f}")
-
-
-async def main(repo_path: str, journal_dir: str | None = None) -> None:
-    """CLI entry point."""
-    agent = BlondieAgent(repo_path, journal_dir)
-    await agent.run()
-
-
-@click.command()
-@click.argument("repo_path", default=".", type=click.Path(exists=True, file_okay=False, dir_okay=True))
-@click.option(
-    "--journal-dir",
-    default=None,
-    help="Directory to store journal logs",
-    type=click.Path(file_okay=False, dir_okay=True),
-)
-def entry_point(repo_path: str = ".", journal_dir: str | None = None) -> None:
-    """Blondie Agent CLI."""
-    asyncio.run(main(repo_path, journal_dir))
-
-
-if __name__ == "__main__":
-    entry_point()
