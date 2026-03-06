@@ -125,9 +125,10 @@ The `LLMRouter` will be enhanced to support nested sessions. This allows a `Chat
   - If tool is "skill" (planner, coder):
     1. Instantiate new ChatSession with that Skill's prompt.
     2. Inject arguments from the tool call into the session context.
-    3. Run the session until it produces a "Final Answer" or "Return" signal.
-    4. Return that result to the parent session.
-    5. **Context Refresh**: Upon return, the parent session triggers a refresh of its `ContextGatherer` (e.g., re-listing files) to reflect changes made by the child.
+    3. **Context Injection**: Automatically trigger `ContextGatherer` for the new session based on the target Skill's `context` requirements (e.g., inject `files`, `policy` into the sub-agent's system prompt).
+    4. Run the session until it produces a "Final Answer" or "Return" signal.
+    5. Return that result to the parent session.
+    6. **Context Refresh**: Upon return, the parent session triggers a refresh of its `ContextGatherer` (e.g., re-listing files) to reflect changes made by the child.
 
 ### 3.4. The Orchestrator (`src/agent/loop2.py`)
 
@@ -167,10 +168,13 @@ Recursive execution requires hierarchical logging.
 - **Implement System Tools**: Wrap `TasksManager`, `GitCLI`, and `Executor` methods into tools in `tooled.py`.
 - Create `orchestrator.skill.md` with access to `plan_task2`, `generate_code2`, `debug_error2` as tools.
 
-### Phase 3: Recursive Runtime (Incremental)
+### Phase 2: Recursive Runtime (Core)
 
 - Enhance `router.py` to handle the "Skill-as-Tool" execution flow via recursion.
-- Implement the Context Stack.
+
+### Phase 3: Advanced Runtime
+
+- Implement the explicit Context Stack (for debugging/observability).
 
 ## 5. Workflow Comparison
 
