@@ -4,6 +4,7 @@
 
 import datetime
 import json
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,27 @@ class Journal:
         self.project_id = project_id
         self.console = Console()
         self.current_log_file: Path | None = None
+        self.indent_level = 0
+
+    def indent(self) -> None:
+        """Increase indentation level."""
+        self.indent_level += 1
+
+    def dedent(self) -> None:
+        """Decrease indentation level."""
+        if self.indent_level > 0:
+            self.indent_level -= 1
+
+    @contextmanager
+    def span(self, title: str):
+        """Context manager for a logging span."""
+        self.print(f"╭── {title}")
+        self.indent()
+        try:
+            yield
+        finally:
+            self.dedent()
+            self.print(f"╰── {title}")
 
     def start_task(self, task_id: str) -> None:
         """Start a new logging session for a task."""
@@ -41,22 +63,27 @@ class Journal:
 
     def print(self, *args: Any, truncate: int | None = None, **kwargs: Any) -> None:
         """Print to console and log to file."""
-        if truncate is not None:
-            console_args = []
-            for arg in args:
+        indent_str = "│   " * self.indent_level
+        console_args = []
+        if indent_str:
+            console_args.append(indent_str)
+
+        for arg in args:
+            if truncate is not None:
                 s = str(arg)
                 if len(s) > truncate:
                     console_args.append(s[:truncate] + "... [truncated]")
                 else:
                     console_args.append(arg)
-            self.console.print(*console_args, **kwargs)
-        else:
-            self.console.print(*args, **kwargs)
+            else:
+                console_args.append(arg)
+
+        self.console.print(*console_args, **kwargs)
 
         if self.current_log_file:
             # Simple text logging for console output
             text = " ".join(str(arg) for arg in args)
-            self.write_raw(f"[CONSOLE] {text}\n")
+            self.write_raw(f"[CONSOLE] {indent_str}{text}\n")
 
     def log_chat(
         self,
@@ -83,6 +110,7 @@ class Journal:
                 tokens = {"total_tokens": response.tokens_used}
             entry = {
                 "type": "LLM",
+                "indent": self.indent_level,
                 "title": title,
                 "operation": operation,
                 "provider": provider,
@@ -99,9 +127,13 @@ class Journal:
                 "timestamp": datetime.datetime.now().isoformat(),
             }
 
-            self.write_raw(f"\n=== LLM CHAT ({operation}) ===\n")
-            self.write_raw(json.dumps(entry, indent=2, default=str))
-            self.write_raw("\n==============================\n")
+            indent_str = "│   " * self.indent_level
+            self.write_raw(f"\n{indent_str}=== LLM CHAT ({operation}) ===\n")
+            json_str = json.dumps(entry, indent=2, default=str)
+            if indent_str:
+                json_str = "\n".join(indent_str + line for line in json_str.splitlines())
+            self.write_raw(json_str)
+            self.write_raw(f"\n{indent_str}==============================\n")
         self.print(f"📋 [{provider.upper()}] {operation}: {response.tokens_used}t")
 
     def log_shell(
@@ -118,6 +150,7 @@ class Journal:
         if self.current_log_file:
             entry = {
                 "type": "SHELL",
+                "indent": self.indent_level,
                 "command": command,
                 "duration": duration,
                 "returncode": returncode,
@@ -126,9 +159,13 @@ class Journal:
                 "timestamp": datetime.datetime.now().isoformat(),
             }
 
-            self.write_raw(f"\n=== SHELL ({command[:50]}...) ===\n")
-            self.write_raw(json.dumps(entry, indent=2, default=str))
-            self.write_raw("\n==============================\n")
+            indent_str = "│   " * self.indent_level
+            self.write_raw(f"\n{indent_str}=== SHELL ({command[:50]}...) ===\n")
+            json_str = json.dumps(entry, indent=2, default=str)
+            if indent_str:
+                json_str = "\n".join(indent_str + line for line in json_str.splitlines())
+            self.write_raw(json_str)
+            self.write_raw(f"\n{indent_str}==============================\n")
 
         if returncode == 0:
             self.print(f"✅ command ok ({duration:.2f}s)")
