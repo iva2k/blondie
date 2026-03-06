@@ -2,12 +2,14 @@
 
 """Unit tests for ToolHandler."""
 
+# pylint: disable=protected-access
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from agent.executor import CommandTimeoutError
-from agent.tooled import ToolHandler
+from agent.tooled import RestartSession, ToolHandler
 from llm.client import LLMResponse
 
 
@@ -45,7 +47,6 @@ async def test_write_file(tool_handler):
     file_path = "test.txt"
     content = "Hello World"
 
-    # pylint: disable=protected-access
     result = await tool_handler._write_file(file_path, content)
 
     assert "Successfully wrote" in result
@@ -59,7 +60,6 @@ async def test_write_file_protected(tool_handler):
     tool_handler.project.protected_files = ["protected.txt"]
     file_path = "protected.txt"
 
-    # pylint: disable=protected-access
     result = await tool_handler._write_file(file_path, "content")
 
     assert "Access denied" in result
@@ -71,7 +71,6 @@ async def test_write_file_outside_repo(tool_handler):
     """Test writing outside the repo fails."""
     file_path = "../outside.txt"
 
-    # pylint: disable=protected-access
     result = await tool_handler._write_file(file_path, "content")
 
     assert "Access denied" in result
@@ -82,7 +81,7 @@ async def test_write_file_outside_repo(tool_handler):
 async def test_write_file_is_dir(tool_handler):
     """Test writing to a path that is a directory fails."""
     (tool_handler.repo_path / "dir").mkdir()
-    # pylint: disable=protected-access
+
     result = await tool_handler._write_file("dir", "content")
     assert "is a directory" in result
 
@@ -107,7 +106,6 @@ async def test_read_file(tool_handler):
     content = "Read Me"
     (tool_handler.repo_path / file_path).write_text(content, encoding="utf-8")
 
-    # pylint: disable=protected-access
     result = await tool_handler._read_file(file_path)
     assert result == content
     tool_handler.progress.add_action.assert_called_with("READ", file_path, "SUCCESS")
@@ -117,7 +115,7 @@ async def test_read_file(tool_handler):
 async def test_read_file_errors(tool_handler):
     """Test read file error conditions."""
     # Missing path
-    # pylint: disable=protected-access
+
     assert "Missing path" in await tool_handler._read_file("")
 
     # Outside repo
@@ -145,7 +143,6 @@ async def test_run_shell(tool_handler):
     mock_res.stderr = ""
     tool_handler.executor.run.return_value = mock_res
 
-    # pylint: disable=protected-access
     result = await tool_handler._run_shell("echo hello")
 
     assert "Exit Code: 0" in result
@@ -166,11 +163,31 @@ async def test_run_shell_install_gate(tool_handler):
     mock_res.stderr = ""
     tool_handler.executor.run.return_value = mock_res
 
-    # pylint: disable=protected-access
     await tool_handler._run_shell("npm install")
 
     _, kwargs = tool_handler.executor.run.call_args
     assert kwargs["gate"] == "add-package"
+
+
+@pytest.mark.asyncio
+async def test_run_shell_interaction(tool_handler):
+    """Test shell command execution with interaction callback."""
+    tool_handler.executor.run = AsyncMock()
+    tool_handler.llm.interact_with_shell = AsyncMock()
+    tool_handler.llm.interact_with_shell.return_value.content = "user input"
+
+    # Mock executor.run to execute the callback passed to it
+    async def mock_run_side_effect(_command, _gate=None, interaction_callback=None, **_kwargs):
+        if interaction_callback:
+            await interaction_callback("cmd", "stdout", "stderr")
+        return MagicMock(returncode=0, stdout="", stderr="")
+
+    tool_handler.executor.run.side_effect = mock_run_side_effect
+
+    await tool_handler._run_shell("interactive_cmd", cmd_instruction="instruction")
+
+    tool_handler.llm.interact_with_shell.assert_called_once()
+    assert tool_handler.llm.interact_with_shell.call_args[1]["instruction"] == "instruction"
 
 
 @pytest.mark.asyncio
@@ -179,7 +196,6 @@ async def test_run_shell_timeout(tool_handler):
     mock_result = MagicMock(returncode=124, stdout="", stderr="Timeout")
     tool_handler.executor.run = AsyncMock(side_effect=CommandTimeoutError(mock_result))
 
-    # pylint: disable=protected-access
     result = await tool_handler._run_shell("sleep 10")
 
     assert "Exit Code: 124" in result
@@ -196,7 +212,6 @@ async def test_find_package(tool_handler):
     mock_res.stderr = ""
     tool_handler.executor.run.return_value = mock_res
 
-    # pylint: disable=protected-access
     result = await tool_handler._find_package("pkg", "python")
 
     assert "1.0.0" in result
@@ -332,6 +347,41 @@ async def test_run_loop_tool_exception(tool_handler):
 
 
 @pytest.mark.asyncio
+async def test_summarize_and_restart(tool_handler):
+    """Test summarize_and_restart tool raises exception."""
+    with pytest.raises(RestartSession) as exc:
+        await tool_handler._summarize_and_restart("Summary text")
+    assert exc.value.summary == "Summary text"
+
+
+@pytest.mark.asyncio
+async def test_run_loop_restart_session(tool_handler):
+    """Test run_loop handles RestartSession."""
+    session = MagicMock()
+    session.send = AsyncMock()
+    session.restart_with_summary = MagicMock()
+    session.add_tool_result = MagicMock()
+
+    # Initial response calls summarize_and_restart
+    initial_response = MagicMock(spec=LLMResponse)
+    initial_response.tool_calls = [
+        {"id": "call_1", "function": {"name": "summarize_and_restart", "arguments": '{"summary": "restart"}'}}
+    ]
+
+    # Mock implementation to raise RestartSession (as it does in real code)
+    tool_handler.tool_implementations["summarize_and_restart"] = tool_handler._summarize_and_restart
+
+    # Mock session.send to return a response without tool calls the second time to exit run_loop
+    final_response = MagicMock(spec=LLMResponse)
+    final_response.tool_calls = []
+    session.send.side_effect = [final_response]
+
+    await tool_handler.run_loop(session, initial_response, "")
+
+    session.restart_with_summary.assert_called_with("restart")
+
+
+@pytest.mark.asyncio
 async def test_get_next_task(tool_handler):
     """Test get_next_task tool."""
     mock_task = MagicMock()
@@ -340,7 +390,6 @@ async def test_get_next_task(tool_handler):
     mock_task.priority = "P0"
     tool_handler.tasks_manager.get_next_task.return_value = mock_task
 
-    # pylint: disable=protected-access
     result = await tool_handler._get_next_task()
     assert "Task ID: 001" in result
     assert "Title: Test Task" in result
@@ -351,7 +400,6 @@ async def test_claim_task(tool_handler):
     """Test claim_task tool."""
     tool_handler.tasks_manager.claim_task.return_value = True
 
-    # pylint: disable=protected-access
     result = await tool_handler._claim_task("001")
     assert "Successfully claimed" in result
     tool_handler.tasks_manager.claim_task.assert_called_with("001", tool_handler.git)
@@ -362,7 +410,6 @@ async def test_complete_task(tool_handler):
     """Test complete_task tool."""
     tool_handler.tasks_manager.complete_task.return_value = True
 
-    # pylint: disable=protected-access
     result = await tool_handler._complete_task("001")
     assert "Successfully completed" in result
     tool_handler.tasks_manager.complete_task.assert_called_with("001")
@@ -371,7 +418,7 @@ async def test_complete_task(tool_handler):
 @pytest.mark.asyncio
 async def test_git_checkout(tool_handler):
     """Test git_checkout tool."""
-    # pylint: disable=protected-access
+
     result = await tool_handler._git_checkout("feature-branch")
     assert "Checked out branch feature-branch" in result
     tool_handler.git.checkout_branch.assert_called_with("feature-branch")
@@ -380,7 +427,7 @@ async def test_git_checkout(tool_handler):
 @pytest.mark.asyncio
 async def test_git_commit(tool_handler):
     """Test git_commit tool."""
-    # pylint: disable=protected-access
+
     result = await tool_handler._git_commit("Initial commit")
     assert "Committed with message: Initial commit" in result
     tool_handler.git.add_all.assert_called_once()
@@ -391,7 +438,7 @@ async def test_git_commit(tool_handler):
 async def test_git_push(tool_handler):
     """Test git_push tool."""
     # Case 1: Explicit branch
-    # pylint: disable=protected-access
+
     result = await tool_handler._git_push("feature-branch")
     assert "Pushed branch feature-branch" in result
     tool_handler.git.push.assert_called_with("feature-branch")
@@ -406,7 +453,7 @@ async def test_git_push(tool_handler):
 @pytest.mark.asyncio
 async def test_git_merge(tool_handler):
     """Test git_merge tool."""
-    # pylint: disable=protected-access
+
     result = await tool_handler._git_merge("feature", "main")
     assert "Merged feature into main" in result
 
@@ -427,7 +474,6 @@ async def test_run_tests(tool_handler):
     mock_res.stderr = ""
     tool_handler.executor.run_tests = AsyncMock(return_value=mock_res)
 
-    # pylint: disable=protected-access
     result = await tool_handler._run_tests()
     assert "Exit Code: 0" in result
     assert "tests passed" in result
@@ -438,7 +484,7 @@ async def test_run_tests(tool_handler):
 async def test_check_daily_limit(tool_handler):
     """Test check_daily_limit tool."""
     tool_handler.llm.check_daily_limit.return_value = True
-    # pylint: disable=protected-access
+
     result = await tool_handler._check_daily_limit()
     assert "WITHIN_LIMIT" in result
 

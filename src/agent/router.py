@@ -86,8 +86,8 @@ class ChatSession:
         use_response_format = response_format or self.response_format
         use_output_schema = output_schema or self.output_schema
 
-        # Default to JSON if output_schema is present
-        if use_output_schema and not use_response_format:
+        # Default to JSON if output_schema or response_schema is present
+        if (use_output_schema or use_response_schema) and not use_response_format:
             use_response_format = "json"
 
         max_retries = 3 if (use_response_schema or use_output_schema) else 0

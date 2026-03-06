@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import yaml
+from pydantic import BaseModel
 
 from agent.context import ContextGatherer
 from agent.policy import Policy
@@ -211,3 +212,72 @@ Prompt
         assert response.parsed is not None
         assert response.parsed["required_field"] == "correct"
         assert mock_instance.post.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_chat_session_yaml_parsing(mock_policy, tmp_path: Path):
+    """Test that ChatSession correctly parses YAML output."""
+    secrets_file = tmp_path / "secrets.env.yaml"
+    secrets_file.write_text("llm:\n  openai:\n    api_key: sk-test", encoding="utf-8")
+    config_file = tmp_path / "llm_config.yaml"
+    config_file.write_text(
+        yaml.dump({"providers": {"openai": {"api_type": "openai"}}, "operations": {"test": [{"provider": "openai"}]}}),
+        encoding="utf-8",
+    )
+
+    with patch("httpx.AsyncClient") as mock_client:
+        mock_instance = mock_client.return_value
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": "key: value\nlist:\n  - item"}}],
+            "usage": {"total_tokens": 10},
+        }
+        mock_instance.post = AsyncMock(return_value=mock_response)
+
+        router = LLMRouter(secrets_file, config_file, mock_policy)
+
+        # pylint: disable-next=protected-access
+        response = await router._execute_llm_task(
+            "test", "System", "User", 0.1, 100, "test", "test", response_format="yaml"
+        )
+
+        assert response.parsed == {"key": "value", "list": ["item"]}
+
+
+@pytest.mark.asyncio
+async def test_chat_session_pydantic_validation(mock_policy, tmp_path: Path):
+    """Test that ChatSession validates against Pydantic models."""
+
+    class TestModel(BaseModel):
+        """Pydantic model for testing."""
+
+        name: str
+        age: int
+
+    secrets_file = tmp_path / "secrets.env.yaml"
+    secrets_file.write_text("llm:\n  openai:\n    api_key: sk-test", encoding="utf-8")
+    config_file = tmp_path / "llm_config.yaml"
+    config_file.write_text(
+        yaml.dump({"providers": {"openai": {"api_type": "openai"}}, "operations": {"test": [{"provider": "openai"}]}}),
+        encoding="utf-8",
+    )
+
+    with patch("httpx.AsyncClient") as mock_client:
+        mock_instance = mock_client.return_value
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": '{"name": "Alice", "age": 30}'}}],
+            "usage": {"total_tokens": 10},
+        }
+        mock_instance.post = AsyncMock(return_value=mock_response)
+
+        router = LLMRouter(secrets_file, config_file, mock_policy)
+
+        # pylint: disable-next=protected-access
+        response = await router._execute_llm_task(
+            "test", "System", "User", 0.1, 100, "test", "test", response_schema=TestModel
+        )
+
+        assert isinstance(response.parsed, TestModel)
+        assert response.parsed.name == "Alice"
+        assert response.parsed.age == 30

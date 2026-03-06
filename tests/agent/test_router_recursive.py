@@ -159,3 +159,87 @@ async def test_generate_code2_side_effect(mock_router):
     tool_handler.run_loop.assert_called_once()
     # The first argument to run_loop is the session, the second is the response containing the tool call
     assert tool_handler.run_loop.call_args[0][1] == sub_agent_response
+
+
+def test_chat_session_restart_with_summary():
+    """Test ChatSession.restart_with_summary."""
+    session = ChatSession(
+        client=MagicMock(),
+        provider_name="test",
+        model="test",
+        journal=MagicMock(),
+        cost_callback=MagicMock(),
+        system_prompt="System",
+        temperature=0,
+        max_tokens=0,
+        log_action="test",
+        log_title="test",
+    )
+    session.messages = [
+        {"role": "system", "content": "System"},
+        {"role": "user", "content": "Hi"},
+        {"role": "assistant", "content": "Hello"},
+    ]
+
+    session.restart_with_summary("Summary")
+
+    assert len(session.messages) == 2
+    assert session.messages[0] == {"role": "system", "content": "System"}
+    assert session.messages[1]["role"] == "user"
+    assert "Summary" in session.messages[1]["content"]
+
+
+def test_chat_session_refresh_context():
+    """Test ChatSession.refresh_context."""
+    skill = MagicMock()
+    skill.context = {"files": True}
+    skill.render_system_prompt.return_value = "New System Prompt"
+
+    context_gatherer = MagicMock()
+    context_gatherer.gather.return_value = ("New Context", {})
+
+    session = ChatSession(
+        client=MagicMock(),
+        provider_name="test",
+        model="test",
+        journal=MagicMock(),
+        cost_callback=MagicMock(),
+        system_prompt="Old System",
+        temperature=0,
+        max_tokens=0,
+        log_action="test",
+        log_title="test",
+        skill=skill,
+        context_gatherer=context_gatherer,
+    )
+
+    session.refresh_context()
+
+    context_gatherer.refresh.assert_called()
+    context_gatherer.gather.assert_called_with({"files": True})
+    skill.render_system_prompt.assert_called()
+    assert session.system_prompt == "New System Prompt"
+    assert session.messages[0]["content"] == "New System Prompt"
+
+
+@pytest.mark.asyncio
+async def test_execute_skill_as_tool_observability(mock_router):
+    """Test execute_skill_as_tool uses journal span and refreshes context."""
+    tool_handler = MagicMock()
+    context_gatherer = MagicMock()
+    mock_router.journal = MagicMock()
+    mock_router.journal.span.return_value.__enter__ = MagicMock()
+    mock_router.journal.span.return_value.__exit__ = MagicMock()
+
+    # Mock session
+    mock_session = MagicMock()
+    mock_session.user_content = "prompt"
+    mock_session.send = AsyncMock()
+    mock_router.start_chat = MagicMock(return_value=mock_session)
+
+    tool_handler.run_loop = AsyncMock(return_value=MagicMock(content="result"))
+
+    await mock_router.execute_skill_as_tool("skill_v2", context_gatherer, tool_handler)
+
+    mock_router.journal.span.assert_called_with("🤖 Skill: skill_v2")
+    context_gatherer.refresh.assert_called()
