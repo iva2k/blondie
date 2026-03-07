@@ -75,7 +75,7 @@ Status: id | priority | title | depends_on
 - [x] 076 | P2 | [Observability] Implement hierarchical logging in `Journal` (spans/indentation) to visualize recursive tool calls. |
 - [x] 077 | P2 | [Observability] Update `LLMRouter` and `ToolHandler` to track execution depth and pass it to `Journal` methods for indentation. | 076
 - [x] 068 | P2 | [Integration] Add CLI switch to run v2 loop (`loop2.py`). |
-- [ ] 079 | P2 | [Integration] Create a simple "Hello World" task in `TASKS.md` and verify v2 loop completes it (E2E test). | 068
+- [x] 079 | P2 | [Integration] Create a simple "Hello World" task in `TASKS.md` and verify v2 loop completes it (E2E test). | 068
 
 ### Future
 
