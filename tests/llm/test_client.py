@@ -82,7 +82,7 @@ async def test_anthropic_cost_calculation():
     response = await client.chat([{"role": "user", "content": "Hi"}])
 
     # 1M input * $10 + 1M output * $30 = $40
-    assert response.cost_usd == 40.0
+    assert response.cost_usd == pytest.approx(40.0)
 
 
 @pytest.mark.asyncio

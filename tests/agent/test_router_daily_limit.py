@@ -50,5 +50,5 @@ def test_check_daily_limit_reset(router):
 
     # Should reset and pass
     assert router.check_daily_limit() is True
-    assert router.daily_cost == 0.0
+    assert router.daily_cost == pytest.approx(0.0)
     assert router.last_reset_date == datetime.date.today()
