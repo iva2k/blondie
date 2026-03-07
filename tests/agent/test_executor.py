@@ -125,7 +125,8 @@ async def test_run_interactive_logic(executor):
     mock_proc.wait.side_effect = delayed_exit
 
     # Interaction callback that responds to prompt
-    async def interaction_callback(cmd, stdout, stderr):
+    async def interaction_callback(_cmd, stdout, _stderr):
+        await asyncio.sleep(0)
         if "Enter name:" in stdout:
             return "Blondie"
         return ""
@@ -134,7 +135,7 @@ async def test_run_interactive_logic(executor):
         executor.cmd_policy.check = MagicMock(return_value=(True, None))
 
         # Mock asyncio.wait to simulate timeout and trigger interaction
-        async def mock_wait(fs, return_when=asyncio.FIRST_COMPLETED, timeout=None):
+        async def mock_wait(fs, **_kwargs):
             await asyncio.sleep(0)
             done = {f for f in fs if f.done()}
             if done:
@@ -195,10 +196,11 @@ async def test_run_interactive_abort(executor):
 
     # Callback returns abort signal
     async def interaction_callback(*_args):
+        await asyncio.sleep(0)
         return "^C"
 
     # Mock wait to trigger interaction logic then exit
-    async def mock_wait(fs, return_when=asyncio.FIRST_COMPLETED, timeout=None):
+    async def mock_wait(fs, **_kwargs):
         await asyncio.sleep(0)
         return set(), set(fs)  # Simulate timeout to trigger check
 
