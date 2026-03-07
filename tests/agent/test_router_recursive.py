@@ -243,3 +243,45 @@ async def test_execute_skill_as_tool_observability(mock_router):
 
     mock_router.journal.span.assert_called_with("🤖 Skill: skill_v2")
     context_gatherer.refresh.assert_called()
+
+
+def test_start_chat_with_dynamic_skill_tool(mock_router):
+    """Test that start_chat resolves dynamic skills as tools."""
+    # 1. Define a skill that acts as a tool (has input_schema)
+    skill_tool = MagicMock(spec=Skill)
+    skill_tool.name = "skill_tool"
+    skill_tool.input_schema = {"type": "object", "properties": {"arg": {"type": "string"}}}
+    skill_tool.to_tool_definition.return_value = {
+        "name": "skill_tool",
+        "description": "A skill tool",
+        "parameters": skill_tool.input_schema,
+    }
+
+    # 2. Define a parent skill that uses the skill_tool
+    parent_skill = MagicMock(spec=Skill)
+    parent_skill.name = "parent_skill"
+    parent_skill.operation = "planning"
+    parent_skill.tools = ["skill_tool", "run_shell"]  # Mix of dynamic and static
+    parent_skill.context = {}
+    parent_skill.render_system_prompt.return_value = "System Prompt"
+    parent_skill.user_content = "User Prompt"
+    parent_skill.temperature = 0.1
+    parent_skill.max_tokens = 100
+    parent_skill.log_title = "Parent"
+    parent_skill.response_schema = None
+    parent_skill.response_format = None
+    parent_skill.output_schema = None
+
+    # 3. Setup router
+    mock_router.skills = {"skill_tool": skill_tool, "parent_skill": parent_skill}
+    mock_router.select_model = MagicMock(return_value=("mock_provider", "mock_model"))
+    mock_router.clients = {"mock_provider": MagicMock()}
+
+    # 4. Start chat
+    session = mock_router.start_chat("parent_skill")
+
+    # 5. Verify tools
+    tool_names = [t["name"] for t in session.tools]
+    assert "skill_tool" in tool_names
+    assert "run_shell" in tool_names
+    assert len(session.tools) == 2

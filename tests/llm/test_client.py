@@ -109,8 +109,9 @@ async def test_anthropic_tool_calls_parsing():
 async def test_openai_list_models():
     """Test OpenAI list_models."""
     client = OpenAIClient("key", "url", "model")
-    client.client.get = AsyncMock()
-    client.client.get.return_value.json.return_value = {"data": [{"id": "gpt-4"}, {"id": "gpt-3.5"}]}
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"data": [{"id": "gpt-4"}, {"id": "gpt-3.5"}]}
+    client.client.get = AsyncMock(return_value=mock_response)
 
     models = await client.list_models()
     assert "gpt-4" in models
@@ -121,8 +122,9 @@ async def test_openai_list_models():
 async def test_anthropic_list_models():
     """Test Anthropic list_models."""
     client = AnthropicClient("key", "url", "model")
-    client.client.get = AsyncMock()
-    client.client.get.return_value.json.return_value = {"data": [{"id": "claude-3"}, {"id": "claude-2"}]}
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"data": [{"id": "claude-3"}, {"id": "claude-2"}]}
+    client.client.get = AsyncMock(return_value=mock_response)
 
     models = await client.list_models()
     assert "claude-3" in models

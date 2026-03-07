@@ -574,6 +574,8 @@ class LLMRouter:
             for tool_name in skill.tools:
                 if tool_name in TOOL_DEFINITIONS:
                     tools.append(TOOL_DEFINITIONS[tool_name])
+                elif tool_name in self.skills and self.skills[tool_name].input_schema:
+                    tools.append(self.skills[tool_name].to_tool_definition())
                 else:
                     self.journal.print(f"⚠️ Unknown tool '{tool_name}' in skill '{skill.name}'")
 

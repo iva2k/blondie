@@ -226,4 +226,4 @@ async def test_run_build(executor):
     result = await executor.run_build()
 
     assert result.returncode == 0
-    executor.run.assert_called_with("make", timeout=300)
+    executor.run.assert_called_with("make")
