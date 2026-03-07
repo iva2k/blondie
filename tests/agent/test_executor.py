@@ -157,3 +157,73 @@ async def test_run_interactive_logic(executor):
     # Verify input was written to stdin
     mock_proc.stdin.write.assert_called_with(b"Blondie\n")
     mock_proc.stdin.drain.assert_called()
+
+
+@pytest.mark.asyncio
+async def test_run_list_command(executor):
+    """Test running command as a list."""
+    mock_proc = AsyncMock()
+    mock_proc.returncode = 0
+    mock_proc.stdout.readline = AsyncMock(side_effect=[b"", b""])
+    mock_proc.stderr.readline = AsyncMock(side_effect=[b"", b""])
+    mock_proc.wait.return_value = None
+
+    with patch("asyncio.create_subprocess_shell", return_value=mock_proc) as mock_shell:
+        executor.cmd_policy.check = MagicMock(return_value=(True, None))
+
+        await executor.run(["echo", "hello"])
+
+        # Verify it was joined correctly
+        args = mock_shell.call_args[0]
+        # Basic check that it's a string now
+        assert isinstance(args[0], str)
+        assert "echo" in args[0]
+        assert "hello" in args[0]
+
+
+@pytest.mark.asyncio
+async def test_run_interactive_abort(executor):
+    """Test aborting interaction with ^C."""
+    mock_proc = AsyncMock()
+    mock_proc.returncode = None
+    mock_proc.stdin = AsyncMock()
+    mock_proc.kill = MagicMock()
+
+    # Simulate stdout to trigger interaction
+    mock_proc.stdout.readline = AsyncMock(side_effect=[b"Prompt: ", b""])
+    mock_proc.stderr.readline = AsyncMock(return_value=b"")
+
+    # Callback returns abort signal
+    async def interaction_callback(*_args):
+        return "^C"
+
+    # Mock wait to trigger interaction logic then exit
+    async def mock_wait(fs, return_when=asyncio.FIRST_COMPLETED, timeout=None):
+        await asyncio.sleep(0)
+        return set(), set(fs)  # Simulate timeout to trigger check
+
+    # We also need process.wait() to eventually return to exit the loop
+    async def delayed_exit():
+        await asyncio.sleep(0.1)
+        mock_proc.returncode = -1
+
+    mock_proc.wait.side_effect = delayed_exit
+
+    with patch("asyncio.create_subprocess_shell", return_value=mock_proc):
+        executor.cmd_policy.check = MagicMock(return_value=(True, None))
+        with patch("agent.executor.asyncio.wait", side_effect=mock_wait):
+            await executor.run("cmd", interaction_callback=interaction_callback)
+
+    mock_proc.kill.assert_called()
+
+
+@pytest.mark.asyncio
+async def test_run_build(executor):
+    """Test run_build wrapper."""
+    executor.project.commands = {"build": "make"}
+    executor.run = AsyncMock(return_value=CommandResult("make", 0, "ok", ""))
+
+    result = await executor.run_build()
+
+    assert result.returncode == 0
+    executor.run.assert_called_with("make", timeout=300)

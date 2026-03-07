@@ -103,3 +103,27 @@ async def test_anthropic_tool_calls_parsing():
     assert response.tool_calls is not None
     assert response.tool_calls[0]["function"]["name"] == "test_tool"
     assert response.tool_calls[0]["function"]["arguments"] == '{"arg": "val"}'
+
+
+@pytest.mark.asyncio
+async def test_openai_list_models():
+    """Test OpenAI list_models."""
+    client = OpenAIClient("key", "url", "model")
+    client.client.get = AsyncMock()
+    client.client.get.return_value.json.return_value = {"data": [{"id": "gpt-4"}, {"id": "gpt-3.5"}]}
+
+    models = await client.list_models()
+    assert "gpt-4" in models
+    assert len(models) == 2
+
+
+@pytest.mark.asyncio
+async def test_anthropic_list_models():
+    """Test Anthropic list_models."""
+    client = AnthropicClient("key", "url", "model")
+    client.client.get = AsyncMock()
+    client.client.get.return_value.json.return_value = {"data": [{"id": "claude-3"}, {"id": "claude-2"}]}
+
+    models = await client.list_models()
+    assert "claude-3" in models
+    assert len(models) == 2

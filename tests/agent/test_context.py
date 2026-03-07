@@ -139,3 +139,13 @@ def test_os_context(context_gatherer):
 def test_refresh(context_gatherer):
     """Test refresh method (currently no-op but should exist)."""
     context_gatherer.refresh()
+
+
+def test_env_context(context_gatherer, mock_deps):
+    """Test environment context gathering."""
+    mock_deps["project"].dev_env = {"guidelines": ["Rule 1", "Rule 2"]}
+
+    _, parts = context_gatherer.gather({"env": True})
+
+    assert "Rule 1" in parts["env"]
+    assert "Rule 2" in parts["env"]
