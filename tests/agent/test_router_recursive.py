@@ -285,3 +285,53 @@ def test_start_chat_with_dynamic_skill_tool(mock_router):
     assert "skill_tool" in tool_names
     assert "run_shell" in tool_names
     assert len(session.tools) == 2
+
+
+def test_circular_skill_definitions(mock_router):
+    """Test that skills can reference each other in tools (circular dependency)."""
+    # 1. Define Skill A
+    skill_a = MagicMock(spec=Skill)
+    skill_a.name = "skill_a"
+    skill_a.operation = "op"
+    skill_a.tools = ["skill_b"]  # References B
+    skill_a.input_schema = {"type": "object"}
+    skill_a.to_tool_definition.return_value = {"name": "skill_a", "parameters": {}}
+    skill_a.render_system_prompt.return_value = "Prompt A"
+    skill_a.user_content = "User A"
+    skill_a.temperature = 0.1
+    skill_a.max_tokens = 100
+    skill_a.log_title = "A"
+    skill_a.response_schema = None
+    skill_a.response_format = None
+    skill_a.output_schema = None
+
+    # 2. Define Skill B
+    skill_b = MagicMock(spec=Skill)
+    skill_b.name = "skill_b"
+    skill_b.operation = "op"
+    skill_b.tools = ["skill_a"]  # References A
+    skill_b.input_schema = {"type": "object"}
+    skill_b.to_tool_definition.return_value = {"name": "skill_b", "parameters": {}}
+    skill_b.render_system_prompt.return_value = "Prompt B"
+    skill_b.user_content = "User B"
+    skill_b.temperature = 0.1
+    skill_b.max_tokens = 100
+    skill_b.log_title = "B"
+    skill_b.response_schema = None
+    skill_b.response_format = None
+    skill_b.output_schema = None
+
+    # 3. Setup router
+    mock_router.skills = {"skill_a": skill_a, "skill_b": skill_b}
+    mock_router.select_model = MagicMock(return_value=("mock_provider", "mock_model"))
+    mock_router.clients = {"mock_provider": MagicMock()}
+
+    # 4. Start Chat A
+    session_a = mock_router.start_chat("skill_a")
+    tool_names_a = [t["name"] for t in session_a.tools]
+    assert "skill_b" in tool_names_a
+
+    # 5. Start Chat B
+    session_b = mock_router.start_chat("skill_b")
+    tool_names_b = [t["name"] for t in session_b.tools]
+    assert "skill_a" in tool_names_b
