@@ -4,6 +4,7 @@
 
 import datetime
 import json
+from collections import defaultdict
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -581,7 +582,9 @@ class LLMRouter:
 
         user_content = None
         if skill.user_content:
-            user_content = skill.user_content.format(**kwargs)
+            safe_kwargs: defaultdict[str, Any] = defaultdict(str)
+            safe_kwargs.update(kwargs)
+            user_content = skill.user_content.format_map(safe_kwargs)
 
         session = ChatSession(
             client=self.clients[provider],

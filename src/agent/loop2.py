@@ -69,6 +69,7 @@ class BlondieOrchestrator:
 
     async def run(self) -> None:
         """Start the orchestrator loop."""
+        self.journal.start_task("orchestrator")
         self.journal.print("🚀 Starting Blondie v2 Orchestrator...")
 
         try:

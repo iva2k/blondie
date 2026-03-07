@@ -65,8 +65,6 @@ class Journal:
         """Print to console and log to file."""
         indent_str = "│   " * self.indent_level
         console_args = []
-        if indent_str:
-            console_args.append(indent_str)
 
         for arg in args:
             if truncate is not None:
@@ -78,6 +76,8 @@ class Journal:
             else:
                 console_args.append(arg)
 
+        if indent_str:
+            self.console.print(indent_str, end="")
         self.console.print(*console_args, **kwargs)
 
         if self.current_log_file:

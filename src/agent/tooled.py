@@ -339,6 +339,7 @@ class ToolHandler:
             success = await asyncio.to_thread(self.tasks_manager.claim_task, task_id, self.git)
             if success:
                 self.progress.add_action("CLAIM_TASK", task_id, "SUCCESS")
+                self.journal.start_task(task_id)
                 return f"Successfully claimed task {task_id}."
             else:
                 self.progress.add_action("CLAIM_TASK", task_id, "FAILED")
@@ -355,6 +356,7 @@ class ToolHandler:
             success = await asyncio.to_thread(self.tasks_manager.complete_task, task_id)
             if success:
                 self.progress.add_action("COMPLETE_TASK", task_id, "SUCCESS")
+                self.journal.start_task("orchestrator")
                 return f"Successfully completed task {task_id}."
             else:
                 self.progress.add_action("COMPLETE_TASK", task_id, "FAILED")

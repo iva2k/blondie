@@ -20,9 +20,14 @@ def test_journal_indentation(tmp_path):
 
     # Check console calls
     calls = journal.console.print.call_args_list
-    assert calls[0][0][0] == "Level 0"
-    assert calls[1][0] == ("│   ", "Level 1")
-    assert calls[2][0][0] == "Level 0"
+    assert calls[0].args[0] == "Level 0"
+
+    # Indented print is split into two calls
+    assert calls[1].args[0] == "│   "
+    assert calls[1].kwargs.get("end") == ""
+    assert calls[2].args[0] == "Level 1"
+
+    assert calls[3].args[0] == "Level 0"
 
 
 def test_journal_span(tmp_path):
@@ -35,15 +40,17 @@ def test_journal_span(tmp_path):
 
     assert journal.indent_level == 0
     # Verify calls include span start/end and indented content
-    calls = [c[0] for c in journal.console.print.call_args_list]
-    # Flatten args
-    flat_calls = []
-    for args in calls:
-        flat_calls.append("".join(str(a) for a in args))
+    calls = journal.console.print.call_args_list
+    printed_args = [c.args[0] for c in calls]
 
-    assert any("╭── My Span" in c for c in flat_calls)
-    assert any("│   Inside" in c for c in flat_calls)
-    assert any("╰── My Span" in c for c in flat_calls)
+    assert "╭── My Span" in printed_args
+    assert "╰── My Span" in printed_args
+
+    # Check that "Inside" is printed and preceded by indentation
+    assert "Inside" in printed_args
+    idx = printed_args.index("Inside")
+    assert idx > 0
+    assert printed_args[idx - 1] == "│   "
 
 
 def test_journal_json_indentation(tmp_path):
