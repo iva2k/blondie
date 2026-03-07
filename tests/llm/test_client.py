@@ -63,3 +63,43 @@ async def test_anthropic_chat():
     assert payload["messages"][1]["role"] == "user"
     assert payload["messages"][1]["content"][0]["type"] == "tool_result"
     assert payload["messages"][1]["content"][0]["tool_use_id"] == "123"
+
+
+@pytest.mark.asyncio
+async def test_anthropic_cost_calculation():
+    """Test Anthropic cost calculation."""
+    pricing = {"claude-3": {"input": 10.0, "output": 30.0}}  # $10/$30 per M
+    client = AnthropicClient("key", "url", "claude-3", pricing=pricing)
+    client.client.post = AsyncMock()
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {
+        "content": [{"type": "text", "text": "Hi"}],
+        "usage": {"input_tokens": 1_000_000, "output_tokens": 1_000_000},
+    }
+    client.client.post.return_value = mock_resp
+
+    response = await client.chat([{"role": "user", "content": "Hi"}])
+
+    # 1M input * $10 + 1M output * $30 = $40
+    assert response.cost_usd == 40.0
+
+
+@pytest.mark.asyncio
+async def test_anthropic_tool_calls_parsing():
+    """Test parsing of Anthropic tool calls."""
+    client = AnthropicClient("key", "url", "claude-3")
+    client.client.post = AsyncMock()
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {
+        "content": [{"type": "tool_use", "id": "call_1", "name": "test_tool", "input": {"arg": "val"}}],
+        "usage": {},
+    }
+    client.client.post.return_value = mock_resp
+
+    response = await client.chat([{"role": "user", "content": "Hi"}])
+
+    assert response.tool_calls is not None
+    assert response.tool_calls[0]["function"]["name"] == "test_tool"
+    assert response.tool_calls[0]["function"]["arguments"] == '{"arg": "val"}'

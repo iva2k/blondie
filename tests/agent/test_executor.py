@@ -65,11 +65,6 @@ async def test_run_timeout(executor):
     mock_proc.stderr.readline = AsyncMock(return_value=b"")
     mock_proc.kill = MagicMock()
 
-    # We need to mock wait_for to raise TimeoutError,
-    # BUT Executor uses asyncio.wait() inside run() for reading streams,
-    # and asyncio.wait_for() is usually called by the *caller* of executor.run().
-    # However, executor.run() handles CancelledError internally to kill the process.
-
     with patch("asyncio.create_subprocess_shell", return_value=mock_proc):
         executor.cmd_policy.check = MagicMock(return_value=(True, None))
 
@@ -105,3 +100,60 @@ async def test_run_install_skipped(executor):
 
     assert "skipped" in result.command
     assert result.returncode == 0
+
+
+@pytest.mark.asyncio
+async def test_run_interactive_logic(executor):
+    """Test the interaction loop inside run()."""
+    mock_proc = AsyncMock()
+    mock_proc.returncode = None
+    mock_proc.stdin = AsyncMock()
+    mock_proc.stdin.write = MagicMock()
+    mock_proc.stdin.drain = AsyncMock()
+
+    # Simulate stdout arriving in chunks
+    # 1. "Enter name: "
+    # 2. EOF
+    mock_proc.stdout.readline = AsyncMock(side_effect=[b"Enter name: ", b""])
+    mock_proc.stderr.readline = AsyncMock(return_value=b"")
+
+    # Simulate process finishing after interaction
+    async def delayed_exit():
+        await asyncio.sleep(0.2)  # Wait for interaction
+        mock_proc.returncode = 0
+
+    mock_proc.wait.side_effect = delayed_exit
+
+    # Interaction callback that responds to prompt
+    async def interaction_callback(cmd, stdout, stderr):
+        if "Enter name:" in stdout:
+            return "Blondie"
+        return ""
+
+    with patch("asyncio.create_subprocess_shell", return_value=mock_proc):
+        executor.cmd_policy.check = MagicMock(return_value=(True, None))
+
+        # Mock asyncio.wait to simulate timeout and trigger interaction
+        async def mock_wait(fs, return_when=asyncio.FIRST_COMPLETED, timeout=None):
+            await asyncio.sleep(0)
+            done = {f for f in fs if f.done()}
+            if done:
+                return done, set(fs) - done
+            # Simulate timeout to trigger interaction
+            await asyncio.sleep(0.1)
+            done = {f for f in fs if f.done()}
+            if done:
+                return done, set(fs) - done
+            return set(), set(fs)
+
+        with patch("agent.executor.asyncio.wait", side_effect=mock_wait):
+            result = await executor.run(
+                "interactive_script",
+                interaction_callback=interaction_callback,
+            )
+
+    assert result.returncode == 0
+    assert "Enter name:" in result.stdout
+    # Verify input was written to stdin
+    mock_proc.stdin.write.assert_called_with(b"Blondie\n")
+    mock_proc.stdin.drain.assert_called()
