@@ -156,7 +156,7 @@ class TasksManager:
                 if not git.remote_branch_exists(branch):
                     git.push(branch)
                 return True, f"Recovered existing local task {task.id}."
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 return False, f"Failed to checkout existing branch {branch}: {e}"
 
         # 2. Check remote lock
@@ -168,7 +168,7 @@ class TasksManager:
             git.checkout_branch(branch)
             git.push(branch)
             return True, f"Successfully claimed task {task.id}."
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             return False, f"Git operation failed: {e}"
 
     def complete_task(self, task_id: str) -> tuple[bool, str]:
