@@ -120,7 +120,7 @@ class ChatSession:
                 if status == 429:
                     seen_rate_limit = True
 
-                if status == 429 or status in (400, 404):
+                if status in (400, 404, 429):
                     error_msg = "Rate limit (429)" if status == 429 else f"Client error ({status})"
                     self.journal.print(f"⚠️ {error_msg} exceeded for {self.provider_name}.")
                     if status != 429:
@@ -403,11 +403,6 @@ class LLMRouter:
                             f"⚠️ Model '{selection.model}' not found in known models for {selection.provider}"
                         )
                 return selection.provider, selection.model
-
-        # Fallback: return first available client
-        for name in self.clients:
-            if name not in excluded:
-                return name, None
 
         raise ValueError(f"No active LLM provider found for operation '{operation}'")
 

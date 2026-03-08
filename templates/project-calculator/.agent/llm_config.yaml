@@ -16,7 +16,7 @@ providers:
   groq:
     api_type: openai
     base_url: https://api.groq.com/openai/v1
-    default_model: llama3-70b-8192
+    default_model: llama-3.3-70b-versatile
 
 operations:
   # Priority order: First provider with available secret is used
@@ -24,6 +24,7 @@ operations:
     - provider: anthropic
     - provider: openai
       model: gpt-4o  # Override default_model
+    - provider: groq
   
   coding:
     - provider: openai

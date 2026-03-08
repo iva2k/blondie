@@ -104,9 +104,6 @@ async def test_rate_limit_wait_and_retry(router_with_fallback):
     # 2. Mock the client
     _openai_client = router_with_fallback.clients["openai"]
 
-    # Remove other clients to ensure no fallback
-    router_with_fallback.clients.pop("groq", None)
-
     # First call fails, second succeeds
     mock_429_response = httpx.Response(429, request=httpx.Request("POST", ""))
     success_response = MagicMock()
@@ -143,3 +140,72 @@ async def test_rate_limit_wait_and_retry(router_with_fallback):
             # Check journal messages
             router_with_fallback.journal.print.assert_any_call("⚠️ Rate limit (429) exceeded for openai.")
             router_with_fallback.journal.print.assert_any_call("⏳ No fallback available. Waiting 60s...")
+
+
+def test_select_model_strict_config(router_with_fallback):
+    """Test that select_model does not return unconfigured providers."""
+    # Configure 'testing' to use ONLY openai
+    router_with_fallback.config.operations["testing"] = [OperationSelection(provider="openai")]
+
+    # Exclude openai (simulating rate limit)
+    excluded = {"openai"}
+
+    # Even though 'groq' is available in router.clients, it should not be selected
+    with pytest.raises(ValueError, match="No active LLM provider found"):
+        router_with_fallback.select_model("testing", excluded_providers=excluded)
+
+
+@pytest.fixture
+def complex_router(tmp_path):
+    """Router with complex config for fallback testing."""
+    secrets_file = tmp_path / "secrets.env.yaml"
+    # Secrets for openai, deepseek, groq. Anthropic missing.
+    secrets_file.write_text(
+        """
+llm:
+  openai:
+    api_key: sk-openai
+  deepseek:
+    api_key: sk-deepseek
+  groq:
+    api_key: sk-groq
+"""
+    )
+
+    config_file = tmp_path / "llm_config.yaml"
+    config_data = {
+        "providers": {
+            "openai": {"api_type": "openai"},
+            "anthropic": {"api_type": "anthropic"},
+            "groq": {"api_type": "openai"},
+            "deepseek": {"api_type": "openai"},
+        },
+        "operations": {
+            "planning": [
+                {"provider": "openai"},
+                {"provider": "anthropic"},
+                {"provider": "groq"},
+            ]
+        },
+    }
+    config_file.write_text(yaml.dump(config_data))
+
+    with patch("agent.router.LLMRouter._load_known_models", return_value=({}, {})):
+        router = LLMRouter(secrets_file, config_file)
+        router.journal = MagicMock()
+        return router
+
+
+def test_select_model_complex_fallback(complex_router):
+    """Test fallback logic with missing keys and unconfigured providers."""
+    # 1. First call: openai (first in list, has key)
+    provider, _ = complex_router.select_model("planning")
+    assert provider == "openai"
+
+    # 2. Exclude openai: should skip anthropic (no key) and pick groq
+    provider, _ = complex_router.select_model("planning", excluded_providers={"openai"})
+    assert provider == "groq"
+
+    # 3. Exclude openai and groq: should fail. Deepseek has key but not in list.
+    with pytest.raises(ValueError, match="No active LLM provider found"):
+        complex_router.select_model("planning", excluded_providers={"openai", "groq"})
