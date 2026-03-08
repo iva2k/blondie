@@ -174,6 +174,8 @@ def test_chat_session_restart_with_summary():
         max_tokens=0,
         log_action="test",
         log_title="test",
+        router=None,
+        operation=None,
     )
     session.messages = [
         {"role": "system", "content": "System"},
@@ -211,6 +213,8 @@ def test_chat_session_refresh_context():
         log_title="test",
         skill=skill,
         context_gatherer=context_gatherer,
+        router=None,
+        operation=None,
     )
 
     session.refresh_context()

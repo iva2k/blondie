@@ -2,6 +2,7 @@
 
 """LLM Router - selects provider/model per task type."""
 
+import asyncio
 import datetime
 import json
 from collections import defaultdict
@@ -9,6 +10,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+import httpx
 import jsonschema
 import yaml
 from pydantic import ValidationError
@@ -49,6 +51,8 @@ class ChatSession:
         skill: Skill | None = None,
         context_gatherer: ContextGatherer | None = None,
         render_kwargs: dict[str, Any] | None = None,
+        router: "LLMRouter | None" = None,
+        operation: str | None = None,
     ):
         self.client = client
         self.provider_name = provider_name
@@ -68,6 +72,8 @@ class ChatSession:
         self.skill = skill
         self.context_gatherer = context_gatherer
         self.render_kwargs = render_kwargs or {}
+        self.router = router
+        self.operation = operation
 
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": self.system_prompt}]
 
@@ -94,17 +100,53 @@ class ChatSession:
         max_retries = 3 if (use_response_schema or use_output_schema) else 0
         attempts = 0
 
+        excluded_providers: set[str] = set()
+        seen_rate_limit = False
+
         while True:
             attempts += 1
 
             # Call LLM
-            response = await self.client.chat(
-                self.messages,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-                model=self.model,
-                tools=self.tools,
-            )
+            try:
+                response = await self.client.chat(
+                    self.messages,
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
+                    model=self.model,
+                    tools=self.tools,
+                )
+            except httpx.HTTPStatusError as e:
+                status = e.response.status_code
+                if status == 429:
+                    seen_rate_limit = True
+
+                if status == 429 or status in (400, 404):
+                    error_msg = "Rate limit (429)" if status == 429 else f"Client error ({status})"
+                    self.journal.print(f"⚠️ {error_msg} exceeded for {self.provider_name}.")
+                    if status != 429:
+                        self.journal.print(f"   Response: {e.response.text}")
+
+                    excluded_providers.add(self.provider_name)
+                    attempts -= 1  # Don't count rate limit as a validation attempt
+
+                    if self.router and self.operation:
+                        try:
+                            new_provider, new_model = self.router.select_model(self.operation, excluded_providers)
+                            self.provider_name = new_provider
+                            self.model = new_model
+                            self.client = self.router.clients[new_provider]
+                            self.journal.print(f"🔄 Switching to provider: {self.provider_name} ({self.model})")
+                            continue
+                        except ValueError:
+                            pass  # No fallback found
+
+                    if seen_rate_limit:
+                        wait_time = 60  # TODO: (now) Make it configurable in llm_config.yaml
+                        self.journal.print(f"⏳ No fallback available. Waiting {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                        excluded_providers.clear()
+                        continue
+                raise e
 
             # Track cost
             self.cost_callback(response.cost_usd)
@@ -344,11 +386,14 @@ class LLMRouter:
 
         self.journal.print(f"🧠 LLM providers: {list(self.clients.keys())}")
 
-    def select_model(self, operation: str) -> tuple[str, str | None]:
+    def select_model(self, operation: str, excluded_providers: set[str] | None = None) -> tuple[str, str | None]:
         """Select best provider/model for operation based on config priority."""
+        excluded = excluded_providers or set()
         selections = self.config.operations.get(operation, [])
 
         for selection in selections:
+            if selection.provider in excluded:
+                continue
             if selection.provider in self.clients:
                 # Validate model if known models are loaded
                 if selection.model and self.known_models:
@@ -360,8 +405,9 @@ class LLMRouter:
                 return selection.provider, selection.model
 
         # Fallback: return first available client
-        if self.clients:
-            return list(self.clients.keys())[0], None
+        for name in self.clients:
+            if name not in excluded:
+                return name, None
 
         raise ValueError(f"No active LLM provider found for operation '{operation}'")
 
@@ -401,6 +447,8 @@ class LLMRouter:
             response_format=response_format,
             user_content=user_prompt,
             output_schema=output_schema,
+            router=self,
+            operation=operation,
         )
 
         return await session.send(prompt=user_prompt)
@@ -605,6 +653,8 @@ class LLMRouter:
             skill=skill,
             context_gatherer=context_gatherer,
             render_kwargs=render_kwargs,
+            router=self,
+            operation=skill.operation,
         )
 
         return session
