@@ -38,10 +38,6 @@ You are provided with the following context sections:
 
 Your goal is to determine if command is prompting for input and provide the text input to satisfy the command prompt.
 
-## CONTEXT
-
-{context}
-
 ## INSTRUCTIONS
 
 - Analyze the provided context:
@@ -59,3 +55,7 @@ Your goal is to determine if command is prompting for input and provide the text
 - Do not include markdown formatting.
 - If the prompt is a yes/no question, answer 'y' or 'n' (usually 'y' for automated tasks unless dangerous).
 - If the command is stuck or should be aborted, return `^C`.
+
+## CONTEXT
+
+{context}

@@ -65,10 +65,6 @@ You are provided with the following context sections:
 
 Your goal is to generate the full content for the specified **FILENAME** and use the `write_file` tool to save it. After saving, you will return a JSON object summarizing the action.
 
-## CONTEXT
-
-{context}
-
 ## INSTRUCTIONS
 
 - **CRITICAL**: Your primary workflow is:
@@ -91,3 +87,7 @@ Your goal is to generate the full content for the specified **FILENAME** and use
 - Use 'run_shell' tool with 'grep', 'find' (or similar) commands to check external references or definitions if needed to ensure the generated code integrates correctly.
 - When using 'run_shell', specify a conservative timeout (4x nominal time) to prevent partial execution and avoid project corruption.
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
+
+## CONTEXT
+
+{context}

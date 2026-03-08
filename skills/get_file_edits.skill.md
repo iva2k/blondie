@@ -58,10 +58,6 @@ Your goal is to follow the **INSTRUCTIONS** and specify actions to perform on th
 
 Your output will be used in **AGENT FLOW** step 3 by another LLM to generate file content and shell commands.
 
-## CONTEXT
-
-{context}
-
 ## INSTRUCTIONS
 
 Return ONLY a JSON object matching the schema.
@@ -110,3 +106,7 @@ edits:
 Valid actions: create, edit, delete, shell.
 
 Do not include any explanations. Do not use markdown formatting (like ```yaml), output ONLY the raw YAML text.
+
+## CONTEXT
+
+{context}

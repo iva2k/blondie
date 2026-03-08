@@ -75,10 +75,6 @@ Your goal is to follow the **INSTRUCTIONS** and specify actions to perform on th
 
 Your output will be used in **AGENT FLOW** step 3 by another LLM to generate file content and shell commands.
 
-## CONTEXT
-
-{context}
-
 ## INSTRUCTIONS
 
 - Generate actions plan.
@@ -104,3 +100,7 @@ Your output will be used in **AGENT FLOW** step 3 by another LLM to generate fil
 - When using 'run_shell' tool, specify a conservative timeout (4x nominal time) to prevent partial execution and avoid project corruption.
 - Use 'run_shell' tool with 'grep', 'find' (or similar) commands to locate all relevant source files and verify references before specifying edits.
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
+
+## CONTEXT
+
+{context}

@@ -49,10 +49,6 @@ Your goal is to follow the **INSTRUCTIONS** and plan changes for the files to ac
 
 Your output will be used in **AGENT FLOW** step 2 by another LLM to generate specific file edits and shell commands.
 
-## CONTEXT
-
-{context}
-
 ## INSTRUCTIONS
 
 - Generate implementation plan.
@@ -84,3 +80,7 @@ Format as clean Markdown with only these sections:
 7. **Risks**: Potential risks + mitigations.
 
 Do not add any other sections or a title.
+
+## CONTEXT
+
+{context}

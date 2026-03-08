@@ -58,10 +58,6 @@ Your goal is to follow the **INSTRUCTIONS** and to provide a plan to resolve the
 
 Your output will be used in **AGENT FLOW** step 2 by another LLM to generate specific file edits and shell commands.
 
-## CONTEXT
-
-{context}
-
 ## INSTRUCTIONS
 
 - Generate the fix plan.
@@ -85,3 +81,7 @@ Your output will be used in **AGENT FLOW** step 2 by another LLM to generate spe
 - When investigating timeout errors - ask if command is supposed to finish on its own, or could it wait for user input. Is it a GUI app that needs to be explicitly closed?
 - Do NOT use shell commands to create or modify files (e.g. `echo`, `cat`, `printf` with redirection) unless the `shell-files` gate in **POLICY** is set to `allow`. If gate is `forbid`, they return `SKIPPED_BY_POLICY`. If the error is `SKIPPED_BY_POLICY`, replace the shell command with a file edit action.
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
+
+## CONTEXT
+
+{context}

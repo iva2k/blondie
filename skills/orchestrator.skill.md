@@ -64,7 +64,7 @@ Your primary loop is as follows:
 10. **Merge**: Use `git_merge` to merge your branch back into the main branch. Resolve any merge errors using `debug_error2` with the error log to get a fix plan. Go back to step 4 with the new plan.
 11. **Repeat**: Go back to step 1.
 
-## CONTEXT
+## INPUTS
 
 You are provided with the following context sections:
 
@@ -88,3 +88,7 @@ You are provided with the following context sections:
 - **Always finish your work**: Ensure you commit your changes.
 - **Update Status**: Use `complete_task` mark the task as complete.
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
+
+## CONTEXT
+
+{context}

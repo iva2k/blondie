@@ -52,10 +52,6 @@ Your goal is to follow the **INSTRUCTIONS** and to generate or modify **EXISTING
 
 Your output will be used in **AGENT FLOW** step 4 to run the tests and verify if the **TASK** has been achieved.
 
-## CONTEXT
-
-{context}
-
 ## INSTRUCTIONS
 
 - Generate source code.
@@ -77,3 +73,7 @@ Your output will be used in **AGENT FLOW** step 4 to run the tests and verify if
 - When using 'run_shell', specify a conservative timeout (4x nominal time) to prevent partial execution and avoid project corruption.
 - Do NOT use shell to modify files, regardless of `shell-files` gate in **POLICY**. Modify only the **FILENAME** by generating its new content.
 - If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
+
+## CONTEXT
+
+{context}
