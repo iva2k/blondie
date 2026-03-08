@@ -53,11 +53,25 @@
             "justMyCode": true
         },
         {
-            "name": "Python: scripts/fetch_models",
+            "name": "Python: scripts/fetch_models all",
             "type": "debugpy",
             "request": "launch",
             "module": "scripts.fetch_models",
             "args": [
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "Python: scripts/fetch_models groq",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "scripts.fetch_models",
+            "args": [
+                "groq",
             ],
             "cwd": "${workspaceFolder}",
             "env": {

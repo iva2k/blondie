@@ -2,6 +2,7 @@
 
 """Fetch available LLM models and save to .agent/llm.yaml."""
 
+import argparse
 import asyncio
 import datetime
 import sys
@@ -14,11 +15,33 @@ sys.path.append(str(Path(__file__).parents[1] / "src"))
 
 # pylint: disable=wrong-import-position
 from lib.webscrape import scrape_pricing
-from llm.client import LLM_CLIENTS
+from llm.client import LLM_CLIENTS, OpenAIClient
+
+
+class GroqClient(OpenAIClient):
+    """Groq API."""
+
+    base_url_default = "https://api.groq.com/openai/v1"
+    pricing_url = ""
+
+
+LLM_CLIENTS["Groq"] = GroqClient
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description="Fetch available LLM models.")
+    parser.add_argument(
+        "providers",
+        nargs="*",
+        help="List of providers to fetch (case-insensitive). Defaults to all.",
+    )
+    return parser.parse_args()
 
 
 async def main() -> None:
     """Fetch models from configured providers."""
+    args = parse_args()
     root_dir = Path(__file__).parents[1]
     agent_dir = root_dir / ".agent"
     secrets_path = agent_dir / "secrets.env.yaml"
@@ -49,7 +72,16 @@ async def main() -> None:
     # Prepare output structure
     output_data = existing_data.copy()
 
-    for title, client_cls in LLM_CLIENTS.items():
+    clients_to_process = LLM_CLIENTS
+    if args.providers:
+        requested = {p.lower() for p in args.providers}
+        clients_to_process = {k: v for k, v in LLM_CLIENTS.items() if k.lower() in requested}
+
+        if not clients_to_process:
+            print(f"❌ No matching providers found. Available: {list(LLM_CLIENTS.keys())}")
+            return
+
+    for title, client_cls in clients_to_process.items():
         name = title.lower().replace(" ", "_")
 
         # Ensure structure exists
