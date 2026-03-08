@@ -398,9 +398,10 @@ async def test_get_next_task(tool_handler):
 @pytest.mark.asyncio
 async def test_claim_task(tool_handler):
     """Test claim_task tool."""
-    tool_handler.tasks_manager.claim_task.return_value = True
+    tool_handler.tasks_manager.claim_task.return_value = (True, "Successfully claimed task 001.")
 
     result = await tool_handler._claim_task("001")
+    assert "SUCCESS" in result
     assert "Successfully claimed" in result
     tool_handler.tasks_manager.claim_task.assert_called_with("001", tool_handler.git)
 
@@ -408,10 +409,11 @@ async def test_claim_task(tool_handler):
 @pytest.mark.asyncio
 async def test_complete_task(tool_handler):
     """Test complete_task tool."""
-    tool_handler.tasks_manager.complete_task.return_value = True
+    tool_handler.tasks_manager.complete_task.return_value = (True, "Task 001 marked as Done.")
 
     result = await tool_handler._complete_task("001")
-    assert "Successfully completed" in result
+    assert "SUCCESS" in result
+    assert "marked as Done" in result
     tool_handler.tasks_manager.complete_task.assert_called_with("001")
 
 

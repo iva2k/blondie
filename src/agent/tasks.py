@@ -128,43 +128,58 @@ class TasksManager:
                 return task
         return None
 
-    def claim_task(self, task_id: str, git: GitCLI) -> bool:
-        """Claim task by creating remote branch. Returns True if claimed."""
-        # Handle both "003" and "BLONDIE-003"
+    def get_task(self, task_id: str) -> Task | None:
+        """Get task by ID (handles '001', 'PROJECT-001', 'Task 001')."""
         clean_id = task_id.replace(f"{self.project_id}-", "")
-        task = next((t for t in self.tasks if t.id == clean_id), None)
+
+        # Handle "Task 001" or "task 001" common hallucinations
+        if clean_id.lower().startswith("task"):
+            clean_id = clean_id.lower().replace("task", "").strip()
+
+        for task in self.tasks:
+            if task.id == clean_id:
+                return task
+        return None
+
+    def claim_task(self, task_id: str, git: GitCLI) -> tuple[bool, str]:
+        """Claim task by creating remote branch. Returns (Success, Message)."""
+        task = self.get_task(task_id)
         if not task:
-            return False
+            return False, f"Task ID '{task_id}' not found."
 
         branch = task.branch_name
 
         # 1. Check local ownership (Recovery/Idempotency)
         if git.branch_exists(branch):
-            git.checkout_branch(branch)  # Safe switch
-            if not git.remote_branch_exists(branch):
-                git.push(branch)
-            return True
+            try:
+                git.checkout_branch(branch)  # Safe switch
+                if not git.remote_branch_exists(branch):
+                    git.push(branch)
+                return True, f"Recovered existing local task {task.id}."
+            except Exception as e:
+                return False, f"Failed to checkout existing branch {branch}: {e}"
 
         # 2. Check remote lock
         if git.remote_branch_exists(branch):
-            return False
+            return False, f"Task {task.id} is already claimed (remote branch '{branch}' exists)."
 
         # 3. New Claim
-        git.checkout_branch(branch)
-        git.push(branch)
-        return True
+        try:
+            git.checkout_branch(branch)
+            git.push(branch)
+            return True, f"Successfully claimed task {task.id}."
+        except Exception as e:
+            return False, f"Git operation failed: {e}"
 
-    def complete_task(self, task_id: str) -> bool:
+    def complete_task(self, task_id: str) -> tuple[bool, str]:
         """Mark task complete."""
-        # Handle both "003" and "BLONDIE-003"
-        clean_id = task_id.replace(f"{self.project_id}-", "")
-        for task in self.tasks:
-            if task.id == clean_id:
-                task.status = TaskStatus.DONE
-                self._save()
-                # self.journal.print(f"✅ Completed task [bold green]{task.full_id}[/]: {task.title}")
-                return True
-        return False
+        task = self.get_task(task_id)
+        if not task:
+            return False, f"Task ID '{task_id}' not found."
+
+        task.status = TaskStatus.DONE
+        self._save()
+        return True, f"Task {task.id} marked as Done."
 
     def get_next_task(self) -> Task | None:
         """Get highest priority available task."""

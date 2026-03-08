@@ -130,10 +130,11 @@ class ContextGatherer:
         return (
             yaml.safe_dump(
                 {
-                    "id": self.task.id,
+                    "task_id": self.task.id,
                     "priority": self.task.priority or "",
                     "title": self.task.title,
                     "full_id": self.task.full_id,
+                    "usage_hint": f"Use task_id='{self.task.id}' for tool calls.",
                 }
             )
             if self.task

@@ -3,6 +3,7 @@
 """Unit tests for TASKS.md parser."""
 
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -63,11 +64,59 @@ def test_get_todo_tasks_priority(tasks_file: Path) -> None:
 def test_complete_task(tasks_file: Path) -> None:
     """Test completing a task."""
     manager = TasksManager(tasks_file)
-    success = manager.complete_task("002")
+    success, _ = manager.complete_task("002")
     assert success
 
     t2 = next(t for t in manager.tasks if t.id == "002")
     assert t2.status == TaskStatus.DONE
+
+
+def test_claim_task_success(tasks_file: Path) -> None:
+    """Test claiming a task successfully."""
+    manager = TasksManager(tasks_file)
+    mock_git = MagicMock()
+    # Setup git mocks for success path
+    # 1. Check local ownership -> False
+    mock_git.branch_exists.return_value = False
+    # 2. Check remote lock -> False
+    mock_git.remote_branch_exists.return_value = False
+
+    success, msg = manager.claim_task("002", mock_git)
+
+    assert success
+    assert "Successfully claimed" in msg
+    mock_git.checkout_branch.assert_called_with("task-blondie-002")
+    mock_git.push.assert_called_with("task-blondie-002")
+
+
+def test_claim_task_already_claimed_remote(tasks_file: Path) -> None:
+    """Test claiming a task that exists on remote."""
+    manager = TasksManager(tasks_file)
+    mock_git = MagicMock()
+    mock_git.branch_exists.return_value = False
+    mock_git.remote_branch_exists.return_value = True
+
+    success, msg = manager.claim_task("002", mock_git)
+
+    assert not success
+    assert "already claimed" in msg
+
+
+def test_get_task_fuzzy(tasks_file: Path) -> None:
+    """Test fuzzy ID matching."""
+    manager = TasksManager(tasks_file)
+
+    # Exact
+    t1 = manager.get_task("001")
+    assert t1 is not None and t1.id == "001"
+
+    # Full ID
+    t2 = manager.get_task("BLONDIE-001")
+    assert t2 is not None and t2.id == "001"
+
+    # "Task 001"
+    t3 = manager.get_task("Task 001")
+    assert t3 is not None and t3.id == "001"
 
 
 def test_missing_file(tmp_path: Path) -> None:

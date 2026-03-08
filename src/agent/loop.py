@@ -114,8 +114,9 @@ class BlondieAgent:
             self.progress.clear()
 
             # 4. Claim task
-            if not self.tasks.claim_task(task.id, self.git):
-                self.journal.print(f'⚠️  Task {task.id} already claimed (remote branch "{task.branch_name}" exists)')
+            success, msg = self.tasks.claim_task(task.id, self.git)
+            if not success:
+                self.journal.print(f"⚠️  {msg}")
                 return None
 
         return task

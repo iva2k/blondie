@@ -89,7 +89,12 @@ TOOL_DEFINITIONS = {
         "description": "Claim a task to start working on it. Creates a git branch.",
         "parameters": {
             "type": "object",
-            "properties": {"task_id": {"type": "string", "description": "The ID of the task to claim."}},
+            "properties": {
+                "task_id": {
+                    "type": "string",
+                    "description": "The exact ID of the task to claim (e.g. '001', as listed in TASKS.md).",
+                }
+            },
             "required": ["task_id"],
         },
     },
@@ -328,22 +333,30 @@ class ToolHandler:
         task = await asyncio.to_thread(self.tasks_manager.get_next_task)
         if not task:
             return "No tasks available."
-        return f"Task ID: {task.id}\nTitle: {task.title}\nPriority: {task.priority}"
+        return f"Task ID: {task.id} (Use this exact ID for claim_task)\nTitle: {task.title}\nPriority: {task.priority}"
 
     async def _claim_task(self, task_id: str, **_kwargs) -> str:
         """Claim a task."""
         if not task_id:
             return "Error: Missing task_id"
 
+        # Pre-check existence to provide better error message
+        task = self.tasks_manager.get_task(task_id)
+        if not task:
+            # Provide list of valid IDs to help LLM self-correct
+            todos = self.tasks_manager.get_todo_tasks()
+            ids = ", ".join(f"'{t.id}'" for t in todos)
+            return f"Error: Task '{task_id}' not found. Available Task IDs: {ids}"
+
         try:
-            success = await asyncio.to_thread(self.tasks_manager.claim_task, task_id, self.git)
+            success, msg = await asyncio.to_thread(self.tasks_manager.claim_task, task_id, self.git)
             if success:
                 self.progress.add_action("CLAIM_TASK", task_id, "SUCCESS")
-                self.journal.start_task(task_id)
-                return f"Successfully claimed task {task_id}."
+                self.journal.start_task(task.id)
+                return f"SUCCESS: {msg}"
             else:
-                self.progress.add_action("CLAIM_TASK", task_id, "FAILED")
-                return f"Failed to claim task {task_id}. It might be already claimed or branch exists."
+                self.progress.add_action("CLAIM_TASK", task_id, f"FAILED: {msg}")
+                return f"ERROR: {msg}"
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error claiming task: {e}"
 
@@ -353,14 +366,14 @@ class ToolHandler:
             return "Error: Missing task_id"
 
         try:
-            success = await asyncio.to_thread(self.tasks_manager.complete_task, task_id)
+            success, msg = await asyncio.to_thread(self.tasks_manager.complete_task, task_id)
             if success:
                 self.progress.add_action("COMPLETE_TASK", task_id, "SUCCESS")
                 self.journal.start_task("orchestrator")
-                return f"Successfully completed task {task_id}."
+                return f"SUCCESS: {msg}"
             else:
-                self.progress.add_action("COMPLETE_TASK", task_id, "FAILED")
-                return f"Failed to complete task {task_id}. Task not found or update failed."
+                self.progress.add_action("COMPLETE_TASK", task_id, f"FAILED: {msg}")
+                return f"ERROR: {msg}"
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error completing task: {e}"
 
