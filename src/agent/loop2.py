@@ -50,7 +50,7 @@ class BlondieOrchestrator:
             self.progress,
         )
 
-        self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal)
+        self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal, progress=self.progress)
 
         self.tool_handler = ToolHandler(
             self.repo_path,
@@ -86,6 +86,15 @@ class BlondieOrchestrator:
             # The orchestrator will call tools (get_next_task, plan_task, etc.)
             # The ToolHandler will execute them and return results to the LLM
             await self.tool_handler.run_loop(session, response, "Orchestrator")
+
+            self.progress.add_llm_event(
+                "LLM_SESSION",
+                "orchestrator",
+                session.skill.operation if session.skill else "orchestration",
+                session.provider_name,
+                session.model,
+                "COMPLETED",
+            )
 
             self.journal.print("🏁 Orchestrator session ended.")
 

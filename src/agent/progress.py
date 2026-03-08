@@ -48,3 +48,17 @@ class ProgressManager:
             destination.mkdir(parents=True, exist_ok=True)
 
         shutil.copy2(self.path, destination)
+
+    def add_llm_event(
+        self,
+        event_type: str,
+        skill: str,
+        operation: str,
+        provider: str,
+        model: str | None,
+        status: str = "INFO",
+    ) -> None:
+        """Log LLM event."""
+        model_str = model or "default"
+        details = f"Skill: {skill} | Op: {operation} | {provider}/{model_str}"
+        self.add_action(event_type, details, status)

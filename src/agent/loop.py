@@ -52,7 +52,7 @@ class BlondieAgent:
             self.gitignore,
             self.progress,
         )
-        self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal)
+        self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal, progress=self.progress)
         self.tool_handler = ToolHandler(
             self.repo_path,
             self.project,

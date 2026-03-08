@@ -18,6 +18,7 @@ from pydantic import ValidationError
 from agent.context import ContextGatherer
 from agent.llm_config import LLMConfig
 from agent.policy import Policy
+from agent.progress import ProgressManager
 from agent.tooled import TOOL_DEFINITIONS
 from lib.webscrape import KNOWN_COSTS
 from llm.client import AnthropicClient, LLMClient, LLMResponse, OpenAIClient
@@ -284,6 +285,7 @@ class LLMRouter:
         policy: Policy | None = None,
         journal: Journal | None = None,
         skills_dir: Path | None = None,
+        progress: ProgressManager | None = None,
     ):
         self.policy = policy
         self.journal = journal or Journal()
@@ -292,6 +294,7 @@ class LLMRouter:
         self.known_models, self.known_costs = self._load_known_models(config_path.parent / "llm.yaml")
         self.clients: dict[str, LLMClient] = {}
         self.daily_cost = 0.0
+        self.progress = progress
         self.last_reset_date = datetime.date.today()
 
         # Load skills
@@ -427,6 +430,9 @@ class LLMRouter:
         if provider not in self.clients:
             raise ValueError(f"Provider '{provider}' not configured")
 
+        if self.progress:
+            self.progress.add_llm_event("LLM_TASK", log_action, operation, provider, model, "STARTED")
+
         session = ChatSession(
             client=self.clients[provider],
             provider_name=provider,
@@ -446,7 +452,12 @@ class LLMRouter:
             operation=operation,
         )
 
-        return await session.send(prompt=user_prompt)
+        response = await session.send(prompt=user_prompt)
+
+        if self.progress:
+            self.progress.add_llm_event("LLM_TASK", log_action, operation, provider, model, "COMPLETED")
+
+        return response
 
     async def _execute_llm_skill(
         self, skill_name: str, context_gatherer: ContextGatherer, **kwargs: Any
@@ -575,7 +586,18 @@ class LLMRouter:
             context_gatherer.refresh()
 
             # 4. Return result
-            return response.content
+            result = response.content
+
+        if self.progress:
+            self.progress.add_llm_event(
+                "LLM_SESSION",
+                skill_name,
+                session.skill.operation if session.skill else "unknown",
+                session.provider_name,
+                session.model,
+                "COMPLETED",
+            )
+        return result
 
     def register_skills(self, tool_handler: "ToolHandler", context_gatherer: ContextGatherer) -> None:
         """Register v2 skills as tools in the tool handler."""
@@ -610,6 +632,9 @@ class LLMRouter:
         provider, model = self.select_model(skill.operation)
         if provider not in self.clients:
             raise ValueError(f"Provider '{provider}' not configured")
+
+        if self.progress:
+            self.progress.add_llm_event("LLM_SESSION", skill.name, skill.operation, provider, model, "STARTED")
 
         log_title = skill.log_title.format(**kwargs) if skill.log_title else skill.name
 
