@@ -98,7 +98,7 @@ class OpenAIClient(LLMClient):
             cost = input_cost + output_cost
 
         return LLMResponse(
-            content=choice["content"] or "",
+            content=choice.get("content", ""),
             model=self.model,
             tokens_used=usage["total_tokens"],
             cost_usd=cost,
