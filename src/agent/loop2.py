@@ -77,11 +77,7 @@ class BlondieOrchestrator:
             # Initialize the root session with the orchestrator skill
             # Note: 'orchestrator' skill must exist (Task 064)
             session = self.llm.start_chat("coding_orchestrator", self.context_gatherer)
-
-            # Initial kick-off message
-            user_msg = "Analyze the current state and TASKS.md, then proceed with the next high-priority task."
-
-            response = await session.send(user_msg)
+            response = await session.send(prompt=session.user_content)
 
             # Enter the tool execution loop
             # The orchestrator will call tools (get_next_task, plan_task, etc.)

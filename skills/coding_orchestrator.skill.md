@@ -5,6 +5,7 @@ user-invocable: false
 operation: "planning" # It's a meta-planner
 temperature: 0.1
 max-tokens: 4000
+user-content: "Begin. Follow your workflow to find and complete the next task."
 context:
   os: True
   task: True
