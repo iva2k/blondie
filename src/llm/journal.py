@@ -83,7 +83,7 @@ class Journal:
         if self.current_log_file:
             # Simple text logging for console output
             text = " ".join(str(arg) for arg in args)
-            self.write_raw(f"[CONSOLE] {indent_str}{text}\n")
+            self.write_raw(f"{indent_str}{text}\n")
 
     def log_chat(
         self,
