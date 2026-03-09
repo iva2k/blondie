@@ -1,5 +1,4 @@
-# LLM Configuration Template
-# Copy to .agent/llm_config.yaml
+# LLM Configuration
 
 providers:
   # Key matches 'llm' section in secrets.env.yaml
@@ -17,7 +16,7 @@ providers:
   groq:
     api_type: openai
     base_url: https://api.groq.com/openai/v1
-    default_model: llama3-70b-8192
+    default_model: llama-3.3-70b-versatile
 
 operations:
   # Priority order: First provider with available secret is used
@@ -25,10 +24,26 @@ operations:
     - provider: anthropic
     - provider: openai
       model: gpt-4o  # Override default_model
+    - provider: groq
+    - provider: groq
+      model: openai/gpt-oss-120b
+    - provider: groq
+      model: openai/gpt-oss-120b
+    - provider: groq
+      model: en/qwen3-32b
   
   coding:
     - provider: openai
+      model: gpt-4o  # Override default_model
     - provider: anthropic
+    - provider: groq
+    - provider: groq
+      model: openai/gpt-oss-120b
+    - provider: groq
+      model: openai/gpt-oss-120b
+    - provider: groq
+      model: en/qwen3-32b
+    - provider: openai
   
   debugging:
     - provider: anthropic
