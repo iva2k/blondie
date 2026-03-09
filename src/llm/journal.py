@@ -128,7 +128,7 @@ class Journal:
             }
 
             indent_str = "│   " * self.indent_level
-            self.write_raw(f"\n{indent_str}=== LLM CHAT ({operation}) ===\n")
+            self.write_raw(f"{indent_str}\n{indent_str}=== LLM CHAT ({operation}) ===\n")
             json_str = json.dumps(entry, indent=2, default=str)
             if indent_str:
                 json_str = "\n".join(indent_str + line for line in json_str.splitlines())
@@ -160,7 +160,7 @@ class Journal:
             }
 
             indent_str = "│   " * self.indent_level
-            self.write_raw(f"\n{indent_str}=== SHELL ({command[:50]}...) ===\n")
+            self.write_raw(f"{indent_str}\n{indent_str}=== SHELL ({command[:50]}...) ===\n")
             json_str = json.dumps(entry, indent=2, default=str)
             if indent_str:
                 json_str = "\n".join(indent_str + line for line in json_str.splitlines())
