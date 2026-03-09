@@ -30,7 +30,7 @@ operations:
     - provider: groq
       model: openai/gpt-oss-120b
     - provider: groq
-      model: en/qwen3-32b
+      model: qwen/qwen3-32b
   
   coding:
     - provider: openai
@@ -42,7 +42,7 @@ operations:
     - provider: groq
       model: openai/gpt-oss-120b
     - provider: groq
-      model: en/qwen3-32b
+      model: qwen/qwen3-32b
     - provider: openai
   
   debugging:
