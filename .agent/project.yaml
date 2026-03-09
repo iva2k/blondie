@@ -5,6 +5,7 @@ git_user: "Blondie Agent"
 git_email: "blondie@agent.local"
 main_branch: main
 task_source: TASKS.md
+sleep_no_connection: 30
 commands:
   install: poetry install
   test: poetry run pytest tests/

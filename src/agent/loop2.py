@@ -50,7 +50,14 @@ class BlondieOrchestrator:
             self.progress,
         )
 
-        self.llm = LLMRouter(self.secrets_path, self.llm_config_path, self.policy, self.journal, progress=self.progress)
+        self.llm = LLMRouter(
+            self.secrets_path,
+            self.llm_config_path,
+            self.policy,
+            self.journal,
+            progress=self.progress,
+            project=self.project,
+        )
 
         self.tool_handler = ToolHandler(
             self.repo_path,

@@ -31,6 +31,7 @@ class Project(BaseModel):
     dev_env: dict[str, Any] = {}
     git_user: str | None = None
     git_email: str | None = None
+    sleep_no_connection: int = 60
 
     @classmethod
     def from_file(cls, path: Path, journal: Journal | None = None) -> Project:

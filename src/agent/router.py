@@ -26,6 +26,7 @@ from llm.journal import Journal
 from llm.skill import Skill
 
 if TYPE_CHECKING:
+    from agent.project import Project
     from agent.tooled import ToolHandler
 
 
@@ -116,6 +117,15 @@ class ChatSession:
                     model=self.model,
                     tools=self.tools,
                 )
+            except httpx.ConnectError as e:
+                self.journal.print(f"⚠️ Connection error: {e}")
+                attempts -= 1  # Don't count this as a validation attempt
+                if self.router:
+                    wait_time = self.router.project.sleep_no_connection if self.router.project else 60
+                    self.journal.print(f"⏳ Waiting {wait_time}s for connection...")
+                    await asyncio.sleep(wait_time)
+                    continue
+                raise e
             except httpx.HTTPStatusError as e:
                 status = e.response.status_code
                 if status == 429:
@@ -287,8 +297,10 @@ class LLMRouter:
         journal: Journal | None = None,
         skills_dir: Path | None = None,
         progress: ProgressManager | None = None,
+        project: "Project | None" = None,
     ):
         self.policy = policy
+        self.project = project
         self.journal = journal or Journal()
         self.secrets = self._load_secrets(secrets_path)
         self.config = LLMConfig.from_file(config_path)
