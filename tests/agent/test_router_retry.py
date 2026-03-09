@@ -2,6 +2,7 @@
 
 """Tests for LLMRouter retry and fallback logic."""
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -228,15 +229,17 @@ async def test_rate_limit_fallback_same_provider(router_with_fallback):
     mock_success.tool_calls = None
     mock_success.cost_usd = 0.01
 
-    async def side_effect(messages, **kwargs):
+    async def side_effect(_messages, **kwargs):
+        await asyncio.sleep(0)
         model = kwargs.get("model")
         if model == "gpt-4":
-            raise httpx.HTTPStatusError("Rate limit", request=None, response=mock_429)
+            raise httpx.HTTPStatusError("Rate limit", request=mock_429.request, response=mock_429)
         if model == "gpt-3.5":
             return mock_success
         raise ValueError(f"Unexpected model {model}")
 
     with patch.object(openai_client, "chat", side_effect=side_effect) as mock_chat:
+        # pylint: disable-next=protected-access
         response = await router_with_fallback._execute_llm_task(
             operation="testing",
             system_prompt="Sys",

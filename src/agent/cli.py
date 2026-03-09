@@ -28,7 +28,7 @@ async def main(repo_path: str, journal_dir: str | None = None, use_v2: bool = Fa
     help="Directory to store journal logs",
     type=click.Path(file_okay=False, dir_okay=True),
 )
-@click.option("--v2", is_flag=True, help="Run v2 recursive orchestrator.")
+@click.option("--v2", is_flag=True, help="Run v2 recursive coding_orchestrator.")
 def entry_point(repo_path: str = ".", journal_dir: str | None = None, v2: bool = False) -> None:
     """Blondie Agent CLI."""
     asyncio.run(main(repo_path, journal_dir, v2))

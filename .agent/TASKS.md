@@ -58,7 +58,7 @@ Status: id | priority | title | depends_on
 - [x] 058 | P2 | [Phase 1] Update `Skill` class in `src/llm/skill.py` to parse `input_schema` and `output_schema` from frontmatter. |
 - [x] 078 | P2 | [Phase 1] Implement `Skill.to_tool_definition()` in `src/llm/skill.py` to generate OpenAI/Anthropic tool schemas from `input_schema`. | 058
 - [x] 069 | P2 | [Phase 1] Implement `output_schema` logic: Auto-inject "## Output Format" in `Skill.render_system_prompt` and add JSON schema validation to `ChatSession.send`. | 058
-- [x] 070 | P2 | [Phase 1] Create v2 skills (`plan_task2`, `debug_error2`, `command_runner2`, `get_file_edits2`) copying v1. Remove redundant output instructions in favor of `output_schema`. | 069
+- [x] 070 | P2 | [Phase 1] Create v2 skills (`coding_plan_task`, `coding_debug_error`, `command_runner2`, `coding_get_file_edits`) copying v1. Remove redundant output instructions in favor of `output_schema`. | 069
 - [x] 059 | P2 | [Phase 1] Update `ToolHandler` in `src/agent/tooled.py` to allow registering dynamic tools (callables) alongside hardcoded definitions. |
 - [x] 073 | P2 | [Phase 1] Implement `write_file` primitive tool in `tooled.py` to allow Skills to perform side effects directly. |
 - [x] 071 | P2 | [Quality] Update existing unit tests affected by Skill/Tool changes (e.g. `test_llm.py`, `test_tooled.py`). |
@@ -67,7 +67,7 @@ Status: id | priority | title | depends_on
 - [x] 062 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Git Operations (`git_checkout`, `git_commit`, `git_push`, `git_merge`). |
 - [x] 063 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Execution & State (`run_tests`, `check_daily_limit`). |
 - [x] 064 | P2 | [Phase 2] Create `skills/orchestrator.skill.md` defining the root agent persona and available tools (`plan_task2`, etc). |
-- [x] 074 | P2 | [Phase 2] Create `generate_code2` skill to use `write_file` tool and return summary instead of content (Side-Effect Pattern). | 073
+- [x] 074 | P2 | [Phase 2] Create `coding_generate_code` skill to use `write_file` tool and return summary instead of content (Side-Effect Pattern). | 073
 - [x] 065 | P2 | [Phase 2] Enhance `LLMRouter` in `src/agent/router.py` to handle recursive tool execution (Skill-as-Tool) and automatic Context Injection for sub-agents. |
 - [x] 072 | P2 | [Quality] Add unit tests for new modules (`loop2.py`, recursive `router.py` logic). |
 - [x] 067 | P2 | [Phase 3] Implement `summarize_and_restart` logic for long-running sub-agents (replaces 054, 057). | 065

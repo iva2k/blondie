@@ -82,7 +82,7 @@ async def test_run(mock_deps):
 
     await orch.run()
 
-    mock_deps["router"].return_value.start_chat.assert_called_with("orchestrator", orch.context_gatherer)
+    mock_deps["router"].return_value.start_chat.assert_called_with("coding_orchestrator", orch.context_gatherer)
     mock_session.send.assert_called()
     mock_deps["tool_handler"].return_value.run_loop.assert_called_with(mock_session, mock_response, "Orchestrator")
     mock_deps["router"].return_value.close.assert_called()

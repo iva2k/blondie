@@ -71,12 +71,12 @@ class BlondieOrchestrator:
         """Start the orchestrator loop."""
         self.progress.add_action("AGENT_START", "Orchestrator", "INFO")
         self.journal.start_task("orchestrator")
-        self.journal.print("🚀 Starting Blondie v2 Orchestrator...")
+        self.journal.print("🚀 Starting Blondie Orchestrator...")
 
         try:
             # Initialize the root session with the orchestrator skill
             # Note: 'orchestrator' skill must exist (Task 064)
-            session = self.llm.start_chat("orchestrator", self.context_gatherer)
+            session = self.llm.start_chat("coding_orchestrator", self.context_gatherer)
 
             # Initial kick-off message
             user_msg = "Analyze the current state and TASKS.md, then proceed with the next high-priority task."

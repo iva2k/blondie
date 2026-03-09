@@ -1,5 +1,5 @@
 ---
-name: plan_task2
+name: coding_plan_task
 description: Generate detailed implementation plan.
 user-invocable: false
 operation: "planning"

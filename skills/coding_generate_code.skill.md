@@ -1,5 +1,5 @@
 ---
-name: generate_code2
+name: coding_generate_code
 description: Generate/edit single file and write it to disk.
 user-invocable: false
 operation: "coding"

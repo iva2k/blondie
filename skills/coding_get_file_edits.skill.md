@@ -1,5 +1,5 @@
 ---
-name: get_file_edits2
+name: coding_get_file_edits
 description: Identify files to edit from plan.
 user-invocable: false
 operation: "planning"

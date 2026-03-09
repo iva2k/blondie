@@ -25,7 +25,7 @@ def mock_policy():
 
 @pytest.mark.asyncio
 async def test_plan_task_v2_json_parsing(mock_policy, tmp_path: Path):
-    """Test that plan_task2 correctly parses JSON output."""
+    """Test that coding_plan_task correctly parses JSON output."""
     # 1. Setup Config & Secrets
     secrets_file = tmp_path / "secrets.env.yaml"
     secrets_file.write_text("llm:\n  openai:\n    api_key: sk-test", encoding="utf-8")
@@ -37,12 +37,12 @@ async def test_plan_task_v2_json_parsing(mock_policy, tmp_path: Path):
     }
     config_file.write_text(yaml.dump(config_data), encoding="utf-8")
 
-    # 2. Setup Skills Dir with plan_task2
+    # 2. Setup Skills Dir with coding_plan_task
     skills_dir = tmp_path / "skills"
     skills_dir.mkdir()
-    skill_file = skills_dir / "plan_task2.skill.md"
+    skill_file = skills_dir / "coding_plan_task.skill.md"
     skill_content = """---
-name: plan_task2
+name: coding_plan_task
 description: Generate detailed implementation plan.
 operation: "planning"
 input-schema:
@@ -78,7 +78,7 @@ System prompt with {context}
 
         # 6. Execute Skill
         # pylint: disable-next=protected-access
-        response = await router._execute_llm_skill("plan_task2", context_gatherer, task_title="Test Task")
+        response = await router._execute_llm_skill("coding_plan_task", context_gatherer, task_title="Test Task")
 
         # 7. Assertions
         assert isinstance(response, LLMResponse)
@@ -114,9 +114,9 @@ async def test_plan_task_v2_validation_retry(mock_policy, tmp_path: Path):
 
     skills_dir = tmp_path / "skills"
     skills_dir.mkdir()
-    (skills_dir / "plan_task2.skill.md").write_text(
+    (skills_dir / "coding_plan_task.skill.md").write_text(
         """---
-name: plan_task2
+name: coding_plan_task
 operation: "planning"
 output-schema:
   type: object
@@ -153,7 +153,7 @@ Prompt
         context_gatherer.gather.return_value = ("", {})
 
         # pylint: disable-next=protected-access
-        response = await router._execute_llm_skill("plan_task2", context_gatherer)
+        response = await router._execute_llm_skill("coding_plan_task", context_gatherer)
 
         assert response.parsed is not None
         assert response.parsed["plan"] == "Fixed"

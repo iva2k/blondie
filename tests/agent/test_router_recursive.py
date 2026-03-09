@@ -122,18 +122,18 @@ def test_start_chat_unknown_tool(mock_router):
 
 
 @pytest.mark.asyncio
-async def test_generate_code2_side_effect(mock_router):
-    """Test that generate_code2 skill correctly calls write_file tool."""
+async def test_coding_generate_code_side_effect(mock_router):
+    """Test that coding_generate_code skill correctly calls write_file tool."""
     tool_handler = MagicMock()
     context_gatherer = MagicMock()
 
-    # 1. Mock the `generate_code2` skill
+    # 1. Mock the `coding_generate_code` skill
     gen_code_skill = MagicMock(spec=Skill)
-    gen_code_skill.name = "generate_code2"
+    gen_code_skill.name = "coding_generate_code"
     gen_code_skill.input_schema = {"type": "object"}
-    gen_code_skill.to_tool_definition.return_value = {"name": "generate_code2", "parameters": {}}
-    gen_code_skill.user_content = "User prompt for generate_code2"
-    mock_router.skills = {"generate_code2": gen_code_skill}  # type: ignore
+    gen_code_skill.to_tool_definition.return_value = {"name": "coding_generate_code", "parameters": {}}
+    gen_code_skill.user_content = "User prompt for coding_generate_code"
+    mock_router.skills = {"coding_generate_code": gen_code_skill}  # type: ignore
 
     # 2. Mock the LLM response *for the sub-agent*
     # This response will contain the tool call to `write_file`
@@ -144,7 +144,7 @@ async def test_generate_code2_side_effect(mock_router):
 
     # 3. Mock the session that `execute_skill_as_tool` will create
     mock_session = MagicMock(spec=ChatSession)
-    mock_session.user_content = "User prompt for generate_code2"
+    mock_session.user_content = "User prompt for coding_generate_code"
     mock_session.send = AsyncMock(return_value=sub_agent_response)
     mock_router.start_chat = MagicMock(return_value=mock_session)
 
@@ -153,7 +153,7 @@ async def test_generate_code2_side_effect(mock_router):
     tool_handler.run_loop.return_value.content = '{"summary": "File written", "status": "SUCCESS"}'
 
     # 5. Execute the skill-as-a-tool
-    await mock_router.execute_skill_as_tool("generate_code2", context_gatherer, tool_handler)
+    await mock_router.execute_skill_as_tool("coding_generate_code", context_gatherer, tool_handler)
 
     # 6. Assert that the sub-agent's tool loop was called correctly
     tool_handler.run_loop.assert_called_once()

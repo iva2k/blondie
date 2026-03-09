@@ -1,5 +1,5 @@
 ---
-name: debug_error2
+name: coding_debug_error
 description: Suggest fix for test failures.
 user-invocable: false
 operation: "debugging"

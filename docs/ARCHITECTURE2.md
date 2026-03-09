@@ -75,7 +75,7 @@ To prevent context bloat in the Orchestrator, we adopt an **"Action over Data Tr
 
 Skills will use extended Frontmatter to define their tool interface. Existing `Skill` class will be updated to parse these new fields without breaking existing skills.
 
-To preserve v1 functionality, we will create **v2 skills** with a `2` suffix (e.g., `plan_task2.skill.md`).
+To preserve v1 functionality, we will create **v2 skills** with a `2` suffix (e.g., `coding_plan_task.skill.md`).
 
 We will implement `Skill.to_tool_definition()` to dynamically generate the tool JSON schema (name, description, parameters) required by the LLM provider from the `input_schema`.
 
@@ -134,7 +134,7 @@ The `LLMRouter` will be enhanced to support nested sessions. This allows a `Chat
 
 **Strategy**: New Module.
 
-A new entry point that replaces `loop.py` for v2 execution. It initializes the root `orchestrator` skill and manages the top-level execution flow, delegating actual work to the recursive router.
+A new entry point that replaces `loop.py` for v2 execution. It initializes the root `coding_orchestrator` skill and manages the top-level execution flow, delegating actual work to the recursive router.
 
 ### 3.5. System Tools (Hardcoded)
 
@@ -166,7 +166,7 @@ Recursive execution requires hierarchical logging.
 
 - Create `src/agent/loop2.py` implementing the Orchestrator pattern.
 - **Implement System Tools**: Wrap `TasksManager`, `GitCLI`, and `Executor` methods into tools in `tooled.py`.
-- Create `orchestrator.skill.md` with access to `plan_task2`, `generate_code2`, `debug_error2` as tools.
+- Create `coding_orchestrator.skill.md` with access to `coding_plan_task`, `coding_generate_code`, `coding_debug_error` as tools.
 
 ### Phase 2: Recursive Runtime (Core)
 
@@ -178,13 +178,13 @@ Recursive execution requires hierarchical logging.
 
 ## 5. Workflow Comparison
 
-| Feature       | Architecture v1         | Architecture v2                         |
-|---------------|-------------------------|-----------------------------------------|
-| Control Flow  | Python Code (`loop.py`) | LLM (`loop2.py` + `orchestrator` skill) |
-| Context       | Shared/Global           | Stacked/Isolated                        |
-| Tooling       | Hardcoded (Shell/File)  | Dynamic (Skills + Primitives)           |
-| Debugging     | Linear Retry Loop       | Intelligent Sub-Agent Call              |
-| Extensibility | Modify Python Code      | Add `.skill.md` file                    |
+| Feature       | Architecture v1         | Architecture v2                                |
+|---------------|-------------------------|------------------------------------------------|
+| Control Flow  | Python Code (`loop.py`) | LLM (`loop2.py` + `coding_orchestrator` skill) |
+| Context       | Shared/Global           | Stacked/Isolated                               |
+| Tooling       | Hardcoded (Shell/File)  | Dynamic (Skills + Primitives)                  |
+| Debugging     | Linear Retry Loop       | Intelligent Sub-Agent Call                     |
+| Extensibility | Modify Python Code      | Add `.skill.md` file                           |
 
 ## 6. Open Questions
 
