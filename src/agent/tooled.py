@@ -148,6 +148,21 @@ TOOL_DEFINITIONS = {
             "required": ["source_branch", "target_branch"],
         },
     },
+    "finalize_task": {
+        "name": "finalize_task",
+        "description": "Finalizes a task: commits work, pushes branch, marks task as complete, and merges to main.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string", "description": "The ID of the task to finalize."},
+                "commit_message": {
+                    "type": "string",
+                    "description": "The commit message for the work. Defaults to the task title.",
+                },
+            },
+            "required": ["task_id"],
+        },
+    },
     "run_tests": {
         "name": "run_tests",
         "description": "Run the project's test suite.",
@@ -208,6 +223,7 @@ class ToolHandler:
             "git_commit": self._git_commit,
             "git_push": self._git_push,
             "git_merge": self._git_merge,
+            "finalize_task": self._finalize_task,
             "run_tests": self._run_tests,
             "check_daily_limit": self._check_daily_limit,
             "summarize_and_restart": self._summarize_and_restart,
@@ -423,6 +439,55 @@ class ToolHandler:
             return f"Merged {source_branch} into {target_branch}"
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error merging: {e}"
+
+    async def _finalize_task(self, task_id: str, commit_message: str | None = None, **_kwargs) -> str:
+        """Finalize a task by committing, completing, and merging."""
+        # 1. Get task from task_id to get branch name, etc.
+        task = self.tasks_manager.get_task(task_id)
+        if not task:
+            return f"Error: Task '{task_id}' not found."
+
+        branch_name = task.branch_name
+        main_branch = self.project.main_branch
+        final_commit_message = commit_message or task.title
+
+        try:
+            # Ensure we are on the correct branch
+            current_branch = await asyncio.to_thread(self.git.current_branch)
+            if current_branch != branch_name:
+                return f"Error: Not on the correct task branch. Expected '{branch_name}', but on '{current_branch}'."
+
+            # Commit work if there are changes
+            await asyncio.to_thread(self.git.add_all)
+            try:  # Add progress.txt even if ignored
+                progress_path = self.progress.path.relative_to(self.repo_path)
+                await asyncio.to_thread(self.git.add, progress_path, force=True)
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
+
+            if not await asyncio.to_thread(self.git.is_clean):
+                await asyncio.to_thread(self.git.commit, final_commit_message)
+                await asyncio.to_thread(self.git.push, branch_name)
+
+            # Complete task and commit TASKS.md
+            success, msg = await asyncio.to_thread(self.tasks_manager.complete_task, task_id)
+            if not success:
+                return f"Error completing task in TASKS.md: {msg}"
+
+            tasks_path = self.tasks_manager.tasks_path.relative_to(self.repo_path)
+            await asyncio.to_thread(self.git.add, tasks_path)
+            await asyncio.to_thread(self.git.commit, f"Complete task {task.full_id}")
+            await asyncio.to_thread(self.git.push, branch_name)
+
+            # Merge to main
+            exclude_files = [self.progress.path.relative_to(self.repo_path).as_posix()]
+            merged = await asyncio.to_thread(self.git.merge_if_clean, branch_name, main_branch, exclude_files)
+            if not merged:
+                return "SUCCESS: Task completed and pushed, but merge to main failed (likely conflicts)."
+
+            return f"SUCCESS: Task {task_id} completed, committed, pushed, and merged to {main_branch}."
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return f"Error during finalization: {e}"
 
     async def _run_tests(self, **_kwargs) -> str:
         """Run project tests."""
