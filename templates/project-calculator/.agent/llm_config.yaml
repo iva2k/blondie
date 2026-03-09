@@ -23,7 +23,7 @@ operations:
   planning:
     - provider: anthropic
     - provider: openai
-      model: gpt-4o  # Override default_model
+      model: gpt-4o
     - provider: groq
     - provider: groq
       model: openai/gpt-oss-120b
@@ -34,7 +34,7 @@ operations:
   
   coding:
     - provider: openai
-      model: gpt-4o  # Override default_model
+      model: gpt-4o
     - provider: anthropic
     - provider: groq
     - provider: groq
@@ -52,3 +52,15 @@ operations:
   review:
     - provider: anthropic
     - provider: openai
+
+  execution:
+    - provider: anthropic
+    - provider: openai
+      model: gpt-4o
+    - provider: groq
+    - provider: groq
+      model: openai/gpt-oss-120b
+    - provider: groq
+      model: openai/gpt-oss-120b
+    - provider: groq
+      model: qwen/qwen3-32b
