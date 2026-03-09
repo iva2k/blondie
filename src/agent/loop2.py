@@ -69,6 +69,7 @@ class BlondieOrchestrator:
 
     async def run(self) -> None:
         """Start the orchestrator loop."""
+        self.progress.add_action("AGENT_START", "Orchestrator", "INFO")
         self.journal.start_task("orchestrator")
         self.journal.print("🚀 Starting Blondie v2 Orchestrator...")
 
@@ -100,9 +101,12 @@ class BlondieOrchestrator:
 
         except KeyboardInterrupt:
             self.journal.print("\n⏹️  Interrupted by user")
+            self.progress.add_action("AGENT_STOP", "Interrupted by user", "WARN")
         except Exception as e:  # pylint: disable=broad-exception-caught
             tb = traceback.format_exc()
             self.journal.print(f"💥 Orchestrator crashed: {e}\n{tb}")
+            self.progress.add_action("AGENT_CRASH", str(e), "ERROR")
         finally:
             self.journal.print(f"💰 Total session cost: ${self.llm.daily_cost:.4f}")
+            self.progress.add_action("AGENT_END", f"Cost: ${self.llm.daily_cost:.4f}", "INFO")
             await self.llm.close()

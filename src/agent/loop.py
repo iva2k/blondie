@@ -537,6 +537,7 @@ class BlondieAgent:
 
     async def run(self) -> None:
         """Run one cycle or forever based on config."""
+        self.progress.add_action("AGENT_START", f"Mode: {self.project.mode}", "INFO")
         try:
             if self.project.mode == "once":
                 await self.run_once()
@@ -545,3 +546,4 @@ class BlondieAgent:
         finally:
             # 043: Log daily cost on exit
             self.journal.print(f"💰 Total session cost: ${self.llm.daily_cost:.4f}")
+            self.progress.add_action("AGENT_END", f"Cost: ${self.llm.daily_cost:.4f}", "INFO")
