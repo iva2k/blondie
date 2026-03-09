@@ -32,7 +32,7 @@ async def test_plan_task_v2_json_parsing(mock_policy, tmp_path: Path):
 
     config_file = tmp_path / "llm_config.yaml"
     config_data = {
-        "providers": {"openai": {"api_type": "openai"}},
+        "providers": {"openai": {"api_type": "openai", "default_model": "gpt-4"}},
         "operations": {"planning": [{"provider": "openai"}]},
     }
     config_file.write_text(yaml.dump(config_data), encoding="utf-8")
@@ -104,7 +104,10 @@ async def test_plan_task_v2_validation_retry(mock_policy, tmp_path: Path):
     config_file = tmp_path / "llm_config.yaml"
     config_file.write_text(
         yaml.dump(
-            {"providers": {"openai": {"api_type": "openai"}}, "operations": {"planning": [{"provider": "openai"}]}}
+            {
+                "providers": {"openai": {"api_type": "openai", "default_model": "gpt-4"}},
+                "operations": {"planning": [{"provider": "openai"}]},
+            }
         ),
         encoding="utf-8",
     )
@@ -166,7 +169,10 @@ async def test_json_schema_validation_failure(mock_policy, tmp_path: Path):
     config_file = tmp_path / "llm_config.yaml"
     config_file.write_text(
         yaml.dump(
-            {"providers": {"openai": {"api_type": "openai"}}, "operations": {"planning": [{"provider": "openai"}]}}
+            {
+                "providers": {"openai": {"api_type": "openai", "default_model": "gpt-4"}},
+                "operations": {"planning": [{"provider": "openai"}]},
+            }
         ),
         encoding="utf-8",
     )
@@ -221,7 +227,12 @@ async def test_chat_session_yaml_parsing(mock_policy, tmp_path: Path):
     secrets_file.write_text("llm:\n  openai:\n    api_key: sk-test", encoding="utf-8")
     config_file = tmp_path / "llm_config.yaml"
     config_file.write_text(
-        yaml.dump({"providers": {"openai": {"api_type": "openai"}}, "operations": {"test": [{"provider": "openai"}]}}),
+        yaml.dump(
+            {
+                "providers": {"openai": {"api_type": "openai", "default_model": "gpt-4"}},
+                "operations": {"test": [{"provider": "openai"}]},
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -258,7 +269,12 @@ async def test_chat_session_pydantic_validation(mock_policy, tmp_path: Path):
     secrets_file.write_text("llm:\n  openai:\n    api_key: sk-test", encoding="utf-8")
     config_file = tmp_path / "llm_config.yaml"
     config_file.write_text(
-        yaml.dump({"providers": {"openai": {"api_type": "openai"}}, "operations": {"test": [{"provider": "openai"}]}}),
+        yaml.dump(
+            {
+                "providers": {"openai": {"api_type": "openai", "default_model": "gpt-4"}},
+                "operations": {"test": [{"provider": "openai"}]},
+            }
+        ),
         encoding="utf-8",
     )
 

@@ -91,7 +91,7 @@ async def test_rate_limit_fallback(router_with_fallback):
         mock_groq_chat.assert_called_once()
 
         # Check journal messages
-        router_with_fallback.journal.print.assert_any_call("⚠️ Rate limit (429) exceeded for openai.")
+        router_with_fallback.journal.print.assert_any_call("⚠️ Rate limit (429) exceeded for openai (gpt-4).")
         router_with_fallback.journal.print.assert_any_call("🔄 Switching to provider: groq (llama3)")
 
 
@@ -99,7 +99,7 @@ async def test_rate_limit_fallback(router_with_fallback):
 async def test_rate_limit_wait_and_retry(router_with_fallback):
     """Test that the router waits and retries if no fallback is available."""
     # 1. Configure only one provider for the operation
-    router_with_fallback.config.operations["testing"] = [OperationSelection(provider="openai")]
+    router_with_fallback.config.operations["testing"] = [OperationSelection(provider="openai", model="gpt-4")]
 
     # 2. Mock the client
     _openai_client = router_with_fallback.clients["openai"]
@@ -138,17 +138,17 @@ async def test_rate_limit_wait_and_retry(router_with_fallback):
             mock_sleep.assert_called_once_with(60)
 
             # Check journal messages
-            router_with_fallback.journal.print.assert_any_call("⚠️ Rate limit (429) exceeded for openai.")
+            router_with_fallback.journal.print.assert_any_call("⚠️ Rate limit (429) exceeded for openai (gpt-4).")
             router_with_fallback.journal.print.assert_any_call("⏳ No fallback available. Waiting 60s...")
 
 
 def test_select_model_strict_config(router_with_fallback):
     """Test that select_model does not return unconfigured providers."""
     # Configure 'testing' to use ONLY openai
-    router_with_fallback.config.operations["testing"] = [OperationSelection(provider="openai")]
+    router_with_fallback.config.operations["testing"] = [OperationSelection(provider="openai", model="gpt-4")]
 
     # Exclude openai (simulating rate limit)
-    excluded = {"openai"}
+    excluded = {("openai", "gpt-4")}
 
     # Even though 'groq' is available in router.clients, it should not be selected
     with pytest.raises(ValueError, match="No active LLM provider found"):
@@ -175,10 +175,10 @@ llm:
     config_file = tmp_path / "llm_config.yaml"
     config_data = {
         "providers": {
-            "openai": {"api_type": "openai"},
-            "anthropic": {"api_type": "anthropic"},
-            "groq": {"api_type": "openai"},
-            "deepseek": {"api_type": "openai"},
+            "openai": {"api_type": "openai", "default_model": "gpt-4"},
+            "anthropic": {"api_type": "anthropic", "default_model": "claude-3"},
+            "groq": {"api_type": "openai", "default_model": "llama3"},
+            "deepseek": {"api_type": "openai", "default_model": "deepseek-coder"},
         },
         "operations": {
             "planning": [
@@ -203,9 +203,53 @@ def test_select_model_complex_fallback(complex_router):
     assert provider == "openai"
 
     # 2. Exclude openai: should skip anthropic (no key) and pick groq
-    provider, _ = complex_router.select_model("planning", excluded_providers={"openai"})
+    provider, _ = complex_router.select_model("planning", excluded_providers={("openai", "gpt-4")})
     assert provider == "groq"
 
     # 3. Exclude openai and groq: should fail. Deepseek has key but not in list.
     with pytest.raises(ValueError, match="No active LLM provider found"):
-        complex_router.select_model("planning", excluded_providers={"openai", "groq"})
+        complex_router.select_model("planning", excluded_providers={("openai", "gpt-4"), ("groq", "llama3")})
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_fallback_same_provider(router_with_fallback):
+    """Test fallback to another model within the same provider."""
+    # Configure operations: openai (gpt-4) -> openai (gpt-3.5)
+    router_with_fallback.config.operations["testing"] = [
+        OperationSelection(provider="openai", model="gpt-4"),
+        OperationSelection(provider="openai", model="gpt-3.5"),
+    ]
+
+    openai_client = router_with_fallback.clients["openai"]
+
+    mock_429 = httpx.Response(429, request=httpx.Request("POST", ""))
+    mock_success = MagicMock()
+    mock_success.content = "Success"
+    mock_success.tool_calls = None
+    mock_success.cost_usd = 0.01
+
+    async def side_effect(messages, **kwargs):
+        model = kwargs.get("model")
+        if model == "gpt-4":
+            raise httpx.HTTPStatusError("Rate limit", request=None, response=mock_429)
+        if model == "gpt-3.5":
+            return mock_success
+        raise ValueError(f"Unexpected model {model}")
+
+    with patch.object(openai_client, "chat", side_effect=side_effect) as mock_chat:
+        response = await router_with_fallback._execute_llm_task(
+            operation="testing",
+            system_prompt="Sys",
+            user_prompt="User",
+            temperature=0.1,
+            max_tokens=100,
+            log_action="test",
+            log_title="test",
+        )
+
+        assert response.content == "Success"
+        assert mock_chat.call_count == 2
+
+        # Verify logs
+        router_with_fallback.journal.print.assert_any_call("⚠️ Rate limit (429) exceeded for openai (gpt-4).")
+        router_with_fallback.journal.print.assert_any_call("🔄 Switching to provider: openai (gpt-3.5)")

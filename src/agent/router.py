@@ -101,7 +101,7 @@ class ChatSession:
         max_retries = 3 if (use_response_schema or use_output_schema) else 0
         attempts = 0
 
-        excluded_providers: set[str] = set()
+        excluded_providers: set[tuple[str, str | None]] = set()
         seen_rate_limit = False
 
         while True:
@@ -123,11 +123,12 @@ class ChatSession:
 
                 if status in (400, 404, 429):
                     error_msg = "Rate limit (429)" if status == 429 else f"Client error ({status})"
-                    self.journal.print(f"⚠️ {error_msg} exceeded for {self.provider_name}.")
+                    model_info = f" ({self.model})" if self.model else ""
+                    self.journal.print(f"⚠️ {error_msg} exceeded for {self.provider_name}{model_info}.")
                     if status != 429:
                         self.journal.print(f"   Response: {e.response.text}")
 
-                    excluded_providers.add(self.provider_name)
+                    excluded_providers.add((self.provider_name, self.model))
                     attempts -= 1  # Don't count rate limit as a validation attempt
 
                     if self.router and self.operation:
@@ -389,13 +390,15 @@ class LLMRouter:
 
         self.journal.print(f"🧠 LLM providers: {list(self.clients.keys())}")
 
-    def select_model(self, operation: str, excluded_providers: set[str] | None = None) -> tuple[str, str | None]:
+    def select_model(
+        self, operation: str, excluded_providers: set[tuple[str, str | None]] | None = None
+    ) -> tuple[str, str | None]:
         """Select best provider/model for operation based on config priority."""
         excluded = excluded_providers or set()
         selections = self.config.operations.get(operation, [])
 
         for selection in selections:
-            if selection.provider in excluded:
+            if (selection.provider, selection.model) in excluded:
                 continue
             if selection.provider in self.clients:
                 # Validate model if known models are loaded

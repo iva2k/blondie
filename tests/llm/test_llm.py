@@ -52,7 +52,7 @@ async def test_plan_task(mock_policy, tmp_path: Path):
 
     config_file = tmp_path / "llm_config.yaml"
     config_data = {
-        "providers": {"openai": {"api_type": "openai"}},
+        "providers": {"openai": {"api_type": "openai", "default_model": "gpt-4"}},
         "operations": {"planning": [{"provider": "openai"}]},
     }
     config_file.write_text(yaml.dump(config_data), encoding="utf-8")
