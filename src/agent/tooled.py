@@ -81,7 +81,7 @@ TOOL_DEFINITIONS = {
     },
     "get_next_task": {
         "name": "get_next_task",
-        "description": "Get the next high-priority task from the backlog.",
+        "description": "Get the next task to work on. Handles git hygiene and recovers active tasks if any.",
         "parameters": {"type": "object", "properties": {}},
     },
     "claim_task": {
@@ -345,7 +345,53 @@ class ToolHandler:
         return output
 
     async def _get_next_task(self, **_kwargs) -> str:
-        """Get the next high-priority task."""
+        """Get the next task to work on, handling git state and recovery."""
+        # 1. Handle uncommitted changes
+        try:
+            status = await asyncio.wait_for(self.executor.run("git status --porcelain"), timeout=120)
+        except CommandTimeoutError as e:
+            status = e.result
+
+        if status.stdout.strip():
+            self.journal.print("⚠️  Found uncommitted changes.")
+            current_branch = await asyncio.to_thread(self.git.current_branch)
+            main_branch = self.project.main_branch
+
+            if current_branch == main_branch:
+                self.journal.print("🧹 Stashing changes on main to allow pull...")
+                try:
+                    await asyncio.wait_for(self.executor.run("git stash -u"), timeout=120)
+                except CommandTimeoutError:
+                    pass
+            else:
+                self.journal.print(f"💾 Saving WIP on {current_branch}...")
+                await asyncio.to_thread(self.git.add_all)
+                if not await asyncio.to_thread(self.git.is_clean):
+                    await asyncio.to_thread(self.git.commit, "WIP: Orchestrator auto-save")
+                    try:
+                        await asyncio.to_thread(self.git.push, current_branch)
+                    except Exception:  # pylint: disable=broad-exception-caught
+                        pass
+
+        # 2. Sync with main branch
+        main_branch = self.project.main_branch
+        try:
+            await asyncio.to_thread(self.git.checkout, main_branch)
+            await asyncio.to_thread(self.git.pull, main_branch)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return f"Error syncing with main branch: {e}"
+
+        # 3. Recover active task
+        task = await asyncio.to_thread(self.tasks_manager.recover_active_task, self.git)
+        if task:
+            return (
+                f"Recovered active Task ID: {task.id} (Use this exact ID for claim_task)\n"
+                f"Title: {task.title}\n"
+                f"Priority: {task.priority}\n"
+                f"Status: In Progress (Local Branch '{task.branch_name}' found)"
+            )
+
+        # 4. Pick next task
         task = await asyncio.to_thread(self.tasks_manager.get_next_task)
         if not task:
             return "No tasks available."
@@ -364,9 +410,14 @@ class ToolHandler:
             ids = ", ".join(f"'{t.id}'" for t in todos)
             return f"Error: Task '{task_id}' not found. Available Task IDs: {ids}"
 
+        # Check if we are recovering (branch exists locally)
+        is_recovery = await asyncio.to_thread(self.git.branch_exists, task.branch_name)
+
         try:
             success, msg = await asyncio.to_thread(self.tasks_manager.claim_task, task_id, self.git)
             if success:
+                if not is_recovery:
+                    self.progress.clear()
                 self.progress.add_action("CLAIM_TASK", task_id, "SUCCESS")
                 self.journal.start_task(task.id)
                 return f"SUCCESS: {msg}"
