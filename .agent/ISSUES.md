@@ -2,15 +2,11 @@
 
 This file contains topics to be pondered on and should produce entries in TASKS.md.
 
-- [ ] config param "exit when no tasks left".
-
-- [ ] skill.md files: "The top of skill.md file (the --- section) is parsed by the system before Agent even reads the full instructions. The description field should be injected into Agent's context window to help it decide if it should activate the skill." - meaning use description from the skill frontmatter for tools object. Also need `docs/SKILLS.md` documentation - frontmatter fields, special logic in Blondie, context generator.
-
 - [ ] Installation issue: SSL_CERT_FILE env var is not defined. It should be taken from certifi python package.
 
 - [ ] Python env is 3.11, poetry is installed under mingw64 and it hitches a different python, lower version. Poetry install fails due to python version mismatch to one specified in `pyproject.toml`.
 
-- [ ] LLM misses that dev.yaml file exists in get_file_edits. It is NOT given in files list, but PROJECT section mentions it in protected files. To close, verify protected files are listed in context.
+- [x] LLM misses that dev.yaml file exists in get_file_edits. It is NOT given in files list, but PROJECT section mentions it in protected files. To close, verify protected files are listed in context.
 
 - [ ] Debugging agent operation is quite tedious - copious logs, a lot of noise. A log browser app would be very handy.
 
