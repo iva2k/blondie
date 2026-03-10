@@ -14,7 +14,7 @@ context:
   progress: True
 input-schema:
   type: object
-  properties: []
+  properties: {}
   required: []
 output-schema:
   type: object
