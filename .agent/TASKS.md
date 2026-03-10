@@ -75,23 +75,26 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
+- [ ] 086 | P1 | consolidate scripts for `poe snapshot-dev` & `poe setup-dev` so _tmp/logs/ is handled in both snapshot and clear. Move _tmp/logs/ under _tmp/repo/_logs, add .gitignore to project template |
 - [ ] 082 | P1 | Implement debugging_hints in context.py:_get_env_context() |
+- [ ] 081 | P2 | [FEATURE] Skill convention: In loop2.py and `coding_orchestartor.skill.md` implement looping and exit decision logic based on LLM output (the idea was to have a tool call for summarize and restart - extent it for "loop" call). |
+- [ ] 084 | P2 | [FEATURE] pull git main branch before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
+
 - [ ] 015 | P4 | **DEPLOY!** Start self-editing | 082
 
 ### Future
 
-- [ ] 080 | P5 | skill.md format is quite elaborate. Implement skill.md checker script and poe task. Ensure {context} is present in system prompt if context frontmatter is listed, but "## CONTEXT" header is not present, as it is inserted programmatically. Ensure context items are listed if there are references, e.g. `[PROGRESS]`, in the system prompt. Ensure `user-content` has fields mentioned by reference. |
-- [ ] 081 | P5 | [FEATURE] Skill convention: In loop2.py and `coding_orchestartor.skill.md` implement looping and exit decision logic based on LLM output (the idea was to have a tool call for summarize and restart - extent it for "loop" call). |
+- [ ] 018 | P3 | [FEATURE] Tasks.py should pick blocking task first. Priority of blocking task should elevate to blocked task priority when considering what to pick.  |
+- [ ] 080 | P3 | skill.md format is quite elaborate. Implement skill.md checker script and poe task. Ensure {context} is present in system prompt if context frontmatter is listed, but "## CONTEXT" header is not present, as it is inserted programmatically. Ensure context items are listed if there are references, e.g. `[PROGRESS]`, in the system prompt. Ensure `user-content` has fields mentioned by reference. |
 - [ ] 083 | P5 | [FEATURE] Generalize loop2.py - allow any skill orchestrator to be selected by argument, remove any hard-coded flow specific to `coding_orchestartor.skill.md`. Needed for Different agent personalities from same codebase. | 081
-- [ ] 083 | P5 | [FEATURE] pull git main branch before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
 - [ ] 013 | P5 | [FEATURE] Vercel/Netlify CLI wrappers |
 - [ ] 014 | P5 | [FEATURE] Docker build + e2e tests |
 - [ ] 016 | P5 | [FEATURE] Multi-repo scanner + project.yaml | 038
 - [ ] 038 | P5 | [for 016] Allow multirepo - limit agent to a project subfolder inside a bigger repo |
 - [ ] 017 | P5 | [FEATURE] Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" |
-- [ ] 018 | P5 | [FEATURE] Tasks.py should pick blocking task first |
 - [ ] 019 | P5 | [FEATURE] Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
 - [ ] 021 | P5 | [FEATURE] Add "details" field to TASKS.md, so title could be short, similar to most bug trackers. Prompts bigger rethink - how TASKS.md is best structured? BugTrackers usually have discussions pre- and post- implementation.  |
 - [ ] 041 | P5 | [FEATURE] Agent should communicate with external world: email, slack, twitter. Events: task queue stuck (all tasks blocked, can't finish blockers), Deploy triggered. Carefull as swarm will flood the channels. |
 - [ ] 082 | P5 | [CLEANUP] Remove loop.py and it's hard-coded skills: [plan_task, get_file_edits, generate_code, debug_error], wrappers for these skills in router.py, related unit tests. |
-- [ ] 083 | P5 | [CLEANUP] When loop.py is removed, cleanup command_runner vs command_runner2 skills. | 082
+- [ ] 085 | P5 | [CLEANUP] When loop.py is removed, cleanup command_runner vs command_runner2 skills. | 082
+- [ ] 087 | P5 | [FEATURE] Done tasks should be moved from TASKS.md to docs/CHANGELOG.md. Need a toolified skill for that. Consider how removing task from TASKS.md can affect agents swarm (probably not). |
