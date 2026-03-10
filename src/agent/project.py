@@ -32,6 +32,7 @@ class Project(BaseModel):
     git_user: str | None = None
     git_email: str | None = None
     sleep_no_connection: int = 60
+    sleep_daily_limit: int = 3600
 
     @classmethod
     def from_file(cls, path: Path, journal: Journal | None = None) -> Project:

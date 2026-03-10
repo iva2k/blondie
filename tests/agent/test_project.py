@@ -61,6 +61,7 @@ def test_project_defaults(tmp_path: Path) -> None:
     assert project.commands == {}
     assert project.git_user is None
     assert project.git_email is None
+    assert project.sleep_daily_limit == 3600
 
 
 def test_file_not_found(tmp_path: Path) -> None:

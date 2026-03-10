@@ -2,6 +2,7 @@
 
 """Blondie v2 Orchestrator Loop."""
 
+import asyncio
 import traceback
 from pathlib import Path
 
@@ -81,6 +82,29 @@ class BlondieOrchestrator:
         self.journal.print("🚀 Starting Blondie Orchestrator...")
 
         try:
+            while True:
+                should_continue = await self._run_cycle()
+                if not should_continue:
+                    break
+
+        except KeyboardInterrupt:
+            self.journal.print("\n⏹️  Interrupted by user")
+            self.progress.add_action("AGENT_STOP", "Interrupted by user", "WARN")
+        finally:
+            self.journal.print(f"💰 Total session cost: ${self.llm.daily_cost:.4f}")
+            self.progress.add_action("AGENT_END", f"Cost: ${self.llm.daily_cost:.4f}", "INFO")
+            await self.llm.close()
+
+    async def _run_cycle(self) -> bool:
+        """Execute one orchestrator cycle. Returns True to continue, False to exit."""
+        try:
+            # Check daily limit
+            if not self.llm.check_daily_limit():
+                wait_time = self.project.sleep_daily_limit
+                self.journal.print(f"⏳ Daily limit reached. Idling for {wait_time}s...")
+                await asyncio.sleep(wait_time)
+                return True
+
             # Initialize the root session with the orchestrator skill
             # Note: 'orchestrator' skill must exist (Task 064)
             session = self.llm.start_chat("coding_orchestrator", self.context_gatherer)
@@ -102,14 +126,18 @@ class BlondieOrchestrator:
 
             self.journal.print("🏁 Orchestrator session ended.")
 
-        except KeyboardInterrupt:
-            self.journal.print("\n⏹️  Interrupted by user")
-            self.progress.add_action("AGENT_STOP", "Interrupted by user", "WARN")
+            # Check if we should exit (no tasks left)
+            if not self.tasks.get_todo_tasks() and not self.tasks.recover_active_task(self.git):
+                self.journal.print("✅ No tasks left, exiting.")
+                return False
+
+            self.journal.print("🔄 Restarting orchestrator session...")
+            await asyncio.sleep(2)
+            return True
+
         except Exception as e:  # pylint: disable=broad-exception-caught
             tb = traceback.format_exc()
             self.journal.print(f"💥 Orchestrator crashed: {e}\n{tb}")
             self.progress.add_action("AGENT_CRASH", str(e), "ERROR")
-        finally:
-            self.journal.print(f"💰 Total session cost: ${self.llm.daily_cost:.4f}")
-            self.progress.add_action("AGENT_END", f"Cost: ${self.llm.daily_cost:.4f}", "INFO")
-            await self.llm.close()
+            await asyncio.sleep(10)
+            return True

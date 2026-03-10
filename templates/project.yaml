@@ -6,6 +6,7 @@ git_email: "blondie@agent.local"
 main_branch: main
 task_source: TASKS.md
 sleep_no_connection: 30
+sleep_daily_limit: 3600
 commands:
   install: "{{install|default('npm ci')}}"
   test: "{{test|default('npm test')}}"

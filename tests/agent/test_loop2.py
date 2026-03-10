@@ -80,6 +80,10 @@ async def test_run(mock_deps):
     mock_session.send = AsyncMock(return_value=mock_response)
     mock_deps["tool_handler"].return_value.run_loop = AsyncMock()
 
+    # Ensure loop exits: no tasks
+    orch.tasks.get_todo_tasks.return_value = []
+    orch.tasks.recover_active_task.return_value = None
+
     await orch.run()
 
     mock_deps["router"].return_value.start_chat.assert_called_with("coding_orchestrator", orch.context_gatherer)
@@ -92,7 +96,8 @@ async def test_run(mock_deps):
 async def test_run_exception(mock_deps):
     """Test exception handling in run loop."""
     orch = BlondieOrchestrator(str(mock_deps["repo_path"]))
-    mock_deps["router"].return_value.start_chat.side_effect = Exception("Boom")
+    # First call raises Exception (caught in _run_cycle), second raises KeyboardInterrupt (caught in run) to break loop
+    mock_deps["router"].return_value.start_chat.side_effect = [Exception("Boom"), KeyboardInterrupt()]
 
     await orch.run()
 
