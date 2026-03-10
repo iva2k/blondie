@@ -133,9 +133,9 @@ class ChatSession:
                     seen_rate_limit = True
 
                 if status in (400, 404, 429):
-                    error_msg = "Rate limit (429)" if status == 429 else f"Client error ({status})"
+                    error_msg = "Rate limit (429) exceeded" if status == 429 else f"Client error ({status})"
                     model_info = f" ({self.model})" if self.model else ""
-                    self.journal.print(f"⚠️ {error_msg} exceeded for {self.provider_name}{model_info}.")
+                    self.journal.print(f"⚠️ {error_msg} for {self.provider_name}{model_info}.")
                     if status != 429:
                         self.journal.print(f"   Response: {e.response.text}")
 
