@@ -128,8 +128,12 @@ class BlondieOrchestrator:
 
             # Check if we should exit (no tasks left)
             if not self.tasks.get_todo_tasks() and not self.tasks.recover_active_task(self.git):
-                self.journal.print("✅ No tasks left, exiting.")
-                return False
+                if self.project.exit_on_no_tasks:
+                    self.journal.print("✅ No tasks left, exiting.")
+                    return False
+                self.journal.print("💤 No tasks left. Idling for 60s...")
+                await asyncio.sleep(60)
+                return True
 
             self.journal.print("🔄 Restarting orchestrator session...")
             await asyncio.sleep(2)
@@ -137,6 +141,10 @@ class BlondieOrchestrator:
 
         except Exception as e:  # pylint: disable=broad-exception-caught
             tb = traceback.format_exc()
+            if self.project.exit_on_exception:
+                self.journal.print(f"💥 Exiting, Orchestrator crashed: {e}\n{tb}")
+                self.progress.add_action("AGENT_CRASH", str(e) + " Exiting.", "ERROR")
+                return False
             self.journal.print(f"💥 Orchestrator crashed: {e}\n{tb}")
             self.progress.add_action("AGENT_CRASH", str(e), "ERROR")
             await asyncio.sleep(10)

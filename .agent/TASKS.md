@@ -79,10 +79,11 @@ Status: id | priority | title | depends_on
 
 ### [Sprint3 2026-0310]
 
-- [ ] 088 | P1 | config params in project.yaml: exit_on_no_tasks "exit when no tasks left", exit_on_exception "exit in case of unhandled exception", otherwise agent should keep running forever. |
-- [ ] 081 | P2 | [FEATURE] Skill convention: In loop2.py and `coding_orchestartor.skill.md` implement looping and exit decision logic based on LLM output (the idea was to have a tool call for summarize and restart - extent it for "loop" call). | 088
+- [x] 088 | P1 | config params in project.yaml: exit_on_no_tasks "exit when no tasks left", exit_on_exception "exit in case of unhandled exception", otherwise agent should keep running forever. |
+- [ ] 092 | P1 | Create `docs/SKILLS.md` documentation - frontmatter fields, special logic in Blondie, explain context generator. |
+- [ ] 081 | P2 | [FEATURE] Skill convention: In loop2.py and `coding_orchestartor.skill.md` implement looping and exit decision logic based on LLM output (the idea was to have a tool call for summarize and restart - extent it for "loop" call). | 088, 092
 
-- [ ] 089 | P1 | Ensure skill.md description frontmatter is used in tools context. Background: original skill.md files: "The top of skill.md file (the --- section) is parsed by the system before Agent even reads the full instructions. The description field should be injected into Agent's context window to help it decide if it should activate the skill." - meaning use description from the skill frontmatter for tools object. Also need `docs/SKILLS.md` documentation - frontmatter fields, special logic in Blondie, context generator. |
+- [ ] 089 | P1 | Ensure skill.md description frontmatter is used in tools context. Background: original skill.md files: "The top of skill.md file (the --- section) is parsed by the system before Agent even reads the full instructions. The description field should be injected into Agent's context window to help it decide if it should activate the skill." - meaning use description from the skill frontmatter for tools object. |
 - [ ] 090 | P1 | [FEATURE] In addition to daily cost limit, add total_cost_limit parameter and modify code to idle (or exit) instead of running. Perhaps rename `*daily_cost_limit*` into `*cost_limit*`. |
 
 - [ ] 082 | P1 | Implement debugging_hints in context.py:_get_env_context() |

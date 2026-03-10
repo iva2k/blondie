@@ -30,6 +30,7 @@ id: test-project
 policy: POLICY.yaml
 git_user: TestBot
 git_email: bot@test.com
+exit_on_no_tasks: true
 """,
         encoding="utf-8",
     )

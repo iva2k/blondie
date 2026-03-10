@@ -7,6 +7,8 @@ main_branch: main
 task_source: TASKS.md
 sleep_no_connection: 30
 sleep_daily_limit: 3600
+exit_on_no_tasks: True
+exit_on_exception: True
 commands:
   install: "{{install|default('npm ci')}}"
   test: "{{test|default('npm test')}}"
