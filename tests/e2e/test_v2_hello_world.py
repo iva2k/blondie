@@ -79,15 +79,10 @@ async def test_v2_hello_world_task(temp_repo: Path):
         mock_start_chat.return_value = mock_session
 
         # Define the sequence of LLM responses
-        # 1. Initial response -> Call get_next_task
+        # 1. Initial response -> Call pick_task
         resp_1 = MagicMock(spec=LLMResponse)
-        resp_1.content = "I will check for tasks."
-        resp_1.tool_calls = [{"id": "call_1", "function": {"name": "get_next_task", "arguments": "{}"}}]
-
-        # 2. After get_next_task -> Call claim_task
-        resp_2 = MagicMock(spec=LLMResponse)
-        resp_2.content = "I see task 001. I will claim it."
-        resp_2.tool_calls = [{"id": "call_2", "function": {"name": "claim_task", "arguments": '{"task_id": "001"}'}}]
+        resp_1.content = "I will pick a task."
+        resp_1.tool_calls = [{"id": "call_1", "function": {"name": "pick_task", "arguments": "{}"}}]
 
         # 3. After claim_task -> Call write_file (Simulating the work)
         resp_3 = MagicMock(spec=LLMResponse)
@@ -114,7 +109,7 @@ async def test_v2_hello_world_task(temp_repo: Path):
 
         # Configure session.send to return these responses in order
         # Note: loop2.py calls session.send(user_msg) first, then run_loop calls session.send() repeatedly
-        mock_session.send = AsyncMock(side_effect=[resp_1, resp_2, resp_3, resp_4, resp_5])
+        mock_session.send = AsyncMock(side_effect=[resp_1, resp_3, resp_4, resp_5])
 
         # Run the orchestrator
         orchestrator = BlondieOrchestrator(str(temp_repo))
@@ -134,4 +129,4 @@ async def test_v2_hello_world_task(temp_repo: Path):
         assert task.status == TaskStatus.DONE
 
         # 3. Verify interaction flow
-        assert mock_session.send.call_count == 5
+        assert mock_session.send.call_count == 4

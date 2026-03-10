@@ -79,24 +79,10 @@ TOOL_DEFINITIONS = {
             "required": ["package_name", "ecosystem"],
         },
     },
-    "get_next_task": {
-        "name": "get_next_task",
-        "description": "Get the next task to work on. Handles git hygiene and recovers active tasks if any.",
+    "pick_task": {
+        "name": "pick_task",
+        "description": "Select and claim the next high-priority task to work on. Handles git hygiene, syncs with main, and recovers active tasks if any.",
         "parameters": {"type": "object", "properties": {}},
-    },
-    "claim_task": {
-        "name": "claim_task",
-        "description": "Claim a task to start working on it. Creates a git branch.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "task_id": {
-                    "type": "string",
-                    "description": "The exact ID of the task to claim (e.g. '001', as listed in TASKS.md).",
-                }
-            },
-            "required": ["task_id"],
-        },
     },
     "complete_task": {
         "name": "complete_task",
@@ -216,8 +202,7 @@ class ToolHandler:
             "read_file": self._read_file,
             "write_file": self._write_file,
             "find_package": self._find_package,
-            "get_next_task": self._get_next_task,
-            "claim_task": self._claim_task,
+            "pick_task": self._pick_task,
             "complete_task": self._complete_task,
             "git_checkout": self._git_checkout,
             "git_commit": self._git_commit,
@@ -344,86 +329,62 @@ class ToolHandler:
             self.progress.add_action("FIND_PKG", f"{ecosystem}:{package_name}", "FAILED")
         return output
 
-    async def _get_next_task(self, **_kwargs) -> str:
-        """Get the next task to work on, handling git state and recovery."""
+    async def _pick_task(self, **_kwargs) -> str:
+        """Pick and claim the next task."""
+        main_branch = self.project.main_branch
+
         # 1. Handle uncommitted changes
         try:
             status = await asyncio.wait_for(self.executor.run("git status --porcelain"), timeout=120)
         except CommandTimeoutError as e:
             status = e.result
-
         if status.stdout.strip():
             self.journal.print("⚠️  Found uncommitted changes.")
             current_branch = await asyncio.to_thread(self.git.current_branch)
-            main_branch = self.project.main_branch
 
             if current_branch == main_branch:
-                self.journal.print("🧹 Stashing changes on main to allow pull...")
+                self.journal.print(f"🧹 Stashing changes on {main_branch} to allow pull...")
                 try:
-                    await asyncio.wait_for(self.executor.run("git stash -u"), timeout=120)
+                    _res = await asyncio.wait_for(self.executor.run("git stash -u"), timeout=120)
                 except CommandTimeoutError:
-                    pass
+                    pass  # TODO: (when needed) Handle stash error
             else:
-                self.journal.print(f"💾 Saving WIP on {current_branch}...")
-                await asyncio.to_thread(self.git.add_all)
-                if not await asyncio.to_thread(self.git.is_clean):
-                    await asyncio.to_thread(self.git.commit, "WIP: Orchestrator auto-save")
-                    try:
-                        await asyncio.to_thread(self.git.push, current_branch)
-                    except Exception:  # pylint: disable=broad-exception-caught
-                        pass
+                await self._save_wip(current_branch, "WIP: Crash recovery")
 
         # 2. Sync with main branch
-        main_branch = self.project.main_branch
         try:
             await asyncio.to_thread(self.git.checkout, main_branch)
             await asyncio.to_thread(self.git.pull, main_branch)
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error syncing with main branch: {e}"
 
-        # 3. Recover active task
+        # 3. Recover active task or pick next
         task = await asyncio.to_thread(self.tasks_manager.recover_active_task, self.git)
+        is_recovery = True
         if task:
-            return (
-                f"Recovered active Task ID: {task.id} (Use this exact ID for claim_task)\n"
-                f"Title: {task.title}\n"
-                f"Priority: {task.priority}\n"
-                f"Status: In Progress (Local Branch '{task.branch_name}' found)"
-            )
+            self.journal.print(f"🔄 Recovered active task [bold cyan]{task.id}[/] {task.title}")
+            self.journal.start_task(task.id)
+        else:
+            task = await asyncio.to_thread(self.tasks_manager.get_next_task)
+            is_recovery = False
 
-        # 4. Pick next task
-        task = await asyncio.to_thread(self.tasks_manager.get_next_task)
-        if not task:
-            return "No tasks available."
-        return f"Task ID: {task.id} (Use this exact ID for claim_task)\nTitle: {task.title}\nPriority: {task.priority}"
+            if not task:
+                self.journal.print("✅ No tasks left, exiting.")
+                return "No tasks available."
 
-    async def _claim_task(self, task_id: str, **_kwargs) -> str:
-        """Claim a task."""
-        if not task_id:
-            return "Error: Missing task_id"
-
-        # Pre-check existence to provide better error message
-        task = self.tasks_manager.get_task(task_id)
-        if not task:
-            # Provide list of valid IDs to help LLM self-correct
-            todos = self.tasks_manager.get_todo_tasks()
-            ids = ", ".join(f"'{t.id}'" for t in todos)
-            return f"Error: Task '{task_id}' not found. Available Task IDs: {ids}"
-
-        # Check if we are recovering (branch exists locally)
-        is_recovery = await asyncio.to_thread(self.git.branch_exists, task.branch_name)
-
+        # 4. Claim task (handles checkout/branch creation)
         try:
-            success, msg = await asyncio.to_thread(self.tasks_manager.claim_task, task_id, self.git)
+            success, msg = await asyncio.to_thread(self.tasks_manager.claim_task, task.id, self.git)
             if success:
                 if not is_recovery:
                     self.progress.clear()
-                self.progress.add_action("CLAIM_TASK", task_id, "SUCCESS")
+                self.progress.add_action("CLAIM_TASK", task.id, "SUCCESS")
                 self.journal.start_task(task.id)
-                return f"SUCCESS: {msg}"
+                status_label = "RECOVERED" if is_recovery else "PICKED"
+                return f"SUCCESS: {status_label} task {task.id}.\n{msg}\nTitle: {task.title}\nPriority: {task.priority}"
             else:
-                self.progress.add_action("CLAIM_TASK", task_id, f"FAILED: {msg}")
-                return f"ERROR: {msg}"
+                self.progress.add_action("CLAIM_TASK", task.id, f"FAILED: {msg}")
+                return f"ERROR: Failed to pick task {task.id}. {msg}"
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error claiming task: {e}"
 
@@ -443,6 +404,21 @@ class ToolHandler:
                 return f"ERROR: {msg}"
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error completing task: {e}"
+
+    async def _save_wip(self, branch_name: str, message: str) -> None:
+        """Save current work as WIP commit."""
+        if self.git.current_branch() == branch_name:
+            try:
+                self.journal.print(f"💾 Saving {message} on {branch_name}...")
+                self.git.add_all()
+                await asyncio.to_thread(self.git.add_all)
+                if not await asyncio.to_thread(self.git.is_clean):
+                    await asyncio.to_thread(self.git.commit, message)
+                    await asyncio.to_thread(self.git.push, branch_name)
+                else:
+                    self.journal.print("⚠️  Nothing to save (clean working directory)")
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                self.journal.print(f"⚠️ Failed to save WIP: {e}")
 
     async def _git_checkout(self, branch_name: str, **_kwargs) -> str:
         """Checkout a git branch."""

@@ -79,6 +79,8 @@ class BlondieAgent:
         if not self.llm.check_daily_limit():
             return None
 
+        main_branch = self.project.main_branch
+
         # 0. Handle uncommitted changes from previous run/crash
         try:
             status = await asyncio.wait_for(self.exec.run("git status --porcelain"), timeout=120)
@@ -88,18 +90,16 @@ class BlondieAgent:
             self.journal.print("⚠️  Found uncommitted changes from previous session.")
             current_branch = self.git.current_branch()
 
-            if current_branch == self.project.main_branch:
-                self.journal.print("🧹 Stashing changes on main to allow pull...")
+            if current_branch == main_branch:
+                self.journal.print(f"🧹 Stashing changes on {main_branch} to allow pull...")
                 try:
                     _res = await asyncio.wait_for(self.exec.run("git stash -u"), timeout=120)
                 except CommandTimeoutError:
                     pass
             else:
-                self.journal.print(f"💾 Saving WIP on {current_branch}...")
                 self._save_wip(current_branch, "WIP: Crash recovery")
 
         # 1. Sync with main branch to ensure fresh start
-        main_branch = self.project.main_branch
         self.git.checkout(main_branch)
         self.git.pull(main_branch)
 
@@ -271,18 +271,17 @@ class BlondieAgent:
 
     def _save_wip(self, branch_name: str, message: str) -> None:
         """Save current work as WIP commit."""
-        try:
-            if self.git.current_branch() == branch_name:
-                self.journal.print("💾 Saving WIP state...")
+        if self.git.current_branch() == branch_name:
+            try:
+                self.journal.print(f"💾 Saving {message} on {branch_name}...")
                 self.git.add_all()
                 if not self.git.is_clean():
                     self.git.commit(message)
                     self.git.push(branch_name)
                 else:
                     self.journal.print("⚠️  Nothing to save (clean working directory)")
-        # pylint: disable-next=broad-exception-caught
-        except Exception as e:
-            self.journal.print(f"⚠️ Failed to save WIP: {e}")
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                self.journal.print(f"⚠️ Failed to save WIP: {e}")
 
     def _create_interaction_callback(self, task: Task, instruction: str):
         """Create a callback for interactive shell commands."""

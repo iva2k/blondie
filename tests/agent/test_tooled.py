@@ -382,14 +382,15 @@ async def test_run_loop_restart_session(tool_handler):
 
 
 @pytest.mark.asyncio
-async def test_get_next_task(tool_handler):
-    """Test get_next_task tool."""
+async def test_pick_task(tool_handler):
+    """Test pick_task tool."""
     mock_task = MagicMock()
     mock_task.id = "001"
     mock_task.title = "Test Task"
     mock_task.priority = "P0"
     tool_handler.tasks_manager.get_next_task.return_value = mock_task
     tool_handler.tasks_manager.recover_active_task.return_value = None
+    tool_handler.tasks_manager.claim_task.return_value = (True, "Claimed")
 
     # Mock executor.run for git status check
     mock_status = MagicMock()
@@ -397,19 +398,9 @@ async def test_get_next_task(tool_handler):
     mock_status.stdout = ""
     tool_handler.executor.run = AsyncMock(return_value=mock_status)
 
-    result = await tool_handler._get_next_task()
-    assert "Task ID: 001" in result
+    result = await tool_handler._pick_task()
+    assert "SUCCESS: PICKED task 001" in result
     assert "Title: Test Task" in result
-
-
-@pytest.mark.asyncio
-async def test_claim_task(tool_handler):
-    """Test claim_task tool."""
-    tool_handler.tasks_manager.claim_task.return_value = (True, "Successfully claimed task 001.")
-
-    result = await tool_handler._claim_task("001")
-    assert "SUCCESS" in result
-    assert "Successfully claimed" in result
     tool_handler.tasks_manager.claim_task.assert_called_with("001", tool_handler.git)
 
 
