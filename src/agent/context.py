@@ -240,7 +240,8 @@ class ContextGatherer:
                 continue
 
             if any(
-                part.startswith(".") and part not in [".git", ".github", ".dockerignore"] for part in rel_path.parts
+                part.startswith(".") and part not in [".git", ".github", ".dockerignore", ".gitignore"]
+                for part in rel_path.parts
             ):
                 continue
 

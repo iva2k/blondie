@@ -1,10 +1,9 @@
 # tests/agent/test_tooled.py
 
 """Unit tests for ToolHandler."""
-
 # pylint: disable=protected-access
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -19,6 +18,7 @@ def tool_handler(tmp_path):
     repo_path = tmp_path / "repo"
     repo_path.mkdir()
     project = MagicMock()
+    project.main_branch = "main"
     project.protected_files = []
     executor = MagicMock()
     journal = MagicMock()
@@ -402,6 +402,40 @@ async def test_pick_task(tool_handler):
     assert "SUCCESS: PICKED task 001" in result
     assert "Title: Test Task" in result
     tool_handler.tasks_manager.claim_task.assert_called_with("001", tool_handler.git)
+
+
+@pytest.mark.asyncio
+async def test_pick_task_dirty_repo_on_main(tool_handler):
+    """Test pick_task stashes changes when on main branch."""
+    # Setup mocks
+    tool_handler.tasks_manager.get_next_task.return_value = MagicMock()
+    tool_handler.tasks_manager.recover_active_task.return_value = None
+    tool_handler.tasks_manager.claim_task.return_value = (True, "Claimed")
+    tool_handler.git.current_branch.return_value = "main"
+
+    # Mock executor.run to show a dirty status, then a clean one after stash
+    dirty_status = MagicMock(returncode=0, stdout=" M file.txt")
+    clean_status = MagicMock(returncode=0, stdout="")
+    tool_handler.executor.run = AsyncMock(side_effect=[dirty_status, clean_status])
+
+    await tool_handler._pick_task()
+
+    # Assert that 'git stash' was called
+    tool_handler.executor.run.assert_any_call("git stash -u")
+    tool_handler.journal.print.assert_any_call("🧹 Stashing changes on main to allow pull...")
+
+
+@pytest.mark.asyncio
+async def test_pick_task_dirty_repo_on_feature_branch(tool_handler):
+    """Test pick_task saves WIP when on a feature branch."""
+    # Setup mocks
+    tool_handler.tasks_manager.recover_active_task.return_value = None
+    tool_handler.git.current_branch.return_value = "feature/abc"
+    tool_handler.executor.run = AsyncMock(return_value=MagicMock(returncode=0, stdout=" M file.txt"))
+
+    with patch.object(tool_handler, "_save_wip", new_callable=AsyncMock) as mock_save_wip:
+        await tool_handler._pick_task()
+        mock_save_wip.assert_called_once_with("feature/abc", "WIP: Crash recovery")
 
 
 @pytest.mark.asyncio

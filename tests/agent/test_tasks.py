@@ -123,3 +123,30 @@ def test_missing_file(tmp_path: Path) -> None:
     """Test graceful handling of missing file."""
     manager = TasksManager(tmp_path / "missing.md")
     assert len(manager.tasks) == 0
+
+
+@pytest.mark.parametrize(
+    "line, expected_id, expected_priority, expected_title, expected_deps",
+    [
+        ("- [ ] 123 | P1 | Simple task |", "123", "P1", "Simple task", []),
+        ("* [ ] ABC | | Task with no priority | 123", "ABC", None, "Task with no priority", ["123"]),
+        ("  - [x] 456 | P2 | Done task with spaces | 1,2, 3", "456", "P2", "Done task with spaces", ["1", "2", "3"]),
+        ("[ ] 789||Another task|", "789", None, "Another task", []),
+        ("- [ ] TSK10 | HIGH | High priority |", "TSK10", "HIGH", "High priority", []),
+    ],
+)
+def test_parse_various_formats(
+    tmp_path: Path, line: str, expected_id: str, expected_priority: str, expected_title: str, expected_deps: list[str]
+) -> None:
+    """Test parsing of various valid task line formats."""
+    content = f"## Todo\n{line}"
+    tasks_file = tmp_path / "TASKS.md"
+    tasks_file.write_text(content, encoding="utf-8")
+
+    manager = TasksManager(tasks_file)
+    assert len(manager.tasks) == 1
+    task = manager.tasks[0]
+    assert task.id == expected_id
+    assert task.priority == expected_priority
+    assert task.title == expected_title
+    assert task.depends_on == expected_deps

@@ -9,6 +9,7 @@ import pytest
 
 from agent.context import ContextGatherer
 from agent.tasks import Task, TaskStatus
+from lib.gitignore import GitIgnore
 
 
 @pytest.fixture
@@ -163,3 +164,39 @@ def test_gather_user_args(context_gatherer):
     assert "You are also provided with these inputs in the user prompt:" in full_text
     assert "- `[TASK_TITLE]`: The title of the task to be performed." in full_text
     assert "- `[UNKNOWN_ARG]`: User input: unknown arg" in full_text
+
+
+def test_get_files_context_with_gitignore(mock_deps):
+    """Test that _get_files_context correctly filters based on a real .gitignore file."""
+    repo_path = mock_deps["repo_path"]
+    # Create a .gitignore file
+    (repo_path / ".gitignore").write_text("*.log\nbuild/\n", encoding="utf-8")
+
+    # Create files and directories to be tested
+    (repo_path / "app.py").write_text("print('hello')", encoding="utf-8")
+    (repo_path / "error.log").write_text("error", encoding="utf-8")
+    build_dir = repo_path / "build"
+    build_dir.mkdir()
+    (build_dir / "output.bin").write_text("binary", encoding="utf-8")
+    (repo_path / ".dotfile").write_text("hidden", encoding="utf-8")
+
+    # Use the real GitIgnore class, not the mock
+    gitignore = GitIgnore(repo_path)
+    gatherer = ContextGatherer(
+        repo_path,
+        mock_deps["project"],
+        mock_deps["policy"],
+        mock_deps["git"],
+        gitignore,
+        mock_deps["progress"],
+    )
+
+    # pylint: disable-next=protected-access
+    files_context = gatherer._get_files_context()
+
+    assert isinstance(files_context, str)
+    assert "app.py" in files_context
+    assert "error.log" not in files_context
+    assert "build/output.bin" not in files_context
+    assert ".gitignore" in files_context  # .gitignore itself is not ignored
+    assert ".dotfile" not in files_context  # Ignored by the `part.startswith(".")` logic
