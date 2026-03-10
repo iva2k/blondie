@@ -150,9 +150,7 @@ class BlondieAgent:
             self.git.checkout_branch(branch_name)
 
             # 2. LLM Implementation Plan
-            session = self.llm.start_chat(
-                "plan_task", self.context_gatherer, task_title=task.title, policy_summary=str(self.policy.model_dump())
-            )
+            session = self.llm.start_chat("plan_task", self.context_gatherer)
             plan_response = await session.send(prompt=session.user_content)
             plan_response = await self.tool_handler.run_loop(
                 session, plan_response, cmd_instruction="Plan task tool calls"
@@ -196,7 +194,6 @@ class BlondieAgent:
                 session = self.llm.start_chat(
                     debug_skill,
                     self.context_gatherer,
-                    task_title=task.title,
                     error_log=error_log,
                 )
                 debug_response = await session.send(prompt=session.user_content)
@@ -375,7 +372,6 @@ class BlondieAgent:
                     session = self.llm.start_chat(
                         "debug_error",
                         self.context_gatherer,
-                        task_title=task.title,
                         error_log=f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}",
                     )
                     debug_response = await session.send(prompt=session.user_content)
@@ -487,9 +483,7 @@ class BlondieAgent:
                 self.journal.print(f"⚠️  File {path_str} not found for edit, treating as create.")
 
             # Provide file list context for imports
-            code_resp = await self.llm.generate_code(
-                self.context_gatherer, task.title, path_str, existing_content, instruction
-            )
+            code_resp = await self.llm.generate_code(self.context_gatherer, path_str, existing_content, instruction)
 
             # Clean up potential markdown fences for code
             code = code_resp.content.strip()

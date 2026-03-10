@@ -96,15 +96,20 @@ def test_gather_all(context_gatherer):
     full_text, parts = context_gatherer.gather(items)
 
     # Check text output
-    assert "### CWD" in full_text
-    assert "### PROJECT" in full_text
-    assert "### GIT" in full_text
-    assert "### FILES" in full_text
-    assert "### TASK" in full_text
-    assert "### COMMAND" in full_text
-    assert "### PROGRESS" in full_text
-    assert "### ENV" in full_text
-    assert "### OS" in full_text
+    assert "## CONTEXT GUIDE\n\n" in full_text
+    assert "## CONTEXT\n\n" in full_text
+    assert "- `[OS]`: The current operating system environment." in full_text
+    assert "- `[ARCH]`: " in full_text
+    assert "- `[SHELL]`: " in full_text
+    assert "### [CWD]" in full_text
+    assert "### [PROJECT]" in full_text
+    assert "### [GIT]" in full_text
+    assert "### [FILES]" in full_text
+    assert "### [TASK]" in full_text
+    assert "### [COMMAND]" in full_text
+    assert "### [PROGRESS]" in full_text
+    assert "### [ENV]" in full_text
+    assert "### [OS]" in full_text
 
     # Check specific content
     assert "file.txt" in parts["files"]
@@ -149,3 +154,12 @@ def test_env_context(context_gatherer, mock_deps):
 
     assert "Rule 1" in parts["env"]
     assert "Rule 2" in parts["env"]
+
+
+def test_gather_user_args(context_gatherer):
+    """Test gathering context with user arguments."""
+    full_text, _ = context_gatherer.gather({}, user_args=["task_title", "unknown_arg"])
+
+    assert "You are also provided with these inputs in the user prompt:" in full_text
+    assert "- `[TASK_TITLE]`: The title of the task to be performed." in full_text
+    assert "- `[UNKNOWN_ARG]`: User input: unknown arg" in full_text

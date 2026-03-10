@@ -14,6 +14,6 @@ environment:
 guidelines:
   - "Use pnpm for dependency management"
   - "Use pnpm test"
-  - "Ensure shell commands are compatible with the current **OS**/**ARCH**/**SHELL**."
+  - "Ensure shell commands are compatible with the current `[OS]`/`[ARCH]`/`[SHELL]` sections."
   - "Ensure all code is compatible with Windows/Linux/MacOS"
 debugging_hints:

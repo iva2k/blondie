@@ -73,7 +73,7 @@ async def test_plan_task(mock_policy, tmp_path: Path):
             {"task_id": "001", "task_title": "Dummy task", "task_priority": "P1"},
         )
         context_gatherer.add_task(None)
-        response = await router.plan_task(context_gatherer, "test task", "")
+        response = await router.plan_task(context_gatherer)
 
         assert isinstance(response, LLMResponse)
         assert "Plan: step 1" in response.content

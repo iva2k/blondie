@@ -55,59 +55,96 @@ class ContextGatherer:
         """Refresh context state (e.g. clear caches)."""
         # Currently no explicit caching is implemented in gather(), but this is the hook for it.
         # Future optimization: clear file tree cache here.
-        pass
 
     def gather(
         self,
         items: dict[str, bool] | None = None,
+        user_args: list[str] | None = None,
     ) -> tuple[str, dict[str, str]]:
         """Gather project context for LLM."""
         items = items or {}
+        user_args = user_args or []
 
         # Define order for the string output
         context_generators = {
-            "cwd": self._get_cwd_context,
-            "project": self._get_project_context,
-            "policy": self._get_policy_context,
-            "git": self._get_git_context,
-            "files": self._get_files_context,
-            "task": self._get_task_context,
             "command": self._get_command_context,
-            "progress": self._get_progress_context,
+            "cwd": self._get_cwd_context,
             "env": self._get_env_context,
+            "files": self._get_files_context,
+            "git": self._get_git_context,
             "os": self._get_os_context,
+            "policy": self._get_policy_context,
+            "progress": self._get_progress_context,
+            "project": self._get_project_context,
+            "task": self._get_task_context,
         }
 
         context_parts: dict[str, str] = {}
         full_context: list[str] = []
+        guide_lines: list[str] = []
+
+        descriptions = {
+            # System prompt args:
+            "arch": "The current hardware environment.",  # from "os" context
+            "command": "The shell command that produced the error.",
+            "cwd": "Current working directory.",
+            "env": "Development environment guidelines.",
+            "files": "The list of existing files in the repository.",
+            "git": "Current git status and branch.",
+            "instruction": "The specific change or implementation detail requested.",
+            "os": "The current operating system environment.",
+            "policy": "The agent's autonomy rules and allowed actions.",
+            "progress": "History of previous attempts and actions on this task with their outcome.",
+            "project": "Project configuration, languages, coding standards, and development guidelines.",
+            "shell": "The current shell environment.",  # from "os" context
+            "stderr": "The standard error captured so far.",
+            "stdout": "The standard output captured so far.",
+            "task": "The current sprint task id, title, priority, and description.",
+            "temp_dir": "Temporary directory.",  # from "cwd" context
+            # "task" fields:
+            "task_id": "The current sprint task id. Use `task_id` for tool calls.",
+            "priority": "The current sprint task priority.",
+            "title": "The current sprint task title.",
+            "full_id": "The current sprint task string. Use full_id for labeling the task in logs and commits.",
+            # User prompt args:
+            "error_log": "The error log or failure message to be analyzed.",
+            "existing_content": "The current content of the file (if it exists).",
+            "filename": "The path of the file to generate or edit.",
+            "task_title": "The title of the task to be performed.",  # Rarely used
+            "user_plan": "The high-level plan generated in the previous step.",
+        }
 
         for key, getter in context_generators.items():
-            if items.get(key, False):
-                result = getter()
-                if result:
-                    if isinstance(result, str):
-                        result = {key: result}
-                    if isinstance(result, dict):
-                        context_parts.update(result)
-                        for k, v in result.items():
-                            header = k.upper().replace("_", " ")
-                            # if "\n" in v:
-                            #     full_context.append(f"{header}:\n{v}")
-                            # else:
-                            #     full_context.append(f"{header}: {v}")
-                            # Use Markdown-style headings:
-                            full_context.append(f"\n### {header}\n\n{v}")
+            result = getter()
+            if result:
+                if isinstance(result, str):
+                    result = {key: result}
+                if isinstance(result, dict):
+                    context_parts.update(result)
+                    for k, v in result.items():
+                        header = k.upper().replace(" ", "_")
+                        full_context.append(f"\n### [{header}]\n\n{v}")
+                        desc = descriptions.get(header.lower(), f"{k.replace('_', ' ')} context.")
+                        guide_lines.append(f"- `[{header}]`: {desc}")
+
+        if user_args:
+            guide_lines.append("\nYou are also provided with these inputs in the user prompt:")
+            for k in user_args:
+                header = k.upper().replace(" ", "_")
+                desc = descriptions.get(header.lower(), f"User input: {k.replace('_', ' ')}")
+                guide_lines.append(f"- `[{header}]`: {desc}")
 
         # Reset context transient data
         self.command = None
         # self.task = None
 
-        return "\n".join(full_context), context_parts
+        guide = "## CONTEXT GUIDE\n\nYou are provided with these context sections:\n\n" + "\n".join(guide_lines) + "\n"
+        return guide + "## CONTEXT\n\n" + "\n".join(full_context), context_parts
 
     def _get_cwd_context(self) -> dict[str, str] | str | None:
         return {
             "cwd": str(self.repo_path.resolve()),
-            "Temp dir": "./_tmp",
+            "temp_dir": "./_tmp",
         }
 
     def _get_project_context(self) -> dict[str, str] | str | None:
@@ -117,13 +154,7 @@ class ContextGatherer:
         return yaml.safe_dump(self.policy.model_dump())
 
     def _get_git_context(self) -> dict[str, str] | str | None:
-        return {
-            "current_branch": self.git.current_branch(),
-            "git_status": self.git.status(),
-        }
-
-    def _get_files_context(self) -> dict[str, str] | str | None:
-        return self._get_file_tree()
+        return {"git": f"Branch: {self.git.current_branch()}\nStatus:\n{self.git.status()}"}
 
     def _get_task_context(self) -> dict[str, str] | str | None:
         # return f"{self.task.id} {self.task.title}" if self.task else None
@@ -134,7 +165,6 @@ class ContextGatherer:
                     "priority": self.task.priority or "",
                     "title": self.task.title,
                     "full_id": self.task.full_id,
-                    "usage_hint": f"Use task_id='{self.task.id}' for tool calls.",
                 }
             )
             if self.task
@@ -193,7 +223,7 @@ class ContextGatherer:
             "shell": str(shell_info),
         }
 
-    def _get_file_tree(self) -> dict[str, str] | str | None:
+    def _get_files_context(self) -> dict[str, str] | str | None:
         """Generate list of repo files (excluding ignored)."""
         files = []
 

@@ -10,7 +10,7 @@ Status: id | priority | title | depends_on
 - [x] 003 | P1 | Git CLI wrapper + branch automation |
 - [x] 004 | P2 | LLM router + basic client |
 - [x] 005 | P2 | Autonomous executor + shell wrapper |
-- [x] 006 | P2 | Git branch based state + task locking | 003
+- [x] 006 | P2 | Git branch based state + task locking |
 - [x] 007 | P2 | Allow debugging the agent locally on dev machine |
 - [x] 008 | P2 | Add repo files hierarchy to the context used in llm.plan_task()  |
 - [x] 009 | P2 | Implement LLM code edits per the plan |
@@ -18,7 +18,7 @@ Status: id | priority | title | depends_on
 - [x] 011 | P3 | After failing test the agent leaves uncommited files and stumbles trying to restart the task |
 - [x] 012 | P3 | Implement agent shell commands (with retry/debug loop). Flatten the errors up (or break outer edit loop) to the outer loop levels, as iterating recursively and editing files in inner loops can create layering problems when higher loop edits cancel lower loop edits. |
 - [x] 020 | P0 | Implement journal - Option to log all chats to a trace dir/files (per task) |
-- [x] 022 | P5 | in loop.py:BlondieAgent._get_file_tree() use current .gitignore instead of hard-coded list |
+- [x] 022 | P5 | in loop.py:BlondieAgent._get_files_context() use current .gitignore instead of hard-coded list |
 - [x] 023 | P5 | in loop.py:BlondieAgent._apply_llm_edits() implement dict for continuous action verbs, i.e. fix "Create-ing" |
 - [x] 024 | P5 | in router.py:LLMRouter._init_clients() raise error for not configured API endpoint |
 - [x] 025 | P3 | Use router.py:LLMRouter.check_daily_limit() |
@@ -49,16 +49,12 @@ Status: id | priority | title | depends_on
 - [x] 053 | P1 | In SKILL plan_task prompt add after "Initialize project" "... and install packages" (so that section is meaningfull for more tasks) |
 - [x] 055 | P1 | Put journal files under `_tmp/log/task-ID/` dir. Make a script (in scripts/) and poe task to move/copy (argument choice) whole `_tmp/` to a dated `_tmp.YYYY-MMDD2-hhmm/` for saving complete trace/snapshot of interesting debug runs |
 
-## Todo
-
-- [ ] 015 | P4 | **DEPLOY!** Start self-editing | 025, 032, 037, 028, 035, 025, 039
-
-### [Current Sprint] Next-Gen Architecture (v2) - Recursive Skill Orchestration
+### [Sprint 2026-0301] Next-Gen Architecture (v2) - Recursive Skill Orchestration
 
 - [x] 058 | P2 | [Phase 1] Update `Skill` class in `src/llm/skill.py` to parse `input_schema` and `output_schema` from frontmatter. |
-- [x] 078 | P2 | [Phase 1] Implement `Skill.to_tool_definition()` in `src/llm/skill.py` to generate OpenAI/Anthropic tool schemas from `input_schema`. | 058
-- [x] 069 | P2 | [Phase 1] Implement `output_schema` logic: Auto-inject "## Output Format" in `Skill.render_system_prompt` and add JSON schema validation to `ChatSession.send`. | 058
-- [x] 070 | P2 | [Phase 1] Create v2 skills (`coding_plan_task`, `coding_debug_error`, `command_runner2`, `coding_get_file_edits`) copying v1. Remove redundant output instructions in favor of `output_schema`. | 069
+- [x] 078 | P2 | [Phase 1] Implement `Skill.to_tool_definition()` in `src/llm/skill.py` to generate OpenAI/Anthropic tool schemas from `input_schema`. |
+- [x] 069 | P2 | [Phase 1] Implement `output_schema` logic: Auto-inject "## Output Format" in `Skill.render_system_prompt` and add JSON schema validation to `ChatSession.send`. |
+- [x] 070 | P2 | [Phase 1] Create v2 skills (`coding_plan_task`, `coding_debug_error`, `command_runner2`, `coding_get_file_edits`) copying v1. Remove redundant output instructions in favor of `output_schema`. |
 - [x] 059 | P2 | [Phase 1] Update `ToolHandler` in `src/agent/tooled.py` to allow registering dynamic tools (callables) alongside hardcoded definitions. |
 - [x] 073 | P2 | [Phase 1] Implement `write_file` primitive tool in `tooled.py` to allow Skills to perform side effects directly. |
 - [x] 071 | P2 | [Quality] Update existing unit tests affected by Skill/Tool changes (e.g. `test_llm.py`, `test_tooled.py`). |
@@ -67,18 +63,27 @@ Status: id | priority | title | depends_on
 - [x] 062 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Git Operations (`git_checkout`, `git_commit`, `git_push`, `git_merge`). |
 - [x] 063 | P2 | [Phase 2] Implement System Tools in `tooled.py`: Execution & State (`run_tests`, `check_daily_limit`). |
 - [x] 064 | P2 | [Phase 2] Create `skills/orchestrator.skill.md` defining the root agent persona and available tools (`plan_task2`, etc). |
-- [x] 074 | P2 | [Phase 2] Create `coding_generate_code` skill to use `write_file` tool and return summary instead of content (Side-Effect Pattern). | 073
+- [x] 074 | P2 | [Phase 2] Create `coding_generate_code` skill to use `write_file` tool and return summary instead of content (Side-Effect Pattern). |
 - [x] 065 | P2 | [Phase 2] Enhance `LLMRouter` in `src/agent/router.py` to handle recursive tool execution (Skill-as-Tool) and automatic Context Injection for sub-agents. |
 - [x] 072 | P2 | [Quality] Add unit tests for new modules (`loop2.py`, recursive `router.py` logic). |
-- [x] 067 | P2 | [Phase 3] Implement `summarize_and_restart` logic for long-running sub-agents (replaces 054, 057). | 065
+- [x] 067 | P2 | [Phase 3] Implement `summarize_and_restart` logic for long-running sub-agents (replaces 054, 057). |
 - [x] 075 | P2 | [Phase 3] Implement Context Refresh: `ContextGatherer` needs a refresh method; Router calls it after tool execution to sync file lists. |
 - [x] 076 | P2 | [Observability] Implement hierarchical logging in `Journal` (spans/indentation) to visualize recursive tool calls. |
-- [x] 077 | P2 | [Observability] Update `LLMRouter` and `ToolHandler` to track execution depth and pass it to `Journal` methods for indentation. | 076
+- [x] 077 | P2 | [Observability] Update `LLMRouter` and `ToolHandler` to track execution depth and pass it to `Journal` methods for indentation. |
 - [x] 068 | P2 | [Integration] Add CLI switch to run v2 loop (`loop2.py`). |
-- [x] 079 | P2 | [Integration] Create a simple "Hello World" task in `TASKS.md` and verify v2 loop completes it (E2E test). | 068
+- [x] 079 | P2 | [Integration] Create a simple "Hello World" task in `TASKS.md` and verify v2 loop completes it (E2E test). |
+
+## Todo
+
+- [ ] 082 | P1 | Implement debugging_hints in context.py:_get_env_context() |
+- [ ] 015 | P4 | **DEPLOY!** Start self-editing | 082
 
 ### Future
 
+- [ ] 080 | P5 | skill.md format is quite elaborate. Implement skill.md checker script and poe task. Ensure {context} is present in system prompt if context frontmatter is listed, but "## CONTEXT" header is not present, as it is inserted programmatically. Ensure context items are listed if there are references, e.g. `[PROGRESS]`, in the system prompt. Ensure `user-content` has fields mentioned by reference. |
+- [ ] 081 | P5 | [FEATURE] Skill convention: In loop2.py and `coding_orchestartor.skill.md` implement looping and exit decision logic based on LLM output (the idea was to have a tool call for summarize and restart - extent it for "loop" call). |
+- [ ] 083 | P5 | [FEATURE] Generalize loop2.py - allow any skill orchestrator to be selected by argument, remove any hard-coded flow specific to `coding_orchestartor.skill.md`. Needed for Different agent personalities from same codebase. | 081
+- [ ] 083 | P5 | [FEATURE] pull git main branch before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
 - [ ] 013 | P5 | [FEATURE] Vercel/Netlify CLI wrappers |
 - [ ] 014 | P5 | [FEATURE] Docker build + e2e tests |
 - [ ] 016 | P5 | [FEATURE] Multi-repo scanner + project.yaml | 038
@@ -88,3 +93,5 @@ Status: id | priority | title | depends_on
 - [ ] 019 | P5 | [FEATURE] Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
 - [ ] 021 | P5 | [FEATURE] Add "details" field to TASKS.md, so title could be short, similar to most bug trackers. Prompts bigger rethink - how TASKS.md is best structured? BugTrackers usually have discussions pre- and post- implementation.  |
 - [ ] 041 | P5 | [FEATURE] Agent should communicate with external world: email, slack, twitter. Events: task queue stuck (all tasks blocked, can't finish blockers), Deploy triggered. Carefull as swarm will flood the channels. |
+- [ ] 082 | P5 | [CLEANUP] Remove loop.py and it's hard-coded skills: [plan_task, get_file_edits, generate_code, debug_error], wrappers for these skills in router.py, related unit tests. |
+- [ ] 083 | P5 | [CLEANUP] When loop.py is removed, cleanup command_runner vs command_runner2 skills. | 082

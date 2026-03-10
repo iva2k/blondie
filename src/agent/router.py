@@ -5,6 +5,7 @@
 import asyncio
 import datetime
 import json
+import string
 from collections import defaultdict
 from collections.abc import Callable
 from pathlib import Path
@@ -275,7 +276,11 @@ class ChatSession:
             return
 
         self.context_gatherer.refresh()
-        context_str, context_parts = self.context_gatherer.gather(self.skill.context)
+
+        user_args = []
+        if self.skill.user_content:
+            user_args = [fname for _, fname, _, _ in string.Formatter().parse(self.skill.user_content) if fname]
+        context_str, context_parts = self.context_gatherer.gather(self.skill.context, user_args=user_args)
 
         self.render_kwargs["context"] = context_str
         self.render_kwargs.update(context_parts)
@@ -486,7 +491,10 @@ class LLMRouter:
         output_schema = kwargs.pop("output_schema", None) or skill.output_schema
         kwargs = kwargs or {}
         if context_gatherer:
-            context_str, context_parts = context_gatherer.gather(skill.context)
+            user_args = []
+            if skill.user_content:
+                user_args = [fname for _, fname, _, _ in string.Formatter().parse(skill.user_content) if fname]
+            context_str, context_parts = context_gatherer.gather(skill.context, user_args=user_args)
             kwargs["context"] = context_str
             kwargs.update(context_parts)
         system_prompt = skill.render_system_prompt(**kwargs)
@@ -510,15 +518,11 @@ class LLMRouter:
 
         return response
 
-    async def plan_task(
-        self, context_gatherer: ContextGatherer, task_title: str, policy_summary: str, **kwargs: Any
-    ) -> LLMResponse:
+    async def plan_task(self, context_gatherer: ContextGatherer, **kwargs: Any) -> LLMResponse:
         """Generate detailed implementation plan."""
         return await self._execute_llm_skill(
             "plan_task",
             context_gatherer,
-            task_title=task_title,
-            policy_summary=policy_summary,
             **kwargs,
         )
 
@@ -551,7 +555,6 @@ class LLMRouter:
     async def generate_code(
         self,
         context_gatherer: ContextGatherer,
-        task_title: str,
         filename: str,
         existing_content: str,
         instruction: str,
@@ -561,21 +564,17 @@ class LLMRouter:
         return await self._execute_llm_skill(
             "generate_code",
             context_gatherer,
-            task_title=task_title,
             filename=filename,
             existing_content=existing_content,
             instruction=instruction,
             **kwargs,
         )
 
-    async def debug_error(
-        self, context_gatherer: ContextGatherer, task_title: str, error_log: str, **kwargs: Any
-    ) -> LLMResponse:
+    async def debug_error(self, context_gatherer: ContextGatherer, error_log: str, **kwargs: Any) -> LLMResponse:
         """Suggest fix for test failures."""
         return await self._execute_llm_skill(
             "debug_error",
             context_gatherer,
-            task_title=task_title,
             error_log=error_log,
             **kwargs,
         )
@@ -639,7 +638,10 @@ class LLMRouter:
 
         render_kwargs = kwargs.copy()
         if context_gatherer:
-            context_str, context_parts = context_gatherer.gather(skill.context)
+            user_args = []
+            if skill.user_content:
+                user_args = [fname for _, fname, _, _ in string.Formatter().parse(skill.user_content) if fname]
+            context_str, context_parts = context_gatherer.gather(skill.context, user_args=user_args)
             render_kwargs["context"] = context_str
             render_kwargs.update(context_parts)
 

@@ -2,9 +2,9 @@
 
 This file contains topics to be pondered on and should produce entries in TASKS.md.
 
-- [ ] param "exit when no tasks left", and main branch pull before looking for next task.
+- [ ] config param "exit when no tasks left".
 
-- [ ] plan_task.skill.md has "## TASK" section twice - once in system prompt context, another in user prompt
+- [ ] skill.md files: "The top of skill.md file (the --- section) is parsed by the system before Agent even reads the full instructions. The description field should be injected into Agent's context window to help it decide if it should activate the skill." - meaning use description from the skill frontmatter for tools object. Also need `docs/SKILLS.md` documentation - frontmatter fields, special logic in Blondie, context generator.
 
 - [ ] Installation issue: SSL_CERT_FILE env var is not defined. It should be taken from certifi python package.
 

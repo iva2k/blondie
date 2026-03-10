@@ -196,6 +196,7 @@ def test_chat_session_refresh_context():
     skill = MagicMock()
     skill.context = {"files": True}
     skill.render_system_prompt.return_value = "New System Prompt"
+    skill.user_content = "User Prompt"
 
     context_gatherer = MagicMock()
     context_gatherer.gather.return_value = ("New Context", {})
@@ -220,7 +221,7 @@ def test_chat_session_refresh_context():
     session.refresh_context()
 
     context_gatherer.refresh.assert_called()
-    context_gatherer.gather.assert_called_with({"files": True})
+    context_gatherer.gather.assert_called_with({"files": True}, user_args=[])
     skill.render_system_prompt.assert_called()
     assert session.system_prompt == "New System Prompt"
     assert session.messages[0]["content"] == "New System Prompt"
