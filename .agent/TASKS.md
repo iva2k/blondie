@@ -96,6 +96,7 @@ Status: id | priority | title | depends_on
 ### Future
 
 - [ ] 096 | P5 | [FEATURE] Use and keep updating SPEC.md |
+- [ ] 097 | P5 | [FEATURE] Use secrets file from `~/.blondie/secrets.env.yaml` if `.agent/secrets.env.yaml` does not exist. |
 - [ ] 018 | P3 | [FEATURE] Tasks.py should pick blocking task first. Priority of blocking task should elevate to blocked task priority when considering what to pick.  |
 - [ ] 080 | P3 | skill.md format is quite elaborate. Implement skill.md checker script and poe task. Ensure {context} is present in system prompt if context frontmatter is listed, but "## CONTEXT" header is not present, as it is inserted programmatically. Ensure context items are listed if there are references, e.g. `[PROGRESS]`, in the system prompt. Ensure `user-content` has fields mentioned by reference. |
 - [ ] 092 | P5 | [FEATURE] Use tool `summarize_and_restart` in coding_orchestrator - when struggling on a single task for multiple sessions. |

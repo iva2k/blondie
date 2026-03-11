@@ -235,28 +235,16 @@ sudo systemctl start blondie
 | Netlify  | netlify deploy --prod --dir=dist              |
 | Git      | git checkout -b task-ID                       |
 
-## v1 Scope
+## v1 Agent Scope
 
 Complete: Policy parser, TASKS.md parser, loop bootstrap, tests 100%  
 Next: Git wrapper (BLONDIE-003), LLM router, SQLite state, Docker  
 Out: Multi-lang (v1.1), GUI dashboard  
 
-## Achieved Summary
+## v2 Agent Scope
 
-✅ BLONDIE BOOTSTRAP 60% COMPLETE
+Skills as tools, orchestrator architecture.
 
-- Code: 400+ lines production Python  
-  ✅ src/agent/policy.py     (POLICY.yaml parser)  
-  ✅ src/agent/tasks.py      (TASKS.md parser)  
-  ✅ src/agent/loop.py       (Bootstrap runner)  
-- Linting: Zero errors (Ruff, Pylint, mypy)
-- Types: Full type stubs + modern dict/list types
-- Templates: POLICY.yaml.template ready
-- Self-coding: Structure validates (reads own TASKS.md/POLICY.yaml)
+## v3 Deployment Scope
 
-🔧 BLOCKED (Poetry/pytest path issues):
-
-❌ poetry install           (Missing editable install)  
-❌ poetry run pytest -v     (ModuleNotFoundError: No module named 'src')  
-
-Status: BLONDIE-001 ✓ BLONDIE-002 ✓ BLOCKED on BLONDIE-003 (Git wrapper)
+See [Deployment Guide](docs/DEPLOY.md)

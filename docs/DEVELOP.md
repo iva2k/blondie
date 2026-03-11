@@ -38,8 +38,16 @@ poe setup-dev
 
 The `_tmp/repo` will contain:
 
-- `.agent/`: Configuration files copied from `templates/project-calculator/.agent`.
+- `.agent/`: Configuration files copied from `templates/project-calculator/.agent` and `secrets.env.yaml` copied from the project workspace `.agent/` folder if file exists.
 - `README.md`, `.gitignore`, etc.
+
+If your project workspace `.agent/secrets.env.yaml` does not include API keys, you must provide secrets for the agent to use:
+
+```bash
+cp .agent/secrets.env.EXAMPLE.yaml _tmp/repo/.agent/secrets.env.yaml
+nano _tmp/repo/.agent/secrets.env.yaml
+# Add your LLM API keys
+```
 
 ### B. Run the Agent
 

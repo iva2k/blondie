@@ -110,16 +110,21 @@ cd blondie
 # 2. Build Docker Image
 docker build -f docker/Dockerfile -t blondie:latest .
 
-# 3. Copy template
-cp .agent/secrets.env.EXAMPLE.yaml .agent/secrets.env.yaml
+# 3. Run Setup Wizard
+#    Mounts ~/.blondie for secrets and $(pwd) for the repo
+#    - Sets up API Keys
+#    - Initializes .agent/ config (Templates or Auto-detect)
+#    - Configures Deployment (Vercel/Netlify/Docker)
+mkdir -p ~/.blondie
+docker run --rm -it \
+  -v ~/.blondie:/root/.blondie \
+  -v $(pwd):/workspace \
+  blondie:latest init
 
-# 4. Fill required values (minimum for bootstrap):
-#    - llm.openai.api_key OR llm.anthropic.api_key OR llm.custom.*
-#    - cloud.vercel.token OR cloud.netlify.token (repo-specific)
-
-# 5. Run (Mounting your target repo and secrets)
-docker run -v /path/to/target/repo:/workspace \
-           -v /path/to/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \
+# 4. Run Agent
+docker run -d --restart always \
+           -v $(pwd):/workspace \
+           -v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \
            blondie:latest
 ```
 
@@ -133,5 +138,4 @@ deploy: vercel --token {{secret:cloud.vercel.token}} --prod
 
 # Renders as:
 deploy: vercel --token V3rC3l_t0k3n_ABC123... --prod
-
-``
+```

@@ -1,6 +1,8 @@
 # Issues
 
-This file contains topics to be pondered on and should produce entries in TASKS.md.
+This file contains known issues and topics to be pondered on.
+
+Items here should produce entries in [TASKS.md](TASKS.md).
 
 - [ ] Installation issue: SSL_CERT_FILE env var is not defined. It should be taken from certifi python package.
 
@@ -8,7 +10,7 @@ This file contains topics to be pondered on and should produce entries in TASKS.
 
 - [x] LLM misses that dev.yaml file exists in get_file_edits. It is NOT given in files list, but PROJECT section mentions it in protected files. To close, verify protected files are listed in context.
 
-- [ ] Debugging agent operation is quite tedious - copious logs, a lot of noise. A log browser app would be very handy.
+- [ ] Debugging agent operation is quite tedious - copious logs, a lot of noise. A log browser app would be very handy. Features - open repo and log folders, show tree of logs, including progrss.txt file. Parse logs into collapsible hiearachical sections, and collapsible blobs e.g. from LLM conversations. Search function. Perfect dogfooding item to use the agent on.
 
 - [ ] Once there is access to shell, agent could escape. E.g. debug_error skill produced:  Executing run_shell: {'command': 'echo \'\nname = "Calculator"\nversion = "0.1.0"\ndescription = ""\nauthors = ["Ilya <iva2k@yahoo.com>"]\nreadme = "README.md"\n\n\npython = "^3.11"\npytest = "^7.0"\nruff = "^0.0"\nmypy = "^0.0"\n\n\ninclude = [{ include = "src", from = "src"
-}]\n\n\nrequires = ["poetry-core"]\nbuild-backend = "poetry.core.masonry.api"\' > pyproject.toml'}
+}]\n\n\nrequires = ["poetry-core"]\nbuild-backend = "poetry.core.masonry.api"\' > pyproject.toml'}. Agent misbehaviors is always a concern.
