@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -169,6 +170,20 @@ TOOL_DEFINITIONS = {
             "required": ["summary"],
         },
     },
+    "agent_sleep": {
+        "name": "agent_sleep",
+        "description": "Pause execution for a specified duration. Use when waiting for tasks or rate limits.",
+        "parameters": {
+            "type": "object",
+            "properties": {"seconds": {"type": "integer", "description": "Seconds to sleep."}},
+            "required": ["seconds"],
+        },
+    },
+    "agent_exit": {
+        "name": "agent_exit",
+        "description": "Terminate the agent process.",
+        "parameters": {"type": "object", "properties": {"rc": {"type": "integer", "description": "Return code."}}},
+    },
 }
 
 
@@ -203,15 +218,17 @@ class ToolHandler:
             "write_file": self._write_file,
             "find_package": self._find_package,
             "pick_task": self._pick_task,
+            "finalize_task": self._finalize_task,
             "complete_task": self._complete_task,
             "git_checkout": self._git_checkout,
             "git_commit": self._git_commit,
             "git_push": self._git_push,
             "git_merge": self._git_merge,
-            "finalize_task": self._finalize_task,
             "run_tests": self._run_tests,
             "check_daily_limit": self._check_daily_limit,
             "summarize_and_restart": self._summarize_and_restart,
+            "agent_sleep": self._agent_sleep,
+            "agent_exit": self._agent_exit,
         }
 
     def register(self, name: str, definition: dict, implementation: Callable):
@@ -539,6 +556,17 @@ class ToolHandler:
         """Summarize and restart session."""
         # This raises an exception to be caught by run_loop
         raise RestartSession(summary)
+
+    async def _agent_sleep(self, seconds: int, **_kwargs) -> str:
+        """Sleep for N seconds."""
+        self.journal.print(f"💤 Sleeping for {seconds}s as requested by tool...")
+        await asyncio.sleep(seconds)
+        return f"Slept for {seconds} seconds."
+
+    async def _agent_exit(self, rc: int = 0, **_kwargs) -> str:
+        """Exit the agent process."""
+        self.journal.print("🛑 Agent requested exit via tool.")
+        sys.exit(rc)
 
     async def run_loop(self, session: ChatSession, initial_response: LLMResponse, cmd_instruction: str) -> LLMResponse:
         """Handle interactive tool execution loop."""

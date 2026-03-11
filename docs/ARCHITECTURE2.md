@@ -43,18 +43,25 @@ To solve "Context Rot" and "Nested Loop" issues:
 - **Isolation**: The Orchestrator does not see the intermediate steps (tool calls) of the Sub-Agent. It only sees the input (Task) and the output (Result).
 - **Benefit**: If the `debug_error` skill takes 50 turns to find a missing semicolon, the Orchestrator's context only grows by 1 turn (The call and the fix).
 
-### 2.3. Summarized Restart
+### 2.3. Looping and Exiting
+
+LLM is not very reliable for looping. For providing continuous operation for fully autonomous deployments, `loop2.py` has looping / exit logic, using project parameters and checking tasks queue.
+
+For additional control, these tools are available:
+
+- `agent_sleep`
+- `agent_exit`
+
+### 2.4. Summarized Restart
 
 If a Sub-Agent skill hits a token limit or gets stuck, it can use the `summarize_and_restart` tool.
 
 1. The skill decides to call `summarize_and_restart` tool.
 2. Skill condenses the current session history into a "Knowledge Summary".
 3. It calls a `summarize_and_restart` tool.
-4. The `ChatSession` is wiped, and a new user message containing the summary is added after the system prompt.
-   - [ ] TODO: (now) for [task-081] determine how user-content is replaced with "Knowledge summary" - perhaps Knowledge summary should be appendewd to the user prompt. 
-   - Another proposal is: The original `user-content` of the skill is not used on restart. (wiping out user-content will break referenced values in the system prompt)
+4. The `ChatSession` is wiped. A new user message is created containing the original `user-content` (to preserve prompt structure/variables) followed by the "Knowledge Summary".
 
-### 2.4. Data Flow & Side Effects (Optimization)
+### 2.5. Data Flow & Side Effects (Optimization)
 
 To prevent context bloat in the Orchestrator, we adopt an **"Action over Data Transfer"** principle.
 
@@ -77,7 +84,7 @@ To prevent context bloat in the Orchestrator, we adopt an **"Action over Data Tr
 
 Skills use extended Frontmatter to define their tool interface. The `Skill` class parses these new fields.
 
-To distinguish from older procedural skills, v2 skills for coding agent use a `coding_` prefix (e.g., `coding_plan_task.skill.md`) as a convention.
+To distinguish from older procedural skills, v2 skills for coding use a `coding_` prefix (e.g., `coding_plan_task.skill.md`) as a convention.
 
 `Skill.to_tool_definition()` dynamically generates the tool JSON schema (name, description, parameters) required by the LLM provider from the `input_schema`.
 

@@ -259,7 +259,7 @@ class ChatSession:
             }
         )
 
-    def restart_with_summary(self, summary: str) -> None:
+    def restart_with_summary(self, summary: str, drop_user_content: bool = False) -> None:
         """Restart session with a summary of previous context."""
         # Keep system prompt (first message)
         system_msg = self.messages[0] if self.messages and self.messages[0]["role"] == "system" else None
@@ -268,7 +268,13 @@ class ChatSession:
         if system_msg:
             self.messages.append(system_msg)
 
-        self.messages.append({"role": "user", "content": f"Context summary of previous actions:\n{summary}\n"})
+        # Restore user content and append summary
+        content = ""
+        if self.user_content and not drop_user_content:
+            content += f"{self.user_content}\n\n"
+        content += f"Context summary of previous actions:\n{summary}\n"
+
+        self.messages.append({"role": "user", "content": content})
 
     def refresh_context(self) -> None:
         """Refresh system prompt with latest context."""
