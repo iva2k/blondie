@@ -202,6 +202,7 @@ class TasksManager:
 
         self.tasks_path.write_text("".join(content), encoding="utf-8")
 
+    # TODO: (now) Use in logging
     def print_summary(self) -> None:
         """Rich table summary."""
         table = Table(title="Blondie Task Status")

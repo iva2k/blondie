@@ -75,8 +75,6 @@ Status: id | priority | title | depends_on
 - [x] 068 | P2 | [Integration] Add CLI switch to run v2 loop (`loop2.py`). |
 - [x] 079 | P2 | [Integration] Create a simple "Hello World" task in `TASKS.md` and verify v2 loop completes it (E2E test). |
 
-## Todo
-
 ### [Sprint3 2026-0310]
 
 - [x] 088 | P1 | config params in project.yaml: exit_on_no_tasks "exit when no tasks left", exit_on_exception "exit in case of unhandled exception", otherwise agent should keep running forever. |
@@ -87,8 +85,9 @@ Status: id | priority | title | depends_on
 - [x] 082 | P1 | Revisit context.py:_get_env_context(). Left for later. |
 - [x] 086 | P2 | [DEV] consolidate scripts for `poe snapshot-dev` & `poe setup-dev` so _tmp/logs/ is handled in both snapshot and clear. Move `_tmp/logs/` to `_tmp/repo/_logs`, add .gitignore to project template |
 - [x] 084 | P2 | [FEATURE] pull git main branch in pick_task tool before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
+- [x] 091 | P3 | [Quality] After-sprint: Implement unit tests for low coverage modules used under loop2.py, increase modules low coverage to 80%. | 088, 092, 081, 089, 090, 082, 086, 084
 
-- [ ] 091 | P3 | [Quality] After-sprint: Implement unit tests for low coverage modules used under loop2.py, increase modules low coverage to 80%. | 088, 092, 081, 089, 090, 082, 086, 084
+## Todo
 
 ### [GOAL]
 
@@ -96,6 +95,7 @@ Status: id | priority | title | depends_on
 
 ### Future
 
+- [ ] 096 | P5 | [FEATURE] Use and keep updating SPEC.md |
 - [ ] 018 | P3 | [FEATURE] Tasks.py should pick blocking task first. Priority of blocking task should elevate to blocked task priority when considering what to pick.  |
 - [ ] 080 | P3 | skill.md format is quite elaborate. Implement skill.md checker script and poe task. Ensure {context} is present in system prompt if context frontmatter is listed, but "## CONTEXT" header is not present, as it is inserted programmatically. Ensure context items are listed if there are references, e.g. `[PROGRESS]`, in the system prompt. Ensure `user-content` has fields mentioned by reference. |
 - [ ] 092 | P5 | [FEATURE] Use tool `summarize_and_restart` in coding_orchestrator - when struggling on a single task for multiple sessions. |

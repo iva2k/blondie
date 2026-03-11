@@ -213,6 +213,50 @@ def test_select_model_complex_fallback(complex_router):
 
 
 @pytest.mark.asyncio
+async def test_connect_error_wait_and_retry(router_with_fallback):
+    """Test that the router waits and retries on httpx.ConnectError."""
+    # Configure only one provider
+    router_with_fallback.config.operations["testing"] = [OperationSelection(provider="openai", model="gpt-4")]
+    router_with_fallback.project = MagicMock()
+    router_with_fallback.project.sleep_no_connection = 30
+
+    # Mock the client
+    _openai_client = router_with_fallback.clients["openai"]
+
+    # First call fails with ConnectError, second succeeds
+    success_response = MagicMock()
+    success_response.content = "OpenAI response"
+    success_response.tool_calls = None
+    success_response.cost_usd = 0.002
+
+    with patch(
+        "llm.client.OpenAIClient.chat",
+        side_effect=[
+            httpx.ConnectError("Connection refused"),
+            success_response,
+        ],
+    ) as mock_chat:
+        with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            # pylint: disable-next=protected-access
+            response = await router_with_fallback._execute_llm_task(
+                operation="testing",
+                system_prompt="System",
+                user_prompt="User",
+                temperature=0.1,
+                max_tokens=100,
+                log_action="test",
+                log_title="test",
+            )
+
+            assert response.content == "OpenAI response"
+            assert mock_chat.call_count == 2
+            mock_sleep.assert_called_once_with(30)
+
+            router_with_fallback.journal.print.assert_any_call("⚠️ Connection error: Connection refused")
+            router_with_fallback.journal.print.assert_any_call("⏳ Waiting 30s for connection...")
+
+
+@pytest.mark.asyncio
 async def test_rate_limit_fallback_same_provider(router_with_fallback):
     """Test fallback to another model within the same provider."""
     # Configure operations: openai (gpt-4) -> openai (gpt-3.5)

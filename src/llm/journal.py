@@ -134,7 +134,8 @@ class Journal:
                 json_str = "\n".join(indent_str + line for line in json_str.splitlines())
             self.write_raw(json_str)
             self.write_raw(f"\n{indent_str}==============================\n")
-        self.print(f"📋 [{provider.upper()}] {operation}: {response.tokens_used}t")
+        tokens_used = getattr(response, "tokens_used", 0)
+        self.print(f"📋 [{provider.upper()}] {operation}: {tokens_used}t")
 
     def log_shell(
         self,

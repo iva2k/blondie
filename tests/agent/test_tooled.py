@@ -469,6 +469,33 @@ async def test_pick_task_dirty_repo_on_feature_branch(tool_handler):
 
 
 @pytest.mark.asyncio
+async def test_pick_task_sync_error(tool_handler):
+    """Test error handling when syncing main branch fails."""
+    tool_handler.tasks_manager.recover_active_task.return_value = None
+    tool_handler.executor.run = AsyncMock(return_value=MagicMock(returncode=0, stdout=""))
+
+    # Mock git pull to fail
+    tool_handler.git.pull.side_effect = Exception("Git pull failed")
+
+    result = await tool_handler._pick_task()
+
+    assert "Error syncing with main branch" in result
+    assert "Git pull failed" in result
+
+
+@pytest.mark.asyncio
+async def test_save_wip_error(tool_handler):
+    """Test error handling in _save_wip."""
+    tool_handler.git.current_branch.return_value = "branch"
+    tool_handler.git.add_all.side_effect = Exception("Git add failed")
+
+    # We need to capture the journal output or ensure no crash
+    await tool_handler._save_wip("branch", "msg")
+
+    tool_handler.journal.print.assert_any_call("⚠️ Failed to save WIP: Git add failed")
+
+
+@pytest.mark.asyncio
 async def test_complete_task(tool_handler):
     """Test complete_task tool."""
     tool_handler.tasks_manager.complete_task.return_value = (True, "Task 001 marked as Done.")

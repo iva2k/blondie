@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agent.tasks import TasksManager, TaskStatus
+from agent.tasks import Task, TasksManager, TaskStatus
 
 
 @pytest.fixture
@@ -150,3 +150,37 @@ def test_parse_various_formats(
     assert task.priority == expected_priority
     assert task.title == expected_title
     assert task.depends_on == expected_deps
+
+
+def test_print_summary(tasks_file):
+    """Test summary printing."""
+    manager = TasksManager(tasks_file)
+    manager.journal = MagicMock()
+
+    manager.print_summary()
+
+    manager.journal.print.assert_called()
+    # Check that table was printed
+    args = manager.journal.print.call_args[0]
+    assert "Blondie Task Status" in args[0].title
+
+
+def test_save_tasks(tmp_path):
+    """Test saving tasks back to file."""
+    f = tmp_path / "TASKS.md"
+    f.write_text("# H\n## Todo\n- [ ] 001 | P1 | T1", encoding="utf-8")
+    manager = TasksManager(f)
+
+    # Add a new task programmatically to check if it's saved
+    new_task = Task(
+        id="002", title="T2", status=TaskStatus.TODO, priority="P2", depends_on=[], raw_line="", project_id="B"
+    )
+    manager.tasks.append(new_task)
+
+    # pylint: disable-next=protected-access
+    manager._save()
+
+    content = f.read_text("utf-8")
+    assert "001" in content
+    assert "002" in content
+    assert "T2" in content
