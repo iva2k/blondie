@@ -51,7 +51,7 @@ Status: id | priority | title | depends_on
 - [x] 053 | P1 | In SKILL plan_task prompt add after "Initialize project" "... and install packages" (so that section is meaningfull for more tasks) |
 - [x] 055 | P1 | Put journal files under `_tmp/log/task-ID/` dir. Make a script (in scripts/) and poe task to move/copy (argument choice) whole `_tmp/` to a dated `_tmp.YYYY-MMDD2-hhmm/` for saving complete trace/snapshot of interesting debug runs |
 
-### [Sprint2 2026-0301] Next-Gen Architecture (v2) - Recursive Skill Orchestration
+### [Sprint2 2026-0304] Next-Gen Architecture (v2) - Recursive Skill Orchestration
 
 - [x] 058 | P2 | [Phase 1] Update `Skill` class in `src/llm/skill.py` to parse `input_schema` and `output_schema` from frontmatter. |
 - [x] 078 | P2 | [Phase 1] Implement `Skill.to_tool_definition()` in `src/llm/skill.py` to generate OpenAI/Anthropic tool schemas from `input_schema`. |
@@ -82,16 +82,13 @@ Status: id | priority | title | depends_on
 - [x] 088 | P1 | config params in project.yaml: exit_on_no_tasks "exit when no tasks left", exit_on_exception "exit in case of unhandled exception", otherwise agent should keep running forever. |
 - [x] 092 | P1 | Create `docs/SKILLS.md` documentation - frontmatter fields, special logic in Blondie, explain context generator. |
 - [x] 081 | P2 | [FEATURE] Skill convention: In loop2.py and `coding_orchestartor.skill.md` implement looping and exit decision logic based on LLM output (the idea was to have a tool call for summarize and restart - extent it for "loop" call). |
-
 - [x] 089 | P1 | Ensure skill.md description frontmatter is used in tools context. Background: original skill.md files: "The top of skill.md file (the --- section) is parsed by the system before Agent even reads the full instructions. The description field should be injected into Agent's context window to help it decide if it should activate the skill." - meaning use description from the skill frontmatter for tools object. |
 - [x] 090 | P1 | [FEATURE] In addition to daily cost limit, add max_total_cost_usd policy parameter and modify code to idle (or exit) instead of running. Perhaps rename `*check_daily_limit*` into `*check_run_limit*` so it can consolidate daily/total cost and token limits. |
-
 - [x] 082 | P1 | Revisit context.py:_get_env_context(). Left for later. |
 - [x] 086 | P2 | [DEV] consolidate scripts for `poe snapshot-dev` & `poe setup-dev` so _tmp/logs/ is handled in both snapshot and clear. Move `_tmp/logs/` to `_tmp/repo/_logs`, add .gitignore to project template |
+- [x] 084 | P2 | [FEATURE] pull git main branch in pick_task tool before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
 
-- [ ] 084 | P2 | [FEATURE] pull git main branch in pick_task tool before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
-
-- [ ] 091 | P3 | [Quality] After-sprint: Implement unit tests for low coverage modules used under loop2.py, increase module coverage to 80%. |
+- [ ] 091 | P3 | [Quality] After-sprint: Implement unit tests for low coverage modules used under loop2.py, increase modules low coverage to 80%. | 088, 092, 081, 089, 090, 082, 086, 084
 
 ### [GOAL]
 

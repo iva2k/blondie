@@ -403,6 +403,36 @@ async def test_pick_task(tool_handler):
     assert "Title: Test Task" in result
     tool_handler.tasks_manager.claim_task.assert_called_with("001", tool_handler.git)
 
+    # Verify sync with main branch occurred (since recover_active_task returned None)
+    tool_handler.git.checkout.assert_called_with("main")
+    tool_handler.git.pull.assert_called_with("main")
+    tool_handler.tasks_manager.reload.assert_called()
+
+
+@pytest.mark.asyncio
+async def test_pick_task_recovery(tool_handler):
+    """Test pick_task tool when recovering an active task (skips sync)."""
+    mock_task = MagicMock()
+    mock_task.id = "001"
+    mock_task.title = "Recovered Task"
+    mock_task.priority = "P0"
+    tool_handler.tasks_manager.recover_active_task.return_value = mock_task
+    tool_handler.tasks_manager.claim_task.return_value = (True, "Recovered")
+
+    # Mock executor.run for git status check
+    mock_status = MagicMock()
+    mock_status.returncode = 0
+    mock_status.stdout = ""
+    tool_handler.executor.run = AsyncMock(return_value=mock_status)
+
+    result = await tool_handler._pick_task()
+    assert "SUCCESS: RECOVERED task 001" in result
+    tool_handler.tasks_manager.claim_task.assert_called_with("001", tool_handler.git)
+
+    # Verify sync with main branch did NOT occur
+    tool_handler.git.pull.assert_not_called()
+    tool_handler.tasks_manager.reload.assert_not_called()
+
 
 @pytest.mark.asyncio
 async def test_pick_task_dirty_repo_on_main(tool_handler):

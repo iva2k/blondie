@@ -52,9 +52,9 @@ class TasksManager:
         self.project_id = project_id
         self.journal = journal or Journal()
         self.tasks: list[Task] = []
-        self._parse()
+        self.reload()
 
-    def _parse(self) -> None:
+    def reload(self) -> None:
         """Parse TASKS.md markdown checklists."""
         if not self.tasks_path.exists():
             self.journal.print(f"⚠️  [yellow]{self.tasks_path}[/yellow] not found")

@@ -369,22 +369,27 @@ class ToolHandler:
             else:
                 await self._save_wip(current_branch, "WIP: Crash recovery")
 
-        # 2. Sync with main branch
-        try:
-            await asyncio.to_thread(self.git.checkout, main_branch)
-            await asyncio.to_thread(self.git.pull, main_branch)
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            return f"Error syncing with main branch: {e}"
-
-        # 3. Recover active task or pick next
+        # 2. Recover active task (Check local first)
         task = await asyncio.to_thread(self.tasks_manager.recover_active_task, self.git)
         is_recovery = True
+
         if task:
             self.journal.print(f"🔄 Recovered active task [bold cyan]{task.id}[/] {task.title}")
             self.journal.start_task(task.id)
         else:
-            task = await asyncio.to_thread(self.tasks_manager.get_next_task)
-            is_recovery = False
+            # 3. No active task locally. Sync with main to find new work.
+            try:
+                self.journal.print(f"🔄 Syncing {main_branch} to check for new tasks...")
+                await asyncio.to_thread(self.git.checkout, main_branch)
+                await asyncio.to_thread(self.git.pull, main_branch)
+
+                # Reload tasks from updated TASKS.md
+                await asyncio.to_thread(self.tasks_manager.reload)
+
+                task = await asyncio.to_thread(self.tasks_manager.get_next_task)
+                is_recovery = False
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                return f"Error syncing with main branch: {e}"
 
             if not task:
                 self.journal.print("✅ No tasks left, exiting.")
