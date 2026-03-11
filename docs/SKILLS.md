@@ -75,7 +75,7 @@ Include the `{context}` placeholder in your system prompt body to inject the gat
 | `git`       | GIT             | Current branch and status.                               | `git status`      |
 | `progress`  | PROGRESS        | History of actions in current session.                   | `progress.txt`    |
 | `command`   | COMMAND         | Last executed shell command (for error recovery).        | `Executor` state  |
-| `env`       | ENV             | Development environment guidelines.                      | `dev.yaml`        |
+| `env`       | ENV             | Environment variables.                                   | `os.environ`      |
 
 ## Recursive Skills (Skills as Tools)
 

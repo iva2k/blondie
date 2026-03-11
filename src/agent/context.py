@@ -178,14 +178,12 @@ class ContextGatherer:
         return self.progress.read() or "(None)"  # Return non-empty string to ensure context section is not empty
 
     def _get_env_context(self) -> dict[str, str] | str | None:
-        if not self.project.dev_env:
-            return None
-        # TODO: (when needed) Implement whole dev_env, including environment
-        # return yaml.safe_dump(self.project.dev_env.model_dump())
-        guidelines = self.project.dev_env.get("guidelines", None) if self.project.dev_env else []
-        if not guidelines:
-            return None
-        return "\n".join(f"- {g}" for g in guidelines)
+        # TODO: (when needed) Implement sanitized list of environment variables. DANGEROUS! Can expose secrets.
+        # e = []
+        # for k, v in os.environ.items():
+        #     e.append(f"- {k}: \"{v}\"")
+        # return "\n".join(e) + "\n\n" if e else ""
+        return "\n"
 
     def _get_os_context(self) -> dict[str, str] | str | None:
         system = platform.system()
