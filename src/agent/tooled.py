@@ -84,6 +84,21 @@ TOOL_DEFINITIONS = {
         "description": "Select and claim the next high-priority task to work on. Handles git hygiene, syncs with main, and recovers active tasks if any.",
         "parameters": {"type": "object", "properties": {}},
     },
+    "finalize_task": {
+        "name": "finalize_task",
+        "description": "Finalizes a task: commits work, pushes branch, marks task as complete, and merges to main.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string", "description": "The ID of the task to finalize."},
+                "commit_message": {
+                    "type": "string",
+                    "description": "The commit message for the work. Defaults to the task title.",
+                },
+            },
+            "required": ["task_id"],
+        },
+    },
     "complete_task": {
         "name": "complete_task",
         "description": "Mark a task as completed in TASKS.md.",
@@ -132,21 +147,6 @@ TOOL_DEFINITIONS = {
                 "target_branch": {"type": "string", "description": "Branch to merge into."},
             },
             "required": ["source_branch", "target_branch"],
-        },
-    },
-    "finalize_task": {
-        "name": "finalize_task",
-        "description": "Finalizes a task: commits work, pushes branch, marks task as complete, and merges to main.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "task_id": {"type": "string", "description": "The ID of the task to finalize."},
-                "commit_message": {
-                    "type": "string",
-                    "description": "The commit message for the work. Defaults to the task title.",
-                },
-            },
-            "required": ["task_id"],
         },
     },
     "run_tests": {

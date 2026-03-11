@@ -1,14 +1,13 @@
 # Next-Gen Blondie Architecture: Recursive Skill Orchestration
 
-**Status**: Proposal (Draft)
-**Date**: 2026-03-04
-**Related Tasks**: 058, 028, 056, 057, 054
+**Status**: Implemented  
+**Date**: 2026-03-10  
 
 ## 1. Executive Summary
 
-Current Blondie architecture (v1) relies on a rigid, procedural state machine (`src/agent/loop.py`) implementing the Plan → Architect → Code → Verify cycle. While effective for linear tasks, this approach struggles with complex debugging loops, context rot, and adaptability.
+Previous Blondie architecture (v1) relies on a rigid, procedural state machine (`src/agent/loop.py`) implementing the Plan → Architect → Code → Verify cycle. While effective for linear tasks, this approach struggles with complex debugging loops, context rot, and adaptability.
 
-The Next-Gen architecture (v2) proposes a **"Skills as Tools"** paradigm implemented in a new module `src/agent/loop2.py`. Instead of a hard-coded loop, the main agent acts as an **Orchestrator** that calls other Skills (Planner, Coder, Debugger) as **Tools**.
+The Next-Gen architecture (v2) implements a **"Skills as Tools"** paradigm implemented in a new module `src/agent/loop2.py`. Instead of a hard-coded loop, the main agent acts as an **Orchestrator** that calls other Skills (Planner, Coder, Debugger) as **Tools**.
 
 This enables:
 
@@ -18,9 +17,9 @@ This enables:
 
 ## 2. Core Concepts
 
-### 2.1. The Skill-Tool Pattern (Task 058, 056)
+### 2.1. The Skill-Tool Pattern
 
-Currently, `skill.py` defines a prompt template. In the new architecture, a **Skill** is defined as:
+Initially, `skill.py` defined a prompt template. In the new architecture, a **Skill** is defined as:
 
 1. **System Prompt**: The persona and instructions (existing).
 2. **Input Schema**: A structured definition of arguments required to invoke this skill (New).
@@ -36,7 +35,7 @@ Currently, `skill.py` defines a prompt template. In the new architecture, a **Sk
 5. The Sub-Agent finishes and returns the final plan string.
 6. The system returns this string as the "Tool Output" to the Orchestrator.
 
-### 2.2. Context Isolation & Stack (Task 028, 057)
+### 2.2. Context Isolation & Stack
 
 To solve "Context Rot" and "Nested Loop" issues:
 
@@ -44,13 +43,16 @@ To solve "Context Rot" and "Nested Loop" issues:
 - **Isolation**: The Orchestrator does not see the intermediate steps (tool calls) of the Sub-Agent. It only sees the input (Task) and the output (Result).
 - **Benefit**: If the `debug_error` skill takes 50 turns to find a missing semicolon, the Orchestrator's context only grows by 1 turn (The call and the fix).
 
-### 2.3. Summarized Restart (Task 054, 057)
+### 2.3. Summarized Restart
 
-If a Sub-Agent hits a token limit or gets stuck:
+If a Sub-Agent skill hits a token limit or gets stuck, it can use the `summarize_and_restart` tool.
 
-1. It triggers a `summarize_and_restart` action.
-2. The system condenses the current session history into a "Knowledge Summary".
-3. The session is wiped, and a new session starts with the original System Prompt + Knowledge Summary.
+1. The skill decides to call `summarize_and_restart` tool.
+2. Skill condenses the current session history into a "Knowledge Summary".
+3. It calls a `summarize_and_restart` tool.
+4. The `ChatSession` is wiped, and a new user message containing the summary is added after the system prompt.
+   - [ ] TODO: (now) for [task-081] determine how user-content is replaced with "Knowledge summary" - perhaps Knowledge summary should be appendewd to the user prompt. 
+   - Another proposal is: The original `user-content` of the skill is not used on restart. (wiping out user-content will break referenced values in the system prompt)
 
 ### 2.4. Data Flow & Side Effects (Optimization)
 
@@ -73,11 +75,11 @@ To prevent context bloat in the Orchestrator, we adopt an **"Action over Data Tr
 
 **Strategy**: Incremental Edit.
 
-Skills will use extended Frontmatter to define their tool interface. Existing `Skill` class will be updated to parse these new fields without breaking existing skills.
+Skills use extended Frontmatter to define their tool interface. The `Skill` class parses these new fields.
 
-To preserve v1 functionality, we will create **v2 skills** with a `2` suffix (e.g., `coding_plan_task.skill.md`).
+To distinguish from older procedural skills, v2 skills for coding agent use a `coding_` prefix (e.g., `coding_plan_task.skill.md`) as a convention.
 
-We will implement `Skill.to_tool_definition()` to dynamically generate the tool JSON schema (name, description, parameters) required by the LLM provider from the `input_schema`.
+`Skill.to_tool_definition()` dynamically generates the tool JSON schema (name, description, parameters) required by the LLM provider from the `input_schema`.
 
 If `output_schema` is present (as in v2 skills), `Skill.render_system_prompt` will automatically append a `## Output Format` section containing the JSON schema and instructions, ensuring consistent LLM output without manual prompt engineering.
 
@@ -108,7 +110,7 @@ user-content: ""  # Legacy user prompt template
 
 **Strategy**: Incremental Edit.
 
-The `ToolHandler` will be updated to support a dynamic registry of tools, merging the existing hardcoded primitives (`run_shell`, `read_file`, `write_file`) with dynamically loaded Skill-Tools.
+The `ToolHandler` supports a dynamic registry of tools, merging the existing hardcoded primitives (`run_shell`, `read_file`, `write_file`) with dynamically loaded Skill-Tools.
 
 - **Registry**: A dynamic dictionary mapping `tool_name` → `Executable`.
 - **Skill Adapter**: A wrapper that converts a `Skill` object into a callable tool that spawns a `ChatSession`.
@@ -117,18 +119,18 @@ The `ToolHandler` will be updated to support a dynamic registry of tools, mergin
 
 **Strategy**: Incremental Edit.
 
-The `LLMRouter` will be enhanced to support nested sessions. This allows a `ChatSession` to pause, execute a Skill-Tool (which spins up a child `ChatSession`), and resume with the result.
+The `LLMRouter` supports nested sessions. This allows a `ChatSession` to pause, execute a Skill-Tool (which spins up a child `ChatSession`), and resume with the result.
 
 - execute_tool_call(call):
-  - **Validation**: If the skill has an `output_schema`, the router validates the final response against this JSON schema before returning.
   - If tool is "primitive" (shell, file): Execute directly.
   - If tool is "skill" (planner, coder):
     1. Instantiate new ChatSession with that Skill's prompt.
     2. Inject arguments from the tool call into the session context.
     3. **Context Injection**: Automatically trigger `ContextGatherer` for the new session based on the target Skill's `context` requirements (e.g., inject `files`, `policy` into the sub-agent's system prompt).
     4. Run the session until it produces a "Final Answer" or "Return" signal.
-    5. Return that result to the parent session.
-    6. **Context Refresh**: Upon return, the parent session triggers a refresh of its `ContextGatherer` (e.g., re-listing files) to reflect changes made by the child.
+    5. **Validation**: If the sub-agent's skill has an `output_schema` or `response_schema`, the sub-agent's `ChatSession` validates its own final response before completing.
+    6. Return the final string result to the parent session.
+    7. **Context Refresh**: Upon return, the parent session triggers a refresh of its `ContextGatherer` (e.g., re-listing files) to reflect changes made by the child.
 
 ### 3.4. The Orchestrator (`src/agent/loop2.py`)
 
@@ -138,9 +140,10 @@ A new entry point that replaces `loop.py` for v2 execution. It initializes the r
 
 ### 3.5. System Tools (Hardcoded)
 
-To allow the Orchestrator to manage the lifecycle without reimplementing logic in prompts, we will expose existing Python logic as tools. These remain hardcoded in Python but are callable by the LLM:
+To allow the Orchestrator to manage the lifecycle without reimplementing logic in prompts, existing Python logic is exposed as tools. These are hardcoded in Python but are callable by the LLM:
 
-- **Task Management**: `get_next_task`, `claim_task`, `complete_task` (wraps `TasksManager`).
+- **Task Management**: `pick_task`, `finalize_task` (wraps `TasksManager` and `GitCLI`).
+- **Task Completion**: `complete_task` (wraps `TasksManager`).
 - **Git Operations**: `git_checkout`, `git_commit`, `git_push`, `git_merge` (wraps `GitCLI`).
 - **Execution**: `run_tests` (wraps `Executor.run_tests`).
 - **State**: `check_daily_limit` (wraps `LLMRouter`).
@@ -151,8 +154,8 @@ These tools allow the Orchestrator to say (by tool calls) "I am done, mark task 
 
 Recursive execution requires hierarchical logging.
 
-- **Journal**: Needs to support `start_span(name)` and `end_span()`.
-- **Router/ToolHandler**: Must track execution depth/parent ID and pass it to the Journal to maintain the trace tree.
+- **Journal**: Supports `journal.span(name)` context manager for creating indented log blocks.
+- **Router/ToolHandler**: Uses `journal.span()` and `journal.indent()`/`dedent()` to track execution depth and maintain the trace tree.
 - **Output**: Logs should be indented or visually grouped to distinguish between the Orchestrator's thoughts and a Sub-Agent's thoughts, and sub-sub-agents.
 
 ## 4. Migration Strategy
@@ -189,4 +192,4 @@ Recursive execution requires hierarchical logging.
 ## 6. Open Questions
 
 - **Cost Control**: Recursive agents can burn tokens fast. We need strict budget passing (e.g., "You have $0.50 for this sub-task").
-- **Infinite Loops**: The Orchestrator might keep calling debug_error forever. We need a "Supervisor" or "Max Depth/Retry" policy enforced by the runtime.
+- **Infinite Loops**: The Orchestrator might keep calling `debug_error` forever. The current implementation in `ToolHandler.run_loop` has a hardcoded `max_cycles = 15` to prevent runaway tool execution within a single session. A more sophisticated "Supervisor" or "Max Depth/Retry" policy across sessions is not yet implemented.
