@@ -24,9 +24,13 @@ def mock_deps(tmp_path):
     (repo_path / ".git").mkdir()
 
     project = MagicMock()
-    project.model_dump.return_value = {"id": "test"}
     project.protected_files = ["protected.txt"]
-    project.dev_env = {"guidelines": ["Be nice"]}
+    project.dev_env = {"guidelines": ["Be nice"], "debugging_hints": ["Run the code"]}
+    project.model_dump.return_value = {
+        "id": "test",
+        "protected_files": project.protected_files,
+        "dev_env": project.dev_env,
+    }
 
     policy = MagicMock()
     policy.model_dump.return_value = {"gates": {}}
@@ -117,7 +121,8 @@ def test_gather_all(context_gatherer):
     assert "ignored.txt" not in parts["files"]
     assert "ls -la" in parts["command"]
     assert "Test Task" in parts["task"]
-    assert "Be nice" in parts["env"]
+    assert "Be nice" in parts["project"]
+    # TODO: (when needed): assert "something" in parts["env"]
 
 
 def test_file_tree_protected(context_gatherer, mock_deps):
@@ -150,11 +155,14 @@ def test_refresh(context_gatherer):
 def test_env_context(context_gatherer, mock_deps):
     """Test environment context gathering."""
     mock_deps["project"].dev_env = {"guidelines": ["Rule 1", "Rule 2"]}
+    # Also update the mocked return value for this test case
+    mock_deps["project"].model_dump.return_value["dev_env"] = mock_deps["project"].dev_env
 
-    _, parts = context_gatherer.gather({"env": True})
+    # The dev_env content is part of the 'project' context, not 'env'
+    _, parts = context_gatherer.gather({"project": True})
 
-    assert "Rule 1" in parts["env"]
-    assert "Rule 2" in parts["env"]
+    assert "Rule 1" in parts["project"]
+    assert "Rule 2" in parts["project"]
 
 
 def test_gather_user_args(context_gatherer):

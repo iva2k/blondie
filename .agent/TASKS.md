@@ -89,7 +89,7 @@ Status: id | priority | title | depends_on
 - [x] 082 | P1 | Revisit context.py:_get_env_context(). Left for later. |
 - [x] 086 | P2 | [DEV] consolidate scripts for `poe snapshot-dev` & `poe setup-dev` so _tmp/logs/ is handled in both snapshot and clear. Move `_tmp/logs/` to `_tmp/repo/_logs`, add .gitignore to project template |
 
-- [ ] 084 | P2 | [FEATURE] pull git main branch before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
+- [ ] 084 | P2 | [FEATURE] pull git main branch in pick_task tool before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
 
 - [ ] 091 | P3 | [Quality] After-sprint: Implement unit tests for low coverage modules used under loop2.py, increase module coverage to 80%. |
 
