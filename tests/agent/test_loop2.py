@@ -42,6 +42,7 @@ def mock_deps(tmp_path):
         mock_project.from_file.return_value.exit_on_exception = False  # Default for tests
         mock_router.return_value.daily_cost = 0.0
         mock_router.return_value.close = AsyncMock()
+        mock_router.return_value.check_run_limit.return_value = (True, "WITHIN_LIMIT")
 
         yield {
             "project": mock_project,

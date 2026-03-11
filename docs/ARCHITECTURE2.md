@@ -153,7 +153,7 @@ To allow the Orchestrator to manage the lifecycle without reimplementing logic i
 - **Task Completion**: `complete_task` (wraps `TasksManager`).
 - **Git Operations**: `git_checkout`, `git_commit`, `git_push`, `git_merge` (wraps `GitCLI`).
 - **Execution**: `run_tests` (wraps `Executor.run_tests`).
-- **State**: `check_daily_limit` (wraps `LLMRouter`).
+- **State**: `check_run_limit` (wraps `LLMRouter` to check daily/total cost).
 
 These tools allow the Orchestrator to say (by tool calls) "I am done, mark task complete" or "I need to start working on task X".
 

@@ -515,13 +515,30 @@ async def test_run_tests(tool_handler):
 
 
 @pytest.mark.asyncio
-async def test_check_daily_limit(tool_handler):
-    """Test check_daily_limit tool."""
-    tool_handler.llm.check_daily_limit.return_value = True
+async def test_check_run_limit(tool_handler):
+    """Test check_run_limit tool."""
+    tool_handler.llm.check_run_limit.return_value = (True, "WITHIN_LIMIT")
 
-    result = await tool_handler._check_daily_limit()
+    result = await tool_handler._check_run_limit()
     assert "WITHIN_LIMIT" in result
 
-    tool_handler.llm.check_daily_limit.return_value = False
-    result = await tool_handler._check_daily_limit()
-    assert "LIMIT_EXCEEDED" in result
+    tool_handler.llm.check_run_limit.return_value = (False, "DAILY_LIMIT_EXCEEDED")
+    result = await tool_handler._check_run_limit()
+    assert "DAILY_LIMIT_EXCEEDED" in result
+
+
+@pytest.mark.asyncio
+async def test_agent_sleep(tool_handler):
+    """Test agent_sleep tool."""
+    with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        result = await tool_handler._agent_sleep(5)
+        assert "Slept for 5 seconds" in result
+        mock_sleep.assert_called_with(5)
+
+
+@pytest.mark.asyncio
+async def test_agent_exit(tool_handler):
+    """Test agent_exit tool."""
+    with patch("sys.exit") as mock_exit:
+        await tool_handler._agent_exit(rc=1)
+        mock_exit.assert_called_with(1)

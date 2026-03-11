@@ -8,7 +8,7 @@ autonomy:
     shell: allow                # use of shell
     shell-files: forbid         # direct change of files
   test_retries: 3
-  coordination: git  # git | filelock | none
+  coordination: git             # git | filelock | none
 
 git:
   branch-prefix: "task-"
@@ -24,4 +24,5 @@ limits:
   max_test_retries: 3       # Max number of test-debug-fix loop
   max_shell_retries: 3      # Max retries for failed shell commands
   max_daily_cost_usd: 10.0
+  max_total_cost_usd: 100.0
   max_concurrent_tasks: 5

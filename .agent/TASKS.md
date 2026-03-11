@@ -84,9 +84,9 @@ Status: id | priority | title | depends_on
 - [x] 081 | P2 | [FEATURE] Skill convention: In loop2.py and `coding_orchestartor.skill.md` implement looping and exit decision logic based on LLM output (the idea was to have a tool call for summarize and restart - extent it for "loop" call). |
 
 - [x] 089 | P1 | Ensure skill.md description frontmatter is used in tools context. Background: original skill.md files: "The top of skill.md file (the --- section) is parsed by the system before Agent even reads the full instructions. The description field should be injected into Agent's context window to help it decide if it should activate the skill." - meaning use description from the skill frontmatter for tools object. |
-- [ ] 090 | P1 | [FEATURE] In addition to daily cost limit, add total_cost_limit parameter and modify code to idle (or exit) instead of running. Perhaps rename `*daily_cost_limit*` into `*cost_limit*`. |
+- [x] 090 | P1 | [FEATURE] In addition to daily cost limit, add max_total_cost_usd policy parameter and modify code to idle (or exit) instead of running. Perhaps rename `*check_daily_limit*` into `*check_run_limit*` so it can consolidate daily/total cost and token limits. |
 
-- [ ] 082 | P1 | Implement debugging_hints in context.py:_get_env_context() |
+- [ ] 082 | P1 | Implement debugging_hints in context.py:_get_env_context(). We should put all dev.yaml in context. |
 - [ ] 086 | P2 | [DEV] consolidate scripts for `poe snapshot-dev` & `poe setup-dev` so _tmp/logs/ is handled in both snapshot and clear. Move `_tmp/logs/` to `_tmp/repo/_logs`, add .gitignore to project template |
 
 - [ ] 084 | P2 | [FEATURE] pull git main branch before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
@@ -116,3 +116,4 @@ Status: id | priority | title | depends_on
 - [ ] 082 | P5 | [CLEANUP] Remove loop.py and it's hard-coded skills: [plan_task, get_file_edits, generate_code, debug_error], wrappers for these skills in router.py, related unit tests. |
 - [ ] 085 | P5 | [CLEANUP] When loop.py is removed, cleanup command_runner vs command_runner2 skills. | 082
 - [ ] 087 | P5 | [FEATURE] Done tasks should be moved from TASKS.md to docs/CHANGELOG.md. Need a toolified skill for that. Consider how removing task from TASKS.md can affect agents swarm (probably not). |
+- [ ] 095 | P5 | [FEATURE] Centralized coordination and reporting, e.g. total cost accrued. Use database? Remove local usage.yaml. (Needed for agents swarm) |

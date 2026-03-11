@@ -5,6 +5,7 @@
 *.py[cod]
 .agent/secrets.env.yaml
 .agent/llm.yaml
+.agent/usage.yaml
 .coverage
 .eggs/
 .mypy_cache/

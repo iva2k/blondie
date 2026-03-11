@@ -76,7 +76,8 @@ class BlondieAgent:
         """Pick next task to run. Claims and starts the task."""
 
         # Check daily limit
-        if not self.llm.check_daily_limit():
+        is_within_limit, _limit_reason = self.llm.check_run_limit()
+        if not is_within_limit:
             return None
 
         main_branch = self.project.main_branch
@@ -132,7 +133,8 @@ class BlondieAgent:
         """Execute one full task cycle. Returns True if task completed."""
 
         # Check daily limit
-        if not self.llm.check_daily_limit():
+        is_within_limit, _limit_reason = self.llm.check_run_limit()
+        if not is_within_limit:
             return False
 
         task = await self._pick_task()
@@ -508,7 +510,8 @@ class BlondieAgent:
 
         while True:
             # 025: Check daily limit
-            if not self.llm.check_daily_limit():
+            is_within_limit, _limit_reason = self.llm.check_run_limit()
+            if not is_within_limit:
                 self.journal.print("⏳ Daily limit reached. Idling for 1 hour...")
                 await asyncio.sleep(3600)
                 continue

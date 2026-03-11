@@ -29,19 +29,23 @@ def router(tmp_path):
         return r
 
 
-def test_check_daily_limit_within_limit(router):
+def test_check_run_limit_within_limit(router):
     """Test check passes when cost is low."""
     router.daily_cost = 5.0
-    assert router.check_daily_limit() is True
+    is_within_limit, reason = router.check_run_limit()
+    assert is_within_limit is True
+    assert reason == "WITHIN_LIMIT"
 
 
-def test_check_daily_limit_exceeded(router):
+def test_check_run_limit_exceeded(router):
     """Test check fails when cost is high."""
     router.daily_cost = 15.0
-    assert router.check_daily_limit() is False
+    is_within_limit, reason = router.check_run_limit()
+    assert is_within_limit is False
+    assert reason == "DAILY_LIMIT_EXCEEDED"
 
 
-def test_check_daily_limit_reset(router):
+def test_check_run_limit_reset(router):
     """Test cost resets on a new day."""
     # Set last reset to yesterday
     yesterday = datetime.date.today() - datetime.timedelta(days=1)
@@ -49,6 +53,49 @@ def test_check_daily_limit_reset(router):
     router.daily_cost = 15.0  # Over limit
 
     # Should reset and pass
-    assert router.check_daily_limit() is True
+    is_within_limit, reason = router.check_run_limit()
+    assert is_within_limit is True
+    assert reason == "WITHIN_LIMIT"
     assert router.daily_cost == pytest.approx(0.0)
     assert router.last_reset_date == datetime.date.today()
+
+
+def test_check_total_limit_exceeded(router):
+    """Test check fails when total cost is high."""
+    router.policy.limits = {"max_total_cost_usd": 100.0, "max_daily_cost_usd": 50.0}
+    router.total_cost = 101.0
+    router.daily_cost = 10.0
+
+    is_within_limit, reason = router.check_run_limit()
+    assert is_within_limit is False
+    assert reason == "TOTAL_LIMIT_EXCEEDED"
+
+
+def test_usage_persistence(router):
+    """Test usage persistence."""
+    # Since config path is in tmp_path, usage.yaml is also in tmp_path
+    assert router.usage_path.parent.exists()
+
+    # Simulate tracking cost
+    # pylint: disable=protected-access
+    router._track_cost(1.5)
+
+    assert router.usage_path.exists()
+    content = router.usage_path.read_text(encoding="utf-8")
+    assert "daily_cost: 1.5" in content
+    assert "total_cost: 1.5" in content
+
+    # Modify usage file to test loading
+    today = datetime.date.today()
+    router.usage_path.write_text(f"daily_cost: 5.0\ntotal_cost: 10.0\ndate: {today.isoformat()}", encoding="utf-8")
+
+    # Reset internal state to ensure load actually changes it
+    router.daily_cost = 0.0
+    router.total_cost = 0.0
+
+    # Reload
+    router._load_usage()
+
+    assert router.daily_cost == pytest.approx(5.0)
+    assert router.total_cost == pytest.approx(10.0)
+    assert router.last_reset_date == today

@@ -82,7 +82,8 @@ TOOL_DEFINITIONS = {
     },
     "pick_task": {
         "name": "pick_task",
-        "description": "Select and claim the next high-priority task to work on. Handles git hygiene, syncs with main, and recovers active tasks if any.",
+        "description": "Select and claim the next high-priority task to work on."
+        " Handles git hygiene, syncs with main, and recovers active tasks if any.",
         "parameters": {"type": "object", "properties": {}},
     },
     "finalize_task": {
@@ -155,9 +156,9 @@ TOOL_DEFINITIONS = {
         "description": "Run the project's test suite.",
         "parameters": {"type": "object", "properties": {}},
     },
-    "check_daily_limit": {
-        "name": "check_daily_limit",
-        "description": "Check if the daily cost limit has been exceeded.",
+    "check_run_limit": {
+        "name": "check_run_limit",
+        "description": "Check if the daily or total cost limit has been exceeded.",
         "parameters": {"type": "object", "properties": {}},
     },
     "summarize_and_restart": {
@@ -225,7 +226,7 @@ class ToolHandler:
             "git_push": self._git_push,
             "git_merge": self._git_merge,
             "run_tests": self._run_tests,
-            "check_daily_limit": self._check_daily_limit,
+            "check_run_limit": self._check_run_limit,
             "summarize_and_restart": self._summarize_and_restart,
             "agent_sleep": self._agent_sleep,
             "agent_exit": self._agent_exit,
@@ -544,17 +545,18 @@ class ToolHandler:
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error running tests: {e}"
 
-    async def _check_daily_limit(self, **_kwargs) -> str:
-        """Check daily cost limit."""
+    async def _check_run_limit(self, **_kwargs) -> str:
+        """Check cost limits."""
         try:
-            is_within_limit = await asyncio.to_thread(self.llm.check_daily_limit)
-            return "WITHIN_LIMIT" if is_within_limit else "LIMIT_EXCEEDED"
+            _, status = await asyncio.to_thread(self.llm.check_run_limit)
+            return status
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error checking limit: {e}"
 
     async def _summarize_and_restart(self, summary: str, **_kwargs) -> str:
         """Summarize and restart session."""
         # This raises an exception to be caught by run_loop
+        await asyncio.sleep(0)
         raise RestartSession(summary)
 
     async def _agent_sleep(self, seconds: int, **_kwargs) -> str:
@@ -566,6 +568,7 @@ class ToolHandler:
     async def _agent_exit(self, rc: int = 0, **_kwargs) -> str:
         """Exit the agent process."""
         self.journal.print("🛑 Agent requested exit via tool.")
+        await asyncio.sleep(0)
         sys.exit(rc)
 
     async def run_loop(self, session: ChatSession, initial_response: LLMResponse, cmd_instruction: str) -> LLMResponse:

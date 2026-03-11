@@ -98,11 +98,17 @@ class BlondieOrchestrator:
     async def _run_cycle(self) -> bool:
         """Execute one orchestrator cycle. Returns True to continue, False to exit."""
         try:
-            # Check daily limit
-            if not self.llm.check_daily_limit():
-                wait_time = self.project.sleep_daily_limit
-                self.journal.print(f"⏳ Daily limit reached. Idling for {wait_time}s...")
-                await asyncio.sleep(wait_time)
+            # Check cost limits
+            is_within_limit, limit_reason = self.llm.check_run_limit()
+            if not is_within_limit:
+                if limit_reason == "TOTAL_LIMIT_EXCEEDED":
+                    self.journal.print("🛑 Total run limit reached. Exiting.")
+                    self.progress.add_action("AGENT_STOP", "Total cost limit reached", "WARN")
+                    return False
+                if limit_reason == "DAILY_LIMIT_EXCEEDED":
+                    wait_time = self.project.sleep_daily_limit
+                    self.journal.print(f"⏳ Daily limit reached. Idling for {wait_time}s...")
+                    await asyncio.sleep(wait_time)
                 return True
 
             # Initialize the root session with the orchestrator skill

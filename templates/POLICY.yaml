@@ -18,11 +18,11 @@ autonomy:
     deploy-*: prompt            # All deploy-* actions
     
   test_retries: 3
-  coordination: git            # git | filelock | none
+  coordination: git             # git | filelock | none
   
 approval:
-  timeout: 30m                 # Timeout → skip
-  channels:                    # Human response methods
+  timeout: 30m                  # Timeout → skip
+  channels:                     # Human response methods
     - stdin
     - slack
     - email
@@ -63,4 +63,5 @@ limits:
   max_test_retries: 3       # Max number of test-debug-fix loop
   max_shell_retries: 3      # Max retries for failed shell commands
   max_daily_cost_usd: 10.0
+  max_total_cost_usd: 100.0
   max_concurrent_tasks: 5

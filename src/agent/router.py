@@ -318,8 +318,11 @@ class LLMRouter:
         self.known_models, self.known_costs = self._load_known_models(config_path.parent / "llm.yaml")
         self.clients: dict[str, LLMClient] = {}
         self.daily_cost = 0.0
+        self.total_cost = 0.0
         self.progress = progress
         self.last_reset_date = datetime.date.today()
+        self.usage_path = config_path.parent / "usage.yaml"
+        self._load_usage()
 
         # Load skills
         if skills_dir is None:
@@ -328,6 +331,31 @@ class LLMRouter:
         self.skills = self._load_skills(skills_dir)
 
         self._init_clients()
+
+    def _load_usage(self) -> None:
+        """Load usage statistics from file."""
+        if self.usage_path.exists():
+            try:
+                with self.usage_path.open("r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f) or {}
+                    self.total_cost = data.get("total_cost", 0.0)
+                    self.daily_cost = data.get("daily_cost", 0.0)
+                    last_date_val = data.get("date")
+                    if last_date_val:
+                        if isinstance(last_date_val, datetime.date):
+                            if isinstance(last_date_val, datetime.datetime):
+                                self.last_reset_date = last_date_val.date()
+                            else:
+                                self.last_reset_date = last_date_val
+                        elif isinstance(last_date_val, str):
+                            self.last_reset_date = datetime.date.fromisoformat(last_date_val)
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                self.journal.print(f"⚠️ Failed to load usage.yaml: {e}")
+
+        # Check for daily reset immediately upon load/init
+        if datetime.date.today() > self.last_reset_date:
+            self.daily_cost = 0.0
+            self.last_reset_date = datetime.date.today()
 
     def _load_secrets(self, secrets_path: Path) -> dict:
         """Load secrets.env.yaml."""
@@ -437,6 +465,18 @@ class LLMRouter:
 
     def _track_cost(self, cost: float) -> None:
         self.daily_cost += cost
+        self.total_cost += cost
+        self._save_usage()
+
+    def _save_usage(self) -> None:
+        """Save usage statistics to file."""
+        data = {
+            "date": self.last_reset_date.isoformat(),
+            "daily_cost": self.daily_cost,
+            "total_cost": self.total_cost,
+        }
+        with self.usage_path.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(data, f)
 
     async def _execute_llm_task(
         self,
@@ -702,20 +742,28 @@ class LLMRouter:
 
         return session
 
-    def check_daily_limit(self) -> bool:
+    def check_run_limit(self) -> tuple[bool, str]:
         """Check cost limit from policy."""
         if datetime.date.today() > self.last_reset_date:
             self.daily_cost = 0.0
             self.last_reset_date = datetime.date.today()
+            self._save_usage()
             self.journal.print("🔄 Daily cost reset for new day.")
 
         if not self.policy:
-            return True
-        limit = self.policy.limits.get("max_daily_cost_usd", float("inf"))
-        if self.daily_cost > limit:
+            return True, "No policy"
+
+        daily_limit = self.policy.limits.get("max_daily_cost_usd", float("inf"))
+        if self.daily_cost > daily_limit:
             self.journal.print(f"💰 Daily limit exceeded: ${self.daily_cost:.2f}")
-            return False
-        return True
+            return False, "DAILY_LIMIT_EXCEEDED"
+
+        total_limit = self.policy.limits.get("max_total_cost_usd", float("inf"))
+        if self.total_cost > total_limit:
+            self.journal.print(f"💰 Total limit exceeded: ${self.total_cost:.2f}")
+            return False, "TOTAL_LIMIT_EXCEEDED"
+
+        return True, "WITHIN_LIMIT"
 
     async def close(self) -> None:
         """Cleanup HTTP clients."""
