@@ -1,10 +1,19 @@
 # blondie
 
-Helpful AI coding agent
+## Autonomous AI Coding Agent
 
-- Fully autonomous coder driven by `TASKS.md`, `POLICY.yaml` files
-- Easy to deploy - run docker instance or install binary on Linux instance
-- Easy to configure - create `secrets.env.yaml` file
+Blondie is a fully autonomous coding agent that attaches to an existing git repository, reads a backlog of tasks (`TASKS.md`), and executes them according to defined policies (`POLICY.yaml`). It handles planning, coding, testing, and deployment (via CLI wrappers).
+
+It is designed to run as a Docker container or a standalone binary on a Linux instance.
+
+Blondie implements a recursive orchestrator using **Skills as Tools** for dynamic and adaptive workflows.
+
+## Documentation
+
+- [**Deployment Guide**](docs/DEPLOY.md): How to deploy Blondie to manage your repo.
+- [**Development Guide**](docs/DEVELOP.md): How to contribute to Blondie's codebase or debug it locally.
+- [**Architecture v2**](docs/ARCHITECTURE2.md): The current recursive skill orchestration architecture.
+- [**Skills System**](docs/SKILLS.md): How to write and modify agent skills.
 
 ## Project Structure
 
@@ -35,8 +44,9 @@ blondie/
 │   ├── agent/                # Main runtime
 │   │   ├── context.py        # LLM Context gatherer
 │   │   ├── executor.py       # Shell/git/cli wrapper
-│   │   ├── llm_config.py     # llm_config.yaml parser
+│   │   ├── llm_config.py     # llm_config.yaml Models/Providers config
 │   │   ├── loop.py           # Main task loop
+│   │   ├── loop2.py          # v2 Orchestrator loop
 │   │   ├── policy.py         # POLICY.yaml parser
 │   │   ├── progress.py       # progress.txt keeper
 │   │   ├── project.py        # project.yaml parser (also loads dev.yaml)
@@ -79,62 +89,38 @@ blondie/
 ## Architecture
 
 Blondie is evolving from a procedural script in [Architecture v1](docs/ARCHITECTURE1.md) to a recursive AI agent in [Architecture v2](docs/ARCHITECTURE2.md).
-  
-| Feature       | v1: Procedural Loop    | v2: Recursive Orchestrator                |
-| :------------ | :--------------------- | :---------------------------------------- |
-| Status        | Current (Stable)       | Next-Gen (In Development)                 |
-| Control Flow  | Python Code (loop.py)  | LLM (loop2.py coding_orchestrator skill)  |
-| Context       | Shared/Global          | Stacked/Isolated                          |
-| Tooling       | Hardcoded (Shell/File) | Dynamic (Skills Primitives)               |
-| Debugging     | Linear Retry Loop      | Intelligent Sub-Agent Call                |
-| Extensibility | Modify Python Code     | Add .skill.md file                        |
 
-## Development and Debugging
+| Feature           | v1: Procedural Loop     | v2: Recursive Orchestrator (Current)           |
+| :---------------- | :---------------------- | :--------------------------------------------- |
+| **Control Flow**  | Python Code (`loop.py`) | LLM (`loop2.py` + `coding_orchestrator` skill) |
+| **Context**       | Shared/Global           | Stacked/Isolated                               |
+| **Tooling**       | Hardcoded (Shell/File)  | Dynamic (Skills + Primitives)                  |
+| **Debugging**     | Linear Retry Loop       | Intelligent Sub-Agent Call                     |
+| **Extensibility** | Modify Python Code      | Add `.skill.md` file                           |
 
-Until this project can bootstrap and self-improve, it is necessary to code MVP and debug it locally.
+## Quick Start (Deploy)
 
-### Debugging
-
-TODO: TBD
-
-### Unit tests
+To run Blondie against a repository using Docker:
 
 ```bash
-# Run unit tests
-poetry install && poetry run pytest -v
-# or
-poetry install && poe check
-```
-
-## First Deploy Command
-
-```bash
-git clone [<@iva2k/blondie>](https://github.com/iva2k/blondie.git)
+# 1. Clone Blondie
+git clone https://github.com/iva2k/blondie.git
 cd blondie
-rm -f poetry.lock && poetry lock && poetry install --only=main --no-root
-docker build -f docker/Dockerfile -t blondie:bootstrap .
-docker run -v $(pwd):/workspace -v ./secrets:/secrets blondie:bootstrap
-```
 
-## Usage Instructions
+# 2. Build Docker Image
+docker build -f docker/Dockerfile -t blondie:latest .
 
-```bash
-# 1. Copy template
+# 3. Copy template
 cp .agent/secrets.env.EXAMPLE.yaml .agent/secrets.env.yaml
 
-# 2. Fill required values (minimum for bootstrap):
+# 4. Fill required values (minimum for bootstrap):
 #    - llm.openai.api_key OR llm.anthropic.api_key OR llm.custom.*
 #    - cloud.vercel.token OR cloud.netlify.token (repo-specific)
 
-# 3. Secure mount for Docker
-docker run -v $(pwd):/workspace \
-           -v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \
-           blondie:bootstrap
-
-# 4. Binary deploy (systemd)
-sudo cp secrets.env.yaml /etc/blondie/secrets.env.yaml
-sudo chown root:blondie /etc/blondie/secrets.env.yaml
-sudo chmod 600 /etc/blondie/secrets.env.yaml
+# 5. Run (Mounting your target repo and secrets)
+docker run -v /path/to/target/repo:/workspace \
+           -v /path/to/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \
+           blondie:latest
 ```
 
 ## Secret Interpolation
