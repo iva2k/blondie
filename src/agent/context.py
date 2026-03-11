@@ -144,7 +144,7 @@ class ContextGatherer:
     def _get_cwd_context(self) -> dict[str, str] | str | None:
         return {
             "cwd": str(self.repo_path.resolve()),
-            "temp_dir": "./_tmp",
+            "temp_dir": "./_tmp",  # TODO: (when needed) parameter?
         }
 
     def _get_project_context(self) -> dict[str, str] | str | None:
