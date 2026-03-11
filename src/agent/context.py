@@ -148,10 +148,10 @@ class ContextGatherer:
         }
 
     def _get_project_context(self) -> dict[str, str] | str | None:
-        return yaml.safe_dump(self.project.model_dump())
+        return "```yaml\n" + yaml.safe_dump(self.project.model_dump()) + "\n```\n"
 
     def _get_policy_context(self) -> dict[str, str] | str | None:
-        return yaml.safe_dump(self.policy.model_dump())
+        return "```yaml\n" + yaml.safe_dump(self.policy.model_dump()) + "\n```\n"
 
     def _get_git_context(self) -> dict[str, str] | str | None:
         return {"git": f"Branch: {self.git.current_branch()}\nStatus:\n{self.git.status()}"}
@@ -159,7 +159,8 @@ class ContextGatherer:
     def _get_task_context(self) -> dict[str, str] | str | None:
         # return f"{self.task.id} {self.task.title}" if self.task else None
         return (
-            yaml.safe_dump(
+            "```yaml\n"
+            + yaml.safe_dump(
                 {
                     "task_id": self.task.id,
                     "priority": self.task.priority or "",
@@ -167,6 +168,7 @@ class ContextGatherer:
                     "full_id": self.task.full_id,
                 }
             )
+            + "\n```\n"
             if self.task
             else None
         )
