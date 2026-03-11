@@ -114,7 +114,7 @@
             "module": "src.agent.cli",
             "args": [
                 "${workspaceFolder}/_tmp/repo",
-                "--journal-dir", "${workspaceFolder}/_tmp/logs",
+                "--journal-dir", "${workspaceFolder}/_tmp/repo/_logs",
             ],
             "cwd": "${workspaceFolder}",
             "env": {
@@ -131,7 +131,7 @@
             "module": "src.agent.cli",
             "args": [
                 "${workspaceFolder}/_tmp/repo",
-                "--journal-dir", "${workspaceFolder}/_tmp/logs",
+                "--journal-dir", "${workspaceFolder}/_tmp/repo/_logs",
                 "--v2",
             ],
             "cwd": "${workspaceFolder}",

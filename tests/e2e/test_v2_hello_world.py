@@ -9,7 +9,7 @@ import pytest
 
 from agent.loop2 import BlondieOrchestrator
 from agent.tasks import TasksManager, TaskStatus
-from lib.setup_repo import setup_repo
+from lib.setup_repo import setup_temp_repo
 from llm.client import LLMResponse
 
 
@@ -19,7 +19,7 @@ def temp_repo(tmp_path: Path) -> Path:
     repo_dir = tmp_path / "repo-e2e"
     remote_dir = tmp_path / "remote-e2e.git"
     root_dir = Path(__file__).parents[2]
-    setup_repo(repo_dir, remote_dir, root_dir=root_dir)
+    setup_temp_repo(repo_dir, remote_dir, root_dir=root_dir)
 
     agent_dir = repo_dir / ".agent"
 

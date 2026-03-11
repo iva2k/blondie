@@ -1,4 +1,4 @@
-# src/lib/setup_repo.py
+# src/lib/setup_temp_repo.py
 
 """Helper to setup a development repository with a local remote."""
 
@@ -6,6 +6,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -20,7 +21,7 @@ def run_command(args: list[str], cwd: Path) -> None:
     subprocess.run(args, cwd=cwd, check=True, capture_output=True, text=True)
 
 
-def setup_repo(
+def setup_temp_repo(
     repo_dir: Path, remote_dir: Path, agent_config_path: Path | None = None, root_dir: Path | None = None
 ) -> None:
     """
@@ -35,8 +36,10 @@ def setup_repo(
     # 1. Clean up previous run
     for path in [repo_dir, remote_dir]:
         if path.exists():
-            # TODO: (now) The function "rmtree" is deprecated. The `onerror` parameter is deprecated. Use `onexc` instead.
-            shutil.rmtree(path, onerror=handle_remove_readonly)
+            if sys.version_info >= (3, 12):
+                shutil.rmtree(path, onexc=handle_remove_readonly)
+            else:
+                shutil.rmtree(path, onerror=handle_remove_readonly)  # pylint: disable=deprecated-argument
 
     # 2. Create Bare Remote
     remote_dir.mkdir(parents=True, exist_ok=True)
@@ -56,6 +59,7 @@ def setup_repo(
 
     # 6. Bootstrap Content
     (repo_dir / "README.md").write_text("# Dev Repo\n\nTest repo for Blondie development.\n", encoding="utf-8")
+    (repo_dir / ".gitignore").write_text("_logs/\n.agent/secrets.env.yaml\n.agent/usage.yaml\n", encoding="utf-8")
 
     # Copy .agent configuration if provided
     if agent_config_path and agent_config_path.exists():

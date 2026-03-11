@@ -87,7 +87,7 @@ Status: id | priority | title | depends_on
 - [x] 090 | P1 | [FEATURE] In addition to daily cost limit, add max_total_cost_usd policy parameter and modify code to idle (or exit) instead of running. Perhaps rename `*check_daily_limit*` into `*check_run_limit*` so it can consolidate daily/total cost and token limits. |
 
 - [x] 082 | P1 | Revisit context.py:_get_env_context(). Left for later. |
-- [ ] 086 | P2 | [DEV] consolidate scripts for `poe snapshot-dev` & `poe setup-dev` so _tmp/logs/ is handled in both snapshot and clear. Move `_tmp/logs/` to `_tmp/repo/_logs`, add .gitignore to project template |
+- [x] 086 | P2 | [DEV] consolidate scripts for `poe snapshot-dev` & `poe setup-dev` so _tmp/logs/ is handled in both snapshot and clear. Move `_tmp/logs/` to `_tmp/repo/_logs`, add .gitignore to project template |
 
 - [ ] 084 | P2 | [FEATURE] pull git main branch before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
 

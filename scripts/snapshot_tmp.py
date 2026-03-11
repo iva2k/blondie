@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Make a snapsjot - copy/move the _tmp directory to a dated _tmp.YYY-MMDD-hhmm directory."""
+"""Make a snapshot - copy/move the _tmp directory to a dated _tmp.YYYY-MMDD-hhmm directory."""
 
 import argparse
 import os
