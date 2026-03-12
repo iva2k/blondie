@@ -1,0 +1,15 @@
+id: my-project
+name: My New Project
+languages: []
+git_user: "Blondie Bot"
+git_email: "blondie@agent.local"
+main_branch: main
+task_source: TASKS.md
+commands:
+  install: echo "Install command not configured"
+  test: echo "Test command not configured"
+  deploy: echo "Deploy command not configured"
+policy: POLICY.yaml
+dev_config: dev.yaml
+docs:
+  - README.md

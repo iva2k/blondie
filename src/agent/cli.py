@@ -8,6 +8,7 @@ import click
 
 from agent.loop import BlondieAgent
 from agent.loop2 import BlondieOrchestrator
+from agent.wizard import setup_secrets
 
 
 async def main(repo_path: str, journal_dir: str | None = None, use_v2: bool = False) -> None:
@@ -42,7 +43,8 @@ def run(repo_path: str = ".", journal_dir: str | None = None, v2: bool = False) 
 @entry_point.command()
 def init() -> None:
     """Initialize a new Blondie agent workspace."""
-    click.echo("Initializing Blondie agent... (Not implemented yet)")
+    click.echo("🧙 Blondie Agent Initialization Wizard")
+    setup_secrets()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,3 @@
+package_manager: custom
+linter: echo "Linter not configured"
+formatter: echo "Formatter not configured"

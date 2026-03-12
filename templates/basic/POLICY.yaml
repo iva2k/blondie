@@ -1,0 +1,16 @@
+# Blondie Self-Policy
+autonomy:
+  gates:
+    git-merge: allow
+    deploy-docker: allow
+    install-binary: prompt
+    add-package: allow
+    shell: allow
+  test_retries: 3
+  coordination: git
+
+limits:
+  max_daily_cost_usd: 5.0
+  max_total_cost_usd: 100.0
+  max_test_retries: 3
+  max_concurrent_tasks: 5

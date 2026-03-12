@@ -1,0 +1,64 @@
+# src/agent/wizard.py
+
+"""Blondie Agent Initialization Wizard."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import click
+import yaml
+
+
+def setup_secrets() -> None:
+    """Interactive secrets setup."""
+    click.echo("\n🔑 Secrets Setup")
+
+    # Path inside container (mapped from host ~/.blondie) or local home
+    secrets_dir = Path.home() / ".blondie"
+    secrets_file = secrets_dir / "secrets.env.yaml"
+
+    if not secrets_dir.exists():
+        try:
+            secrets_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            click.echo(f"Warning: Could not create {secrets_dir}: {e}")
+
+    secrets = {}
+    if secrets_file.exists():
+        click.echo(f"Found existing secrets at {secrets_file}")
+        try:
+            with open(secrets_file, encoding="utf-8") as f:
+                secrets = yaml.safe_load(f) or {}
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            click.echo(f"Error loading secrets: {e}")
+
+    # Ensure structure
+    secrets.setdefault("llm", {})
+    secrets.setdefault("cloud", {})
+
+    # OpenAI
+    if not secrets["llm"].get("openai", {}).get("api_key"):
+        if click.confirm("Do you want to set up OpenAI API Key?", default=True):
+            key = click.prompt("OpenAI API Key", hide_input=True)
+            secrets["llm"]["openai"] = {"api_key": key}
+
+    # Anthropic
+    if not secrets["llm"].get("anthropic", {}).get("api_key"):
+        if click.confirm("Do you want to set up Anthropic API Key?", default=False):
+            key = click.prompt("Anthropic API Key", hide_input=True)
+            secrets["llm"]["anthropic"] = {"api_key": key}
+
+    # Cloud (Vercel)
+    if not secrets["cloud"].get("vercel", {}).get("token"):
+        if click.confirm("Do you want to set up Vercel Token?", default=False):
+            token = click.prompt("Vercel Token", hide_input=True)
+            secrets["cloud"]["vercel"] = {"token": token}
+
+    # Save
+    try:
+        with open(secrets_file, "w", encoding="utf-8") as f:
+            yaml.safe_dump(secrets, f)
+        click.echo(f"✅ Secrets saved to {secrets_file}")
+    except OSError as e:
+        click.echo(f"❌ Failed to write secrets: {e}")
