@@ -1,0 +1,10 @@
+environment:
+  language: python
+  manager: poetry
+  linter: ruff
+  formatter: ruff
+  unit_test: pytest
+guidelines:
+  - "Use poetry for dependency management"
+  - "Use an `src` layout."
+  - "Follow PEP 8 via ruff."

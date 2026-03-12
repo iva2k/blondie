@@ -1,0 +1,23 @@
+id: my-python-project
+name: "My Python Project"
+languages: [python]
+git_user: "Blondie Bot"
+git_email: "blondie@agent.local"
+main_branch: main
+task_source: TASKS.md
+commands:
+  install: poetry install
+  test: poetry run pytest
+  lint: poetry run ruff check .
+  format: poetry run ruff format .
+  deploy: echo "Deploy command not configured"
+policy: POLICY.yaml
+dev_config: dev.yaml
+docs:
+  - README.md
+protected_files:
+  - .agent/llm.yaml
+  - .agent/POLICY.yaml
+  - .agent/project.yaml
+  - .agent/secrets.env.yaml
+  - .agent/dev.yaml

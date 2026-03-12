@@ -1,0 +1,20 @@
+providers:
+  openai:
+    model: gpt-4o
+    temperature: 0.1
+  anthropic:
+    model: claude-3-5-sonnet-20240620
+    temperature: 0.1
+  groq:
+    api_type: openai
+    base_url: https://api.groq.com/openai/v1
+    default_model: llama-3.3-70b-versatile
+
+operations:
+  planning:
+    - provider: openai
+      model: gpt-4o
+  coding:
+    - provider: openai
+      model: gpt-4o
+  # The init wizard will update the provider selection based on user input

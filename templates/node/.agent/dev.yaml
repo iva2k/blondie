@@ -1,0 +1,9 @@
+environment:
+  language: javascript
+  manager: npm
+  linter: eslint
+  formatter: prettier
+  unit_test: jest
+guidelines:
+  - "Use npm for dependency management"
+  - "Follow coding standards via eslint and prettier."

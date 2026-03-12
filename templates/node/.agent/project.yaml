@@ -1,0 +1,22 @@
+id: my-node-project
+name: "My Node.js Project"
+languages: [javascript, typescript]
+git_user: "Blondie Bot"
+git_email: "blondie@agent.local"
+main_branch: main
+task_source: TASKS.md
+commands:
+  install: npm install
+  test: npm test
+  lint: npm run lint
+  deploy: echo "Deploy command not configured"
+policy: POLICY.yaml
+dev_config: dev.yaml
+docs:
+  - README.md
+protected_files:
+  - .agent/llm.yaml
+  - .agent/POLICY.yaml
+  - .agent/project.yaml
+  - .agent/secrets.env.yaml
+  - .agent/dev.yaml
