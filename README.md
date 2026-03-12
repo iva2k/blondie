@@ -104,10 +104,10 @@ The easiest way to get started is with the **Local-First HTML Wizard**. It runs 
 
 ```bash
 # 1. Download the Wizard
-# Go to the repository and save `init.html` to your computer.
+# Go to the repository and save `blondie.html` to your computer.
 
 # 2. Run the Wizard
-# Open init.html in your browser. It will guide you through setup and
+# Open blondie.html in your browser. It will guide you through setup and
 # provide a `blondie_config.zip` file to download.
 
 # 3. Prepare Your Project

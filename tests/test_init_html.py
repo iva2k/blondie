@@ -1,4 +1,4 @@
-"""End-to-end test for the init.html wizard using Playwright."""
+"""End-to-end test for the blondie.html wizard using Playwright."""
 
 import zipfile
 from pathlib import Path
@@ -9,15 +9,15 @@ from playwright.sync_api import sync_playwright
 
 def test_init_html_wizard_flow(tmp_path):
     """
-    Load init.html in a headless browser, fill the form,
+    Load blondie.html in a headless browser, fill the form,
     click generate, and verify the downloaded zip file structure.
     """
-    # Locate init.html relative to this test file
+    # Locate blondie.html relative to this test file
     root_dir = Path(__file__).parents[1]
-    init_html_path = root_dir / "init.html"
+    init_html_path = root_dir / "blondie.html"
 
     if not init_html_path.exists():
-        pytest.fail(f"init.html not found at {init_html_path}")
+        pytest.fail(f"blondie.html not found at {init_html_path}")
 
     with sync_playwright() as p:
         try:
@@ -98,10 +98,10 @@ def test_init_html_load_existing_zip(tmp_path):
     Test loading a pre-existing zip file populates the form correctly.
     """
     root_dir = Path(__file__).parents[1]
-    init_html_path = root_dir / "init.html"
+    init_html_path = root_dir / "blondie.html"
 
     if not init_html_path.exists():
-        pytest.fail(f"init.html not found at {init_html_path}")
+        pytest.fail(f"blondie.html not found at {init_html_path}")
 
     # Create a mock zip file
     mock_zip_path = tmp_path / "mock_config.zip"

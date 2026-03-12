@@ -15,7 +15,7 @@
             "name": "Launch Init Wizard (Chrome)",
             "request": "launch",
             "type": "chrome",
-            "file": "${workspaceFolder}/init.html",
+            "file": "${workspaceFolder}/blondie.html",
             "runtimeArgs": [
                 "--allow-file-access-from-files"
             ]

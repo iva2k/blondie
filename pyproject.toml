@@ -63,6 +63,7 @@ run-v2 = "python -m agent.cli run _tmp/repo --journal-dir _tmp/repo/_logs --v2"
 setup-dev = "python scripts/setup_dev_repo.py --repo _tmp/repo --agent-config templates/project-calculator/.agent"
 snapshot-dev = "python scripts/snapshot_tmp.py _tmp"
 fetch-models = "python scripts/fetch_models.py"
+build-wizard = "python scripts/build_wizard.py"
 
 [tool.ruff]
 line-length = 120

@@ -38,20 +38,20 @@ The agent relies on a strict directory structure at the root of the workspace. T
 
 ## 2. Onboarding Specification
 
-### A. HTML Wizard (`init.html`)
+### A. HTML Wizard (`blondie.html`)
 
 This is the primary and recommended onboarding method.
 
 #### 1. Architecture & Goal
 
 - **Goal**: Provide a zero-installation, maximally secure onboarding experience that runs entirely on the user's local machine.
-- **Implementation**: A single, self-contained `init.html` file that uses client-side JavaScript.
+- **Implementation**: A single, self-contained `blondie.html` file that uses client-side JavaScript.
 - **Dependencies**: Leverages `JSZip.js` and `js-yaml.js`. **Templates are injected into the HTML file at build time** to allow single-file offline usage.
 - **Security**: No data is ever transmitted. All secrets and configurations are handled in the browser's memory and are packaged locally for download.
 
 #### 2. User Flow
 
-1. **Load**: User downloads `init.html` and opens it in their browser.
+1. **Load**: User downloads `blondie.html` and opens it in their browser.
 2. **Edit (Optional)**: User can click "Open Zip File" to load a previously generated `blondie_config.zip`, which populates the form fields with the existing configuration.
 3. **Template Selection**: User selects a project template (e.g., Basic, Python, Node.js) which determines the base configuration files loaded from `templates/<name>/`.
 4. **Interview**: The user fills out a web form with:

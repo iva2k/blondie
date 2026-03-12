@@ -87,8 +87,8 @@ The recommended workflow is to use the **Local-First HTML Wizard**. It runs enti
 
 ### Step 1: Download and Run
 
-1. Locate the `init.html` file in the root of the `blondie` repository you just cloned.
-2. Double-click `init.html` to open it in your web browser.
+1. Locate the `blondie.html` file in the root of the `blondie` repository you just cloned.
+2. Double-click `blondie.html` to open it in your web browser.
 3. In the Wizard you can open a previously created `blondie_config.zip` file to edit your settings.
 
 ### Step 2: The Interview
