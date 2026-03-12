@@ -108,6 +108,22 @@
             "justMyCode": true
         },
         {
+            "name": "Blondie: Init Wizard (_tmp/repo)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.agent.cli",
+            "args": [
+                "init"
+            ],
+            "cwd": "${workspaceFolder}/_tmp/repo",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "BLONDIE_SECRETS_DIR": "${workspaceFolder}/_tmp/secrets"
+            },
+            "justMyCode": true
+        },
+        {
             "name": "Blondie: Run Agent (_tmp/repo)",
             "type": "debugpy",
             "request": "launch",

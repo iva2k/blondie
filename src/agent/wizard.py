@@ -22,7 +22,11 @@ def setup_secrets() -> dict[str, Any]:
     click.echo("\n🔑 Secrets Setup")
 
     # Path inside container (mapped from host ~/.blondie) or local home
-    secrets_dir = Path.home() / ".blondie"
+    if os.environ.get("BLONDIE_SECRETS_DIR"):
+        secrets_dir = Path(os.environ["BLONDIE_SECRETS_DIR"])
+    else:
+        secrets_dir = Path.home() / ".blondie"
+
     secrets_file = secrets_dir / "secrets.env.yaml"
 
     if not secrets_dir.exists():
