@@ -203,8 +203,128 @@ def setup_workspace(target_dir: Path | None = None) -> None:
             click.echo(f"⚠️  Failed to set permissions: {e}")
 
 
+def interview(target_dir: Path | None = None) -> None:
+    """Collect project details and configure agent (Task 106)."""
+    click.echo("\n🎤 Project Interview")
+
+    # Determine workspace path
+    if target_dir:
+        workspace = target_dir
+    else:
+        workspace = Path("/workspace")
+        if not workspace.exists():
+            workspace = Path.cwd()
+
+    agent_dir = workspace / ".agent"
+    if not agent_dir.exists():
+        click.echo("⚠️  .agent directory not found. Please run workspace setup first.")
+        return
+
+    # 1. Spec
+    spec_file = agent_dir / "SPEC.md"
+    default_goal = "A new project"
+    spec_goal = click.prompt("What are you building?", default=default_goal)
+
+    if spec_file.exists():
+        content = spec_file.read_text(encoding="utf-8")
+        # Replace placeholder if present
+        placeholder = "Goal: <Describe your product goal here>"
+        if placeholder in content:
+            content = content.replace(placeholder, f"Goal: {spec_goal}")
+            spec_file.write_text(content, encoding="utf-8")
+        elif f"Goal: {spec_goal}" not in content:
+            # Append if not already there
+            with open(spec_file, "a", encoding="utf-8") as f:
+                f.write(f"\nGoal: {spec_goal}\n")
+    else:
+        spec_file.write_text(f"# Product Spec\n\nGoal: {spec_goal}\n", encoding="utf-8")
+
+    # 2. Project Config
+    project_file = agent_dir / "project.yaml"
+    project_data: dict[str, Any] = {}
+    if project_file.exists():
+        project_data = yaml.safe_load(project_file.read_text(encoding="utf-8")) or {}
+
+    default_id = project_data.get("id", workspace.name)
+    project_id = click.prompt("Project ID", default=default_id)
+    project_data["id"] = project_id
+    if "name" not in project_data or project_data["name"] == "My New Project":
+        project_data["name"] = project_id
+
+    git_user = click.prompt("Bot Git Name", default=project_data.get("git_user", "Blondie Bot"))
+    project_data["git_user"] = git_user
+
+    # 3. Model Provider
+    llm_file = agent_dir / "llm_config.yaml"
+    if llm_file.exists():
+        llm_data = yaml.safe_load(llm_file.read_text(encoding="utf-8")) or {}
+        provider = click.prompt(
+            "Primary AI Provider", default="openai", type=click.Choice(["openai", "anthropic", "groq"])
+        )
+
+        if "operations" not in llm_data:
+            llm_data["operations"] = {}
+
+        model_map = {
+            "openai": "gpt-4o",
+            "anthropic": "claude-3-5-sonnet-20240620",
+            "groq": "llama-3.3-70b-versatile",
+        }
+        selected_model = model_map.get(provider, "gpt-4o")
+
+        for op in ["planning", "coding", "debugging", "review", "execution"]:
+            if op not in llm_data["operations"]:
+                llm_data["operations"][op] = []
+            # Ensure list
+            if not isinstance(llm_data["operations"][op], list):
+                llm_data["operations"][op] = []
+
+            # Prepend selected provider
+            llm_data["operations"][op].insert(0, {"provider": provider, "model": selected_model})
+
+        llm_file.write_text(yaml.safe_dump(llm_data), encoding="utf-8")
+
+    # 4. Deployment
+    deploy_target = click.prompt(
+        "Deployment Target", default="docker", type=click.Choice(["docker", "vercel", "netlify", "custom"])
+    )
+
+    if "commands" not in project_data:
+        project_data["commands"] = {}
+
+    if deploy_target == "vercel":
+        project_data["commands"]["deploy"] = "vercel --prod --token {{secret:cloud.vercel.token}}"
+    elif deploy_target == "netlify":
+        project_data["commands"]["deploy"] = "netlify deploy --prod --dir=dist --auth={{secret:cloud.netlify.token}}"
+    elif deploy_target == "docker":
+        if "deploy" not in project_data:
+            project_data["deploy"] = {}
+        project_data["deploy"]["docker"] = f"docker build -t {project_id}:latest ."
+
+    project_file.write_text(yaml.safe_dump(project_data), encoding="utf-8")
+
+    # 5. Next Steps
+    click.echo("\n🚀 Ready for liftoff!")
+    click.echo("Run the following command to start the agent:")
+
+    ssh_vol = ""
+    if click.confirm("Do you use SSH for Git?", default=False):
+        ssh_vol = "  -v ~/.ssh:/root/.ssh:ro \\\n"
+
+    cmd = f"""
+docker run -d \\
+  --name blondie \\
+  --restart always \\
+  -v $(pwd):/workspace \\
+  -v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \\
+{ssh_vol}  blondie:latest run
+"""
+    click.echo(cmd.strip())
+
+
 def run_init_wizard() -> None:
     """Run the full initialization wizard."""
     secrets = setup_secrets()
     validate_secrets(secrets)
     setup_workspace()
+    interview()

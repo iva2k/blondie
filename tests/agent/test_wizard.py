@@ -7,7 +7,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from agent.wizard import setup_secrets, setup_workspace, validate_secrets
+from agent.wizard import interview, setup_secrets, setup_workspace, validate_secrets
 
 
 @pytest.fixture
@@ -258,3 +258,53 @@ def test_setup_workspace_permissions(mock_walk, mock_chown, _mock_getuid, tmp_pa
     assert result.exit_code == 0
     assert "Fixed file permissions" in result.output
     assert mock_chown.called
+
+
+def test_interview_flow(tmp_path):
+    """Test the interactive interview updates files correctly."""
+    # 1. Setup workspace with templates
+    agent_dir = tmp_path / ".agent"
+    agent_dir.mkdir()
+
+    (agent_dir / "SPEC.md").write_text("# Spec\nGoal: <Describe your product goal here>\n", encoding="utf-8")
+    (agent_dir / "project.yaml").write_text("id: old\ncommands: {}\n", encoding="utf-8")
+    (agent_dir / "llm_config.yaml").write_text("operations: {}\n", encoding="utf-8")
+
+    # Inputs:
+    # 1. Spec: "My App"
+    # 2. Project ID: "app-id"
+    # 3. Git Name: "Agent Smith"
+    # 4. Provider: "anthropic"
+    # 5. Deployment: "vercel"
+    # 6. SSH: "n"
+    inputs = "My App\napp-id\nAgent Smith\nanthropic\nvercel\nn\n"
+
+    runner = CliRunner()
+
+    @click.command()
+    def cmd():
+        interview(target_dir=tmp_path)
+
+    result = runner.invoke(cmd, input=inputs)
+
+    assert result.exit_code == 0
+    assert "Ready for liftoff" in result.output
+
+    # Verify SPEC.md
+    spec_content = (agent_dir / "SPEC.md").read_text(encoding="utf-8")
+    assert "Goal: My App" in spec_content
+
+    # Verify project.yaml
+    project_data = yaml.safe_load((agent_dir / "project.yaml").read_text(encoding="utf-8"))
+    assert project_data["id"] == "app-id"
+    assert project_data["git_user"] == "Agent Smith"
+    assert "vercel --prod" in project_data["commands"]["deploy"]
+
+    # Verify llm_config.yaml
+    llm_data = yaml.safe_load((agent_dir / "llm_config.yaml").read_text(encoding="utf-8"))
+    assert llm_data["operations"]["planning"][0]["provider"] == "anthropic"
+    assert llm_data["operations"]["coding"][0]["model"] == "claude-3-5-sonnet-20240620"
+
+    # Verify output command
+    assert "docker run" in result.output
+    assert "-v ~/.ssh" not in result.output
