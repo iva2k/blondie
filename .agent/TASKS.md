@@ -89,6 +89,16 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
+### [Sprint4 2026-0315] Easy Start Wizard
+
+- [ ] 101 | P0 | [CLI] Refactor `src/agent/cli.py` to use `click.group`. Move existing logic to `run` subcommand (update ALL files calling agent.cli and agent/cli). Add empty `init` subcommand. |
+- [ ] 102 | P0 | [Init] Implement `init_secrets` flow in `src/agent/cli/init.py`. Prompt for keys, write to `/root/.blondie/secrets.env.yaml` (container path), and handle existing files. |
+- [ ] 103 | P0 | [Init] Implement `validate_secrets` flow. call `scripts/fetch_models.py` logic to test connectivity and generate `.agent/llm.yaml` in workspace. |
+- [ ] 104 | P0 | [Templates] Create `templates/basic` directory structure with default config files (`project.yaml`, `POLICY.yaml`, `TASKS.md`, `SPEC.md`, `ISSUES.md`, `llm_config.yaml`, `dev.yaml`, `.gitignore`). |
+- [ ] 105 | P1 | [Init] Implement `setup_workspace` flow. Detect if empty/git repo. Run `git init` if needed. Copy `templates/basic` files (overwrite protection, `.gitignore` appending). **Fix file permissions (chown) for Docker usage.** |
+- [ ] 106 | P1 | [Init] Implement `interview` flow. Prompt for Spec, Project ID, Git Identity, Model Provider, **Deployment Target**. Update config files. **Print final "Next Steps" with exact docker run command.** |
+- [ ] 107 | P2 | [Init] Implement `stack_detection` for existing projects. Detect Python/Node, pre-fill `project.yaml` commands, and ask for confirmation. |
+
 ### [GOAL]
 
 - [ ] 015 | P4 | **DEPLOY!** Start self-editing | 082
@@ -108,10 +118,12 @@ Status: id | priority | title | depends_on
 - [ ] 016 | P5 | [FEATURE] Multi-repo scanner + project.yaml | 038
 - [ ] 038 | P5 | [for 016] Allow multirepo - limit agent to a project subfolder inside a bigger repo |
 - [ ] 017 | P5 | [FEATURE] Agent should analyze tasks inter-dependency and update TASKS.md, new field "depends_on" |
-- [ ] 019 | P5 | [FEATURE] Easy start - detect and run first start script to collect all info from user and create starting repo from template files |
 - [ ] 021 | P5 | [FEATURE] Add "details" field to TASKS.md, so title could be short, similar to most bug trackers. Prompts bigger rethink - how TASKS.md is best structured? BugTrackers usually have discussions pre- and post- implementation.  |
 - [ ] 041 | P5 | [FEATURE] Agent should communicate with external world: email, slack, twitter. Commands: reboot, terminate, pause/resume. Events: task queue stuck (all tasks blocked, can't finish blockers), Deploy triggered. Carefull as swarm will flood the channels. | 088
 - [ ] 082 | P5 | [CLEANUP] Remove loop.py and it's hard-coded skills: [plan_task, get_file_edits, generate_code, debug_error], wrappers for these skills in router.py, related unit tests. |
 - [ ] 085 | P5 | [CLEANUP] When loop.py is removed, cleanup command_runner vs command_runner2 skills. | 082
 - [ ] 087 | P5 | [FEATURE] Done tasks should be moved from TASKS.md to docs/CHANGELOG.md. Need a toolified skill for that. Consider how removing task from TASKS.md can affect agents swarm (probably not). |
 - [ ] 095 | P5 | [FEATURE] Centralized coordination and reporting, e.g. total cost accrued. Use database? Remove local usage.yaml. (Needed for agents swarm) |
+- [ ] 098 | P5 | [FEATURE] Add "follow-up:" questions to skills frontmatter. LLM may improve results after initial answer if follow-ups are asked. |
+- [ ] 099 | P5 | [FEATURE] Add Docs update skill to orchestrator workflow |
+- [ ] 100 | P5 | [FEATURE] Add self-learning (save acquired knowledge to <TBD>.md ) to orchestrator workflow |

@@ -115,6 +115,16 @@ The agent persists its state and logs within your workspace:
 
 ---
 
+## Next Steps
+
+Now that Blondie is running:
+
+1. **Refine the Backlog**: Populate `.agent/TASKS.md` with real work.
+2. **Tune Autonomy**: Adjust `.agent/POLICY.yaml` to allow or forbid specific actions (e.g., enable `git-merge: allow` for fully autonomous PR merging).
+3. **Expand Capabilities**: Check SKILLS.md to learn how to add custom skills or tools.
+
+---
+
 ## Manual Configuration (Advanced)
 
 If you prefer to configure manually, create an `.agent/` directory in the root of your repository with these files below. To get started you can copy one of template projects in`templates/` folder.
