@@ -42,18 +42,30 @@
             <input type="password" id="github-token" placeholder="ghp_...">
         </div>
 
-        <!-- Step 2: Project Details -->
+        <!-- Step 2: Template Selection -->
         <div class="step">
-            <h2>Step 2: Project Details</h2>
+            <h2>Step 2: Template</h2>
+            <p>Select a starting template for your project configuration.</p>
+            <label for="template-select">Template</label>
+            <select id="template-select">
+                <option value="basic">Basic</option>
+            </select>
+        </div>
+
+        <!-- Step 3: Project Details -->
+        <div class="step">
+            <h2>Step 3: Project Details</h2>
             <label for="project-id">Project ID (e.g., my-app)</label>
             <input type="text" id="project-id" placeholder="my-app">
             <label for="project-goal">What are you building? (High-level goal)</label>
             <textarea id="project-goal" rows="3" placeholder="A web app that helps users track their reading habits."></textarea>
+            <label for="initial-tasks">Initial Tasks (One per line)</label>
+            <textarea id="initial-tasks" rows="5" placeholder="Setup project structure&#10;Implement user login"></textarea>
         </div>
 
-        <!-- Step 3: Configuration -->
+        <!-- Step 4: Configuration -->
         <div class="step">
-            <h2>Step 3: Configuration</h2>
+            <h2>Step 4: Configuration</h2>
             <label for="deployment-target">Primary Deployment Target</label>
             <select id="deployment-target">
                 <option value="docker" selected>Docker</option>
@@ -83,6 +95,21 @@
     <script>
         // The build script replaces this comment with the actual templates JSON object.
         // __TEMPLATES_JSON_PLACEHOLDER__
+
+        // Populate templates dropdown
+        window.addEventListener('DOMContentLoaded', () => {
+            const select = document.getElementById('template-select');
+            if (select && typeof TEMPLATES !== 'undefined') {
+                select.innerHTML = '';
+                Object.keys(TEMPLATES).forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+                    if (name === 'basic') option.selected = true;
+                    select.appendChild(option);
+                });
+            }
+        });
 
         async function generateConfig() {
             const projectId = document.getElementById('project-id').value || 'my-project';

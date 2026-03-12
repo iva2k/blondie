@@ -103,7 +103,7 @@ Status: id | priority | title | depends_on
 ### [Sprint5 2026-0312] Local Easy Start Wizard
 
 - [x] 110 | P0 | [HTML Wizard] Rename `blondie.html` to `blondie.template.html`. Create `scripts/build_wizard.py` to recursively read `templates/` directory and inject file contents into `blondie.template.html` as a JSON object (replacing a placeholder), build `blondie.html` to be checked in. Add script to poe tasks. |
-- [ ] 111 | P0 | [HTML Wizard] Update `blondie.template.html` UI: Add Template Selection dropdown (populated from injected JSON keys) and Initial Tasks textarea. |
+- [x] 111 | P0 | [HTML Wizard] Update `blondie.template.html` UI: Add Template Selection dropdown (populated from injected JSON keys) and Initial Tasks textarea. |
 - [ ] 112 | P0 | [HTML Wizard] Refactor `blondie.template.html` logic: Remove hardcoded file strings. Use injected template files as base. Apply user inputs (Secrets, Project ID, Deploy Target, Tasks) on top of the selected template. |
 - [ ] 113 | P1 | [CLI Wizard] Update `src/agent/wizard.py` to list available subdirectories in `templates/` and prompt user to select one (defaulting to 'basic' or auto-detected stack). |
 - [ ] 114 | P1 | [CLI Wizard] Update `src/agent/wizard.py` interview to prompt for "Initial Tasks" and append them to `TASKS.md`. |
