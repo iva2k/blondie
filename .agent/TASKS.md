@@ -97,7 +97,7 @@ Status: id | priority | title | depends_on
 - [x] 104 | P0 | [Templates] Create `templates/basic` directory structure with default config files (`project.yaml`, `POLICY.yaml`, `TASKS.md`, `SPEC.md`, `ISSUES.md`, `llm_config.yaml`, `dev.yaml`, `.gitignore`). |
 - [x] 105 | P1 | [Init] Implement `setup_workspace` flow. Detect if empty/git repo. Run `git init` if needed. Copy `templates/basic` files (overwrite protection, `.gitignore` appending). **Fix file permissions (chown) for Docker usage.** |
 - [x] 106 | P1 | [Init] Implement `interview` flow. Prompt for Spec, Project ID, Git Identity, Model Provider, **Deployment Target**. Update config files. **Print final "Next Steps" with exact docker run command.** |
-- [ ] 107 | P2 | [Init] Implement `stack_detection` for existing projects. Detect Python/Node, pre-fill `project.yaml` commands, and ask for confirmation. |
+- [x] 107 | P2 | [Init] Implement `stack_detection` for existing projects. Detect Python/Node, pre-fill `project.yaml` commands, and ask for confirmation. |
 - [ ] 108 | P3 | [Dev] Enable debugging wizard in local sandbox. |
 
 ### [GOAL]

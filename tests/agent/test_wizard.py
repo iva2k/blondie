@@ -7,7 +7,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from agent.wizard import interview, setup_secrets, setup_workspace, validate_secrets
+from agent.wizard import interview, setup_secrets, setup_workspace, stack_detection, validate_secrets
 
 
 @pytest.fixture
@@ -308,3 +308,76 @@ def test_interview_flow(tmp_path):
     # Verify output command
     assert "docker run" in result.output
     assert "-v ~/.ssh" not in result.output
+
+
+def test_stack_detection_poetry(tmp_path):
+    """Test stack detection for a Poetry project."""
+    agent_dir = tmp_path / ".agent"
+    agent_dir.mkdir()
+    (agent_dir / "project.yaml").write_text("commands: {}\n", encoding="utf-8")
+    (agent_dir / "dev.yaml").write_text("environment: {}\n", encoding="utf-8")
+
+    # Create pyproject.toml with poetry
+    (tmp_path / "pyproject.toml").write_text("[tool.poetry]\nname = 'test'", encoding="utf-8")
+
+    runner = CliRunner()
+
+    @click.command()
+    def cmd():
+        stack_detection(target_dir=tmp_path)
+
+    result = runner.invoke(cmd, input="y\n")
+
+    assert result.exit_code == 0
+    assert "Detected: Python (Poetry)" in result.output
+    assert "Updated project.yaml" in result.output
+
+    project = yaml.safe_load((agent_dir / "project.yaml").read_text(encoding="utf-8"))
+    assert "poetry install" in project["commands"]["install"]
+    assert project["languages"] == ["python"]
+
+    dev = yaml.safe_load((agent_dir / "dev.yaml").read_text(encoding="utf-8"))
+    assert dev["environment"]["manager"] == "poetry"
+
+
+def test_stack_detection_node_npm(tmp_path):
+    """Test stack detection for a Node/NPM project."""
+    agent_dir = tmp_path / ".agent"
+    agent_dir.mkdir()
+    (agent_dir / "project.yaml").write_text("commands: {}\n", encoding="utf-8")
+    (agent_dir / "dev.yaml").write_text("environment: {}\n", encoding="utf-8")
+
+    # Create package.json
+    (tmp_path / "package.json").write_text("{}", encoding="utf-8")
+
+    runner = CliRunner()
+
+    @click.command()
+    def cmd():
+        stack_detection(target_dir=tmp_path)
+
+    result = runner.invoke(cmd, input="y\n")
+
+    assert result.exit_code == 0
+    assert "Detected: Node.js (npm)" in result.output
+
+    project = yaml.safe_load((agent_dir / "project.yaml").read_text(encoding="utf-8"))
+    assert "npm install" in project["commands"]["install"]
+    assert project["languages"] == ["javascript"]
+
+
+def test_stack_detection_none(tmp_path):
+    """Test stack detection when no known files exist."""
+    agent_dir = tmp_path / ".agent"
+    agent_dir.mkdir()
+
+    runner = CliRunner()
+
+    @click.command()
+    def cmd():
+        stack_detection(target_dir=tmp_path)
+
+    result = runner.invoke(cmd)
+
+    assert result.exit_code == 0
+    assert "No specific stack detected" in result.output

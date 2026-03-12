@@ -203,6 +203,95 @@ def setup_workspace(target_dir: Path | None = None) -> None:
             click.echo(f"⚠️  Failed to set permissions: {e}")
 
 
+def stack_detection(target_dir: Path | None = None) -> None:
+    """Detect project stack and configure environment (Task 107)."""
+    click.echo("\n🔍 Stack Detection")
+
+    # Determine workspace path
+    if target_dir:
+        workspace = target_dir
+    else:
+        workspace = Path("/workspace")
+        if not workspace.exists():
+            workspace = Path.cwd()
+
+    agent_dir = workspace / ".agent"
+    if not agent_dir.exists():
+        click.echo("Skipping stack detection (no .agent directory).")
+        return
+
+    detected_stack = None
+    commands: dict[str, str] = {}
+    dev_env: dict[str, str] = {}
+    languages: list[str] = []
+
+    # 1. Python Detection
+    if (workspace / "pyproject.toml").exists():
+        content = (workspace / "pyproject.toml").read_text(encoding="utf-8")
+        if "tool.poetry" in content:
+            detected_stack = "Python (Poetry)"
+            commands = {
+                "install": "poetry install",
+                "test": "poetry run pytest",
+                "lint": "poetry run ruff check .",
+                "format": "poetry run ruff format .",
+            }
+            dev_env = {"language": "python", "manager": "poetry"}
+        else:
+            detected_stack = "Python (Standard/Pip)"
+            commands = {"install": "pip install -e .", "test": "pytest"}
+            dev_env = {"language": "python", "manager": "pip"}
+        languages = ["python"]
+    elif (workspace / "requirements.txt").exists():
+        detected_stack = "Python (requirements.txt)"
+        commands = {"install": "pip install -r requirements.txt", "test": "pytest"}
+        dev_env = {"language": "python", "manager": "pip"}
+        languages = ["python"]
+
+    # 2. Node Detection (Overrides Python if found, or simple priority for now)
+    if (workspace / "package.json").exists() and not detected_stack:
+        manager = "npm"
+        if (workspace / "yarn.lock").exists():
+            manager = "yarn"
+        elif (workspace / "pnpm-lock.yaml").exists():
+            manager = "pnpm"
+
+        detected_stack = f"Node.js ({manager})"
+        commands = {
+            "install": f"{manager} install",
+            "test": f"{manager} test",
+            "build": f"{manager} run build",
+        }
+        dev_env = {"language": "javascript", "manager": manager}
+        languages = ["javascript"]
+
+    if not detected_stack:
+        click.echo("No specific stack detected. Using generic defaults.")
+        return
+
+    click.echo(f"Detected: {detected_stack}")
+
+    if click.confirm("Update project configuration with detected defaults?", default=True):
+        try:
+            project_file = agent_dir / "project.yaml"
+            if project_file.exists():
+                data = yaml.safe_load(project_file.read_text(encoding="utf-8")) or {}
+                if languages:
+                    data["languages"] = languages
+                data.setdefault("commands", {}).update(commands)
+                project_file.write_text(yaml.safe_dump(data), encoding="utf-8")
+                click.echo("✅ Updated project.yaml commands")
+
+            dev_file = agent_dir / "dev.yaml"
+            if dev_file.exists():
+                data = yaml.safe_load(dev_file.read_text(encoding="utf-8")) or {}
+                data.setdefault("environment", {}).update(dev_env)
+                dev_file.write_text(yaml.safe_dump(data), encoding="utf-8")
+                click.echo("✅ Updated dev.yaml environment")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            click.echo(f"⚠️  Failed to update config: {e}")
+
+
 def interview(target_dir: Path | None = None) -> None:
     """Collect project details and configure agent (Task 106)."""
     click.echo("\n🎤 Project Interview")
@@ -327,4 +416,5 @@ def run_init_wizard() -> None:
     secrets = setup_secrets()
     validate_secrets(secrets)
     setup_workspace()
+    stack_detection()
     interview()
