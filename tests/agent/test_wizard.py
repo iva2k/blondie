@@ -20,12 +20,13 @@ def mock_home(tmp_path):
 def test_setup_secrets_new_file(mock_home):
     """Test creating a new secrets file with interactive input."""
     # Simulate user inputs:
-    # 1. OpenAI? Yes
-    # 2. Key: sk-test
-    # 3. Anthropic? No
-    # 4. Vercel? No
-    # 5. GitHub? No
-    inputs = "y\nsk-test\nn\nn\nn\n"
+    # 1. Storage? 2 (Project)
+    # 2. OpenAI? Yes
+    # 3. Key: sk-test
+    # 4. Anthropic? No
+    # 5. Vercel? No
+    # 6. GitHub? No
+    inputs = "2\ny\nsk-test\nn\nn\nn\n"
 
     runner = CliRunner()
     # We invoke a dummy command to run the function in a click context,
@@ -66,11 +67,12 @@ def test_setup_secrets_existing_file(mock_home):
         yaml.safe_dump(existing_data, f)
 
     # Inputs:
+    # Storage? 2
     # OpenAI check (skipped because exists)
     # Anthropic? Yes -> sk-ant
     # Vercel? No
     # GitHub? Yes -> gh-token
-    inputs = "y\nsk-ant\nn\ny\ngh-token\n"
+    inputs = "2\ny\nsk-ant\nn\ny\ngh-token\n"
 
     @click.command()
     def cmd():
@@ -127,7 +129,7 @@ def test_setup_secrets_errors(mock_home):
         def cmd():
             setup_secrets()
 
-        result = runner.invoke(cmd, input="n\nn\nn\nn\n")
+        result = runner.invoke(cmd, input="2\nn\nn\nn\nn\n")
         assert "Warning: Could not create" in result.output
 
     # 2. Test yaml load error
@@ -142,7 +144,7 @@ def test_setup_secrets_errors(mock_home):
     def cmd_load():
         setup_secrets()
 
-    result = runner.invoke(cmd_load, input="n\nn\nn\nn\n")
+    result = runner.invoke(cmd_load, input="2\nn\nn\nn\nn\n")
     assert "Error loading secrets" in result.output
 
 

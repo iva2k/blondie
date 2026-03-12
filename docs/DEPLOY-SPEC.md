@@ -23,10 +23,11 @@ Implement a seamless "Quick Start" onboarding wizard (`blondie init`) that autom
 
 ### A. Secrets Setup
 
-**Path**: `~/.blondie/secrets.env.yaml` (Host) mapped to `/root/.blondie/secrets.env.yaml` (Container).
+**Path**: Prompt user to choose between Global (`~/.blondie/secrets.env.yaml`) or Project-local (`.agent/secrets.env.yaml`).
+*Rationale*: Project-local secrets allow the user to configure locally and `scp` the entire folder to a remote server easily.
 
-1. Check if secrets file exists.
-2. If missing, Interactive Prompts:
+1. Check if secrets file exists at chosen location.
+2. If missing, Interactive Prompts (long text inputs handled on local machine):
    - `llm.openai.api_key`
    - `llm.anthropic.api_key`
    - `llm.groq.api_key`

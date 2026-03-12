@@ -17,6 +17,16 @@ import yaml
 from agent.lib.models import fetch_and_save_models
 
 
+def _get_workspace(target_dir: Path | None = None) -> Path:
+    """Determine the workspace path."""
+    if target_dir:
+        return target_dir
+    workspace = Path("/workspace")
+    if not workspace.exists():
+        workspace = Path.cwd()
+    return workspace
+
+
 def setup_secrets() -> dict[str, Any]:
     """Interactive secrets setup."""
     click.echo("\n🔑 Secrets Setup")
@@ -25,7 +35,15 @@ def setup_secrets() -> dict[str, Any]:
     if os.environ.get("BLONDIE_SECRETS_DIR"):
         secrets_dir = Path(os.environ["BLONDIE_SECRETS_DIR"])
     else:
-        secrets_dir = Path.home() / ".blondie"
+        click.echo("Where do you want to store secrets?")
+        click.echo("  [1] Global (~/.blondie) - Shared across projects")
+        click.echo("  [2] Project (./.agent)  - Portable / Easy to deploy")
+        choice = click.prompt("Select storage", default="2", type=click.Choice(["1", "2"]))
+
+        if choice == "2":
+            secrets_dir = _get_workspace() / ".agent"
+        else:
+            secrets_dir = Path.home() / ".blondie"
 
     secrets_file = secrets_dir / "secrets.env.yaml"
 
@@ -88,11 +106,7 @@ def validate_secrets(secrets: dict[str, Any]) -> None:
     """Validate secrets by fetching models (Task 103)."""
     click.echo("\n📡 Validating Keys & Fetching Models...")
 
-    # Determine workspace path (mapped to /workspace in Docker)
-    workspace = Path("/workspace")
-    if not workspace.exists():
-        # Fallback for local dev
-        workspace = Path.cwd()
+    workspace = _get_workspace()
 
     llm_yaml_path = workspace / ".agent" / "llm.yaml"
 
@@ -108,13 +122,7 @@ def setup_workspace(target_dir: Path | None = None) -> None:
     """Initialize workspace with git and templates (Task 105)."""
     click.echo("\n🛠️  Workspace Setup")
 
-    # Determine workspace path
-    if target_dir:
-        workspace = target_dir
-    else:
-        workspace = Path("/workspace")
-        if not workspace.exists():
-            workspace = Path.cwd()
+    workspace = _get_workspace(target_dir)
 
     click.echo(f"Target: {workspace}")
 
@@ -212,12 +220,7 @@ def stack_detection(target_dir: Path | None = None) -> None:
     click.echo("\n🔍 Stack Detection")
 
     # Determine workspace path
-    if target_dir:
-        workspace = target_dir
-    else:
-        workspace = Path("/workspace")
-        if not workspace.exists():
-            workspace = Path.cwd()
+    workspace = _get_workspace(target_dir)
 
     agent_dir = workspace / ".agent"
     if not agent_dir.exists():
@@ -301,12 +304,7 @@ def interview(target_dir: Path | None = None) -> None:
     click.echo("\n🎤 Project Interview")
 
     # Determine workspace path
-    if target_dir:
-        workspace = target_dir
-    else:
-        workspace = Path("/workspace")
-        if not workspace.exists():
-            workspace = Path.cwd()
+    workspace = _get_workspace(target_dir)
 
     agent_dir = workspace / ".agent"
     if not agent_dir.exists():
@@ -396,9 +394,21 @@ def interview(target_dir: Path | None = None) -> None:
 
     project_file.write_text(yaml.safe_dump(project_data), encoding="utf-8")
 
+    # Determine where secrets ended up to advise on next steps
+    secrets_local = (agent_dir / "secrets.env.yaml").exists()
+
     # 5. Next Steps
     click.echo("\n🚀 Ready for liftoff!")
-    click.echo("Run the following command to start the agent:")
+
+    if secrets_local:
+        click.echo("\n[Deployment Transfer]")
+        click.echo("Since secrets are in .agent/, you can deploy by copying this folder to your server:")
+        click.echo(f"  scp -r {workspace.name}/ user@your-server:/path/to/projects/")
+        click.echo("\nThen run this on the server:")
+        secrets_mount = "-v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml"
+    else:
+        click.echo("Run the following command to start the agent:")
+        secrets_mount = "-v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml"
 
     ssh_vol = ""
     if click.confirm("Do you use SSH for Git?", default=False):
@@ -409,7 +419,7 @@ docker run -d \\
   --name blondie \\
   --restart always \\
   -v $(pwd):/workspace \\
-  -v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \\
+  {secrets_mount} \\
 {ssh_vol}  blondie:latest run
 """
     click.echo(cmd.strip())

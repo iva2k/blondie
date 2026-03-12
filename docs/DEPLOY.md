@@ -18,13 +18,13 @@ The [#onboarding flow](#quick-start-wizard) automates the creation of these file
 
 ---
 
-## Quick Start Wizard
+## Quick Start (Local Setup -> Remote Deploy)
 
-The wizard handles secrets generation, project templating, and deployment configuration in one go.
+The recommended workflow is to run the setup wizard **locally** on your computer. This allows you to securely copy-paste API keys from your password manager and configure the project before moving it to your deployment server.
 
-### 1. Run the Wizard
+### 1. Run the Wizard Locally
 
-First, build the Docker image (if you haven't already):
+Build the image or pull it (once published registry is available).
 
 ```bash
 docker build -f docker/Dockerfile -t blondie:latest .
