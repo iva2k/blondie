@@ -7,7 +7,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from agent.wizard import setup_secrets, validate_secrets
+from agent.wizard import setup_secrets, setup_workspace, validate_secrets
 
 
 @pytest.fixture
@@ -159,3 +159,102 @@ def test_validate_secrets_failure(mock_fetch):
 
     result = runner.invoke(cmd)
     assert "Could not verify any API keys" in result.output
+
+
+@patch("agent.wizard.subprocess.run")
+def test_setup_workspace_fresh(mock_run, tmp_path):
+    """Test workspace setup in an empty directory."""
+    # Ensure we use the real template directory relative to the source
+    # tmp_path will act as our workspace
+
+    runner = CliRunner()
+
+    @click.command()
+    def cmd():
+        # Confirm git init: Yes
+        # (Templates copy proceeds automatically without overwrite prompt since dest doesn't exist)
+        setup_workspace(target_dir=tmp_path)
+
+    result = runner.invoke(cmd, input="y\n")
+
+    assert result.exit_code == 0
+    assert "Initialized empty git repository" in result.output
+    assert "Created .agent/project.yaml" in result.output
+
+    # Check Git init was called
+    mock_run.assert_called()
+    args = mock_run.call_args[0][0]
+    assert args[:2] == ["git", "init"]
+    assert str(tmp_path) in args[2]
+
+    # Check files
+    agent_dir = tmp_path / ".agent"
+    assert agent_dir.exists()
+    assert (agent_dir / "project.yaml").exists()
+    assert (agent_dir / "POLICY.yaml").exists()
+    assert (tmp_path / ".gitignore").exists()
+
+
+@patch("agent.wizard.subprocess.run")
+def test_setup_workspace_existing(mock_run, tmp_path):
+    """Test workspace setup in an existing directory with collisions."""
+    # 1. Setup existing state
+    (tmp_path / ".git").mkdir()
+    (tmp_path / ".gitignore").write_text("*.log", encoding="utf-8")
+
+    agent_dir = tmp_path / ".agent"
+    agent_dir.mkdir()
+    (agent_dir / "project.yaml").write_text("id: old", encoding="utf-8")
+
+    runner = CliRunner()
+
+    @click.command()
+    def cmd():
+        # Confirm git init? (Skipped logic, but input stream might need alignment if logic changed)
+        # Logic says: if .git exists, it prints "Git repository detected" and doesn't prompt.
+
+        # Overwrite project.yaml? No
+        setup_workspace(target_dir=tmp_path)
+
+    # Input 'n' for overwrite confirmation of project.yaml
+    result = runner.invoke(cmd, input="n\n")
+
+    assert result.exit_code == 0
+    assert "Git repository detected" in result.output
+    mock_run.assert_not_called()
+
+    # Check project.yaml was NOT overwritten
+    assert (agent_dir / "project.yaml").read_text(encoding="utf-8") == "id: old"
+
+    # Check .gitignore was updated
+    gitignore_content = (tmp_path / ".gitignore").read_text(encoding="utf-8")
+    assert "*.log" in gitignore_content
+    assert ".agent/secrets.env.yaml" in gitignore_content
+
+
+@patch("os.getuid", return_value=0, create=True)
+@patch("os.chown", create=True)
+@patch("os.walk")
+def test_setup_workspace_permissions(mock_walk, mock_chown, _mock_getuid, tmp_path):
+    """Test permission fixing when running as root."""
+    # Mock os.walk to return dummy files
+    mock_walk.return_value = [
+        (str(tmp_path / ".agent"), ["subdir"], ["file1"]),
+    ]
+
+    # Create dummy files so os.walk logic works if it were real,
+    # but here we rely on the mock return for the loop.
+    # However, the code calls `workspace.stat()`. We need a real path or mocked stat.
+    # tmp_path is real.
+
+    runner = CliRunner()
+
+    @click.command()
+    def cmd():
+        setup_workspace(target_dir=tmp_path)
+
+    result = runner.invoke(cmd, input="y\n")
+
+    assert result.exit_code == 0
+    assert "Fixed file permissions" in result.output
+    assert mock_chown.called
