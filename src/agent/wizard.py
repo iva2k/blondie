@@ -4,13 +4,17 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
+from typing import Any
 
 import click
 import yaml
 
+from agent.lib.models import fetch_and_save_models
 
-def setup_secrets() -> None:
+
+def setup_secrets() -> dict[str, Any]:
     """Interactive secrets setup."""
     click.echo("\n🔑 Secrets Setup")
 
@@ -24,7 +28,7 @@ def setup_secrets() -> None:
         except OSError as e:
             click.echo(f"Warning: Could not create {secrets_dir}: {e}")
 
-    secrets = {}
+    secrets: dict[str, Any] = {}
     if secrets_file.exists():
         click.echo(f"Found existing secrets at {secrets_file}")
         try:
@@ -62,3 +66,31 @@ def setup_secrets() -> None:
         click.echo(f"✅ Secrets saved to {secrets_file}")
     except OSError as e:
         click.echo(f"❌ Failed to write secrets: {e}")
+
+    return secrets
+
+
+def validate_secrets(secrets: dict[str, Any]) -> None:
+    """Validate secrets by fetching models (Task 103)."""
+    click.echo("\n📡 Validating Keys & Fetching Models...")
+
+    # Determine workspace path (mapped to /workspace in Docker)
+    workspace = Path("/workspace")
+    if not workspace.exists():
+        # Fallback for local dev
+        workspace = Path.cwd()
+
+    llm_yaml_path = workspace / ".agent" / "llm.yaml"
+
+    success = asyncio.run(fetch_and_save_models(secrets, llm_yaml_path, log_func=click.echo))
+
+    if success:
+        click.echo(f"✅ Model list saved to {llm_yaml_path}")
+    else:
+        click.echo("⚠️  Could not verify any API keys. Please check your secrets.")
+
+
+def run_init_wizard() -> None:
+    """Run the full initialization wizard."""
+    secrets = setup_secrets()
+    validate_secrets(secrets)
