@@ -4,115 +4,220 @@ Blondie operates as a virtual software engineer living in a container. To employ
 
 1. **Host Machine**: Any machine with Docker installed.
 2. **The Workspace**: A git repository (new or existing) mounted to the container.
-3. **The Keys**: Credentials for LLMs and Cloud providers (`secrets.env.yaml`).
-4. **The Instructions**:
-   - `SPEC.md`: The high-level product specification (What to build).
-   - `TASKS.md`: The backlog of work items (What to do next).
-   - `ISSUES.md`: A scratchpad for the agent to log observations or problems (optional).
-   - `POLICY.yaml`: The rules of engagement (Autonomy levels).
-   - `dev.yaml`: Language and development tools configuration (Linters, formatters).
-   - `llm_config.yaml`: Model selection and parameters (e.g. GPT-4o, Claude 3.5).
-   - `project.yaml`: Project definition (Commands, metadata).
+3. **The Keys**: Credentials for git, LLMs, and Cloud providers (`secrets.env.yaml`).
+4. **The Instructions**: Content of the [`.agent` directory](#the-agent-directory).
 
-The [#onboarding flow](#quick-start-wizard) automates the creation of these files, or you can create them [#manually](#manual-configuration-advanced).
+This guide explains how to deploy and configure the Blondie agent to manage your code repositories.
 
----
+## The `.agent` Directory
 
-## Quick Start (Local Setup -> Remote Deploy)
+Blondie's configuration lives in an `.agent/` directory at the root of your project. This directory contains all the necessary files for the agent to understand its goals, policies, and environment.
 
-The recommended workflow is to run the setup wizard **locally** on your computer. This allows you to securely copy-paste API keys from your password manager and configure the project before moving it to your deployment server.
-
-### 1. Run the Wizard Locally
-
-Build the image or pull it (once published registry is available).
-
-```bash
-docker build -f docker/Dockerfile -t blondie:latest .
-```
-
-Then execute the interactive `init` command. We mount `~/.blondie` to store your global secrets securely on the host, and the current directory as the workspace.
-
-```bash
-mkdir -p ~/.blondie
-cd /path/to/my/project  # Directory to initialize
-
-docker run --rm -it \
-  -v ~/.blondie:/root/.blondie \
-  -v $(pwd):/workspace \
-  blondie:latest init
-```
-
-### 2. The Interview
-
-The wizard will guide you through the following steps:
-
-#### A. Secrets Setup
-
-If `~/.blondie/secrets.env.yaml` is missing, it will ask:
-
-- "Enter your OpenAI/Anthropic API Key:"
-- "Enter your Cloud Provider Token (Vercel/Netlify/AWS) [Optional]:"
-
-#### B. Project Initialization
-
-It detects if the current directory is empty or has code.
-
-- **Empty Directory**: "Choose a starter template: [1] Python Basic [2] React/Vite [3] Node Express..."
-- **Existing Code**: "Analyzing repository... Detected Python. Generating `.agent/` config..."
-- **Product Spec**: "What are you building?" (Writes to `SPEC.md`).
-- **Initial Task**: "What are the first tasks?" [Default: Setup project] (Writes to `TASKS.md`).
-
-#### C. Deployment Configuration
-
-It asks where the final product should be deployed:
-
-- "Select Deployment Target: [1] Docker (Self-hosted) [2] Vercel [3] Netlify [4] Custom SSH"
-- Depending on choice, it configures `project.yaml` commands (e.g., `deploy: vercel --prod`).
+- `SPEC.md`: The high-level product specification (What to build).
+- `TASKS.md`: The backlog of work items (What to do next).
+- `ISSUES.md`: A scratchpad for the agent to log observations or problems (optional).
+- `POLICY.yaml`: The rules of engagement (Autonomy levels/Safety gates).
+- `dev.yaml`: Language and development tools configuration (Linters, formatters, coding standard).
+- `llm_config.yaml`: Model selection and parameters (e.g. GPT-4o, Claude 3.5).
+- `project.yaml`: Project definition (Commands, metadata).
 
 ---
 
-## Git Authentication
+First, collect all [**Prerequisites**](#1-prerequisites) and perform the [**Installation**](#2-installation-build-image).
+
+Then, choose an onboarding method:
+
+- The recommended [**HTML Wizard**](#3-onboarding-the-html-wizard-recommended)
+- or the [**CLI Wizard**](#4-onboarding-the-cli-wizard-advanced).
+- For advanced users, [**Manual Configuration**](#7-manual-configuration-advanced) is also an option.
+
+---
+
+## 1. Prerequisites
+
+Before starting, gather the following credentials.
+
+### LLM API Keys
+
+You need at least one LLM provider, but using a few allows you to leverage their individual strengths.
+
+- **OpenAI**: `sk-...`
+- **Anthropic**: `sk-ant-...`
+- **Groq** (Optional): `gsk-...`
+
+### Git Authentication
 
 Blondie needs credentials to push code and create Pull Requests.
 
-### Option A: HTTPS Token (Recommended)
+#### Option A: HTTPS Token (Recommended)
 
-For HTTPS repositories (e.g., `https://github.com/user/repo.git`), use a Personal Access Token (PAT). The `init` wizard can set this up, or you can add it manually to `secrets.env.yaml`:
+For HTTPS repositories (e.g., `https://github.com/user/repo.git`), create a Personal Access Token (PAT).
 
-```yaml
-git:
-  github_token: "ghp_..."
-  gitlab_token: "glpat-..."
-```
+- **GitHub**: Settings -> Developer Settings -> Personal Access Tokens (Classic). Scopes: `repo`.
+- **GitLab**: User Settings -> Access Tokens. Scopes: `api`, `write_repository`.
 
-### Option B: SSH Keys
+#### Option B: SSH Keys
 
-If your repository uses SSH (e.g., `git@github.com:user/repo.git`), you must mount your SSH keys into the container.
+If you prefer SSH (e.g., `git@github.com:user/repo.git`), you will skip the token setup in the wizard. Instead, you will have to copy your SSH key to the instance's `~/.ssh` directory and mount it when running the container.
 
-```bash
-docker run -d \
-  -v ~/.ssh:/root/.ssh:ro \
-  ...
-```
+---
 
-## 3. Run the Agent
+## 2. Installation (Build Image)
 
-Once initialized, run Blondie in background (daemon) mode.
+You need to build the Blondie Docker image on your host machine.
+
+1. Clone the repository:  
+
+   ```bash
+   git clone https://github.com/iva2k/blondie.git
+   cd blondie
+   ```
+
+2. Build the image:  
+
+   ```bash
+   docker build -f docker/Dockerfile -t blondie:latest .
+   ```
+
+---
+
+## 3. Onboarding: The HTML Wizard (Recommended)
+
+The recommended workflow is to use the **Local-First HTML Wizard**. It runs entirely in your browser, requires no installation dependencies, and lets you securely configure your project.
+
+### Step 1: Download and Run
+
+1. Locate the `init.html` file in the root of the `blondie` repository you just cloned.
+2. Double-click `init.html` to open it in your web browser.
+3. In the Wizard you can open a previously created `blondie_config.zip` file to edit your settings.
+
+### Step 2: The Interview
+
+The wizard page will guide you through the following steps. It runs entirely in your browser.
+
+_**NO DATA IS EVER TRANSMITTED OVER THE NETWORK.**_
+
+Copy-paste your tokens and keys to avoid typos.
+
+1. **Secrets Setup**:
+   - Enter your API Keys (OpenAI, Anthropic, etc.).
+   - Enter your GitHub Token (if using HTTPS).
+2. **Template Selection**:
+   - Choose a starter template (e.g., Basic, Python, Node.js) to pre-fill configuration.
+3. **Project Details**:
+   - **Project ID**: A unique name for your agent/project.
+   - **Goal**: A high-level description of what you are building (populates `SPEC.md`).
+   - **Initial Tasks**: Define the first few tasks for the agent's backlog (`TASKS.md`).
+4. **Configuration**:
+   - **Deployment Target**: Choose where your app will live (Docker, Vercel, Netlify). This configures the `deploy` command in `project.yaml`.
+
+### Step 3: Download Configuration
+
+After completing the interview, click **"Generate & Download"**. Your browser will download a `blondie_config.zip` file containing a ready-to-use `.agent` directory.
+
+### Step 4: Prepare Your Project
+
+1. Create a new folder for your project and navigate into it.
+
+   ```bash
+   mkdir my-new-project
+   cd my-new-project
+   ```
+
+2. Unzip the `blondie_config.zip` file here. Your folder should now contain the `.agent` directory.
+3. If this is a new project, initialize a git repository and connect it to your remote (e.g., on GitHub).
+
+   ```bash
+   # Initialize the local repository
+   git init
+
+   # Add the remote repository URL
+   git remote add origin https://github.com/your-username/my-new-project.git
+
+   # Create an initial commit and push to set the upstream branch
+   git add .
+   git commit -m "Initial commit with Blondie config"
+   git push -u origin main
+   ```
+
+---
+
+## 4. Onboarding: The CLI Wizard (Advanced)
+
+If you prefer the command line, you can run the wizard either inside a Docker container or directly in your local Python environment.
+
+### Option A: Using Docker
+
+Execute the interactive `init` command. This mounts `~/.blondie` for global secrets and the current directory as the workspace.
+
+   ```bash
+   mkdir -p ~/.blondie
+   cd /path/to/my/project  # Directory to initialize
+
+   docker run --rm -it \
+     -v ~/.blondie:/root/.blondie \
+     -v $(pwd):/workspace \
+     blondie:latest init
+   ```
+
+### Option B: Using a Local Python Environment
+
+1. Set up your local development environment as described in the **Development Guide** (clone repo, `poetry install`).
+2. Navigate to your target project folder and run the wizard via `poetry`.  
+
+   ```bash
+   # In your Blondie clone directory
+   cd /path/to/blondie
+
+   # Run the init command, targeting your project's directory
+   poetry run blondie init /path/to/my/project
+   ```
+
+### The Terminal Interview
+
+The CLI wizard will guide you through similar steps as the HTML version:
+
+1. **Secrets**: Asks for storage location (Global `~/.blondie` or Project `.agent/`) and keys.
+2. **Stack Detection**: Analyzes existing files (e.g. `pyproject.toml`) to suggest commands.
+3. **Templating**: If the directory is empty, prompts to select a configuration template.
+4. **Interview**: Prompts for Spec, Project ID, Initial Tasks, and Deployment target.
+
+---
+
+## 5. Running the Agent
+
+Once your project is initialized, run Blondie in the background (daemon mode).
+
+### Standard Run (HTTPS Git)
+
+Use this if you provided a GitHub token in the secrets file.
 
 ```bash
 docker run -d \
   --name blondie \
   --restart always \
   -v $(pwd):/workspace \
-  -v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \
+  -v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \
+  blondie:latest run
+```
+
+### SSH Run
+
+If you skipped the token setup and use SSH for git, mount your SSH keys with additional  `-v ~/.ssh:/root/.ssh:ro` argument.
+
+```bash
+docker run -d \
+  --name blondie \
+  --restart always \
+  -v ~/.ssh:/root/.ssh:ro \
+  -v $(pwd):/workspace \
+  -v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \
   blondie:latest run
 ```
 
 Blondie is now running. It will read `SPEC.md` and `TASKS.md` to begin working on the first available task.
 
----
-
-## Operating the Agent
+## 6. Operating the Agent
 
 ### Monitoring & Logs
 
@@ -122,9 +227,11 @@ Watch the agent plan, code, and test in real-time.
 docker logs -f blondie
 ```
 
+Monitor commits progress: `git log` in your repository.
+
 ### Assigning Work
 
-Edit `.agent/TASKS.md` via your favorite editor and commit/push to git.
+Edit `.agent/TASKS.md` in your favorite editor and commit/push to the `main` branch to assign new work.
 
 ```markdown
 - [ ] 005 | P1 | Add dark mode toggle to header |
@@ -132,28 +239,16 @@ Edit `.agent/TASKS.md` via your favorite editor and commit/push to git.
 
 ### Logs & Artifacts
 
-The agent persists its state and logs within your workspace:
+The agent persists its state and logs within its workspace:
 
 - `.agent/logs/`: Detailed execution logs and LLM conversations (Journal).
 - `.agent/progress.txt`: A summary of recent actions.
 
----
+## 7. Manual Configuration (Advanced)
 
-## Next Steps
+If you prefer to configure manually, create an `.agent/` directory in the root of your repository with these files below. To get started, you can copy files from one of template projects in `templates/` folder, e.g. `templates/basic/.agent`.
 
-Now that Blondie is running:
-
-1. **Refine the Backlog**: Populate `.agent/TASKS.md` with real work.
-2. **Tune Autonomy**: Adjust `.agent/POLICY.yaml` to allow or forbid specific actions (e.g., enable `git-merge: allow` for fully autonomous PR merging).
-3. **Expand Capabilities**: Check SKILLS.md to learn how to add custom skills or tools.
-
----
-
-## Manual Configuration (Advanced)
-
-If you prefer to configure manually, create an `.agent/` directory in the root of your repository with these files below. To get started you can copy one of template projects in`templates/` folder.
-
-### 1. `SPEC.md`
+### `SPEC.md`
 
 Defines your high-level product requirements and "North Star" goals.
 
@@ -163,15 +258,17 @@ Goal: Create a calculator app that supports RPN mode.
 Users: Engineers and students.
 ```
 
-### 2. `project.yaml`
+### `project.yaml`
 
-Defines your project type. Maps generic actions to your specific project commands.
+Defines your project type and maps generic actions to your specific project commands.
 
 ```yaml
-id: my-project
+id: my-app
+name: "My Awesome App"
 languages: [python]
 git_user: "Blondie Bot"
 git_email: "blondie@example.com"
+main_branch: main
 task_source: TASKS.md
 commands:
   install: poetry install
@@ -180,49 +277,61 @@ commands:
   deploy: ./deploy.sh --token {{secret:cloud.vercel.token}}
 policy: POLICY.yaml
 dev_config: dev.yaml
+docs: [README.md]
 ```
 
-### 3. `POLICY.yaml`
+### `POLICY.yaml`
 
 Defines the agent autonomy level and safety gates.
 
 ```yaml
 # Autonomy Gates (allow | prompt | forbid)
-git-merge: allow          # Auto-merge PRs if tests pass
-deploy-prod: prompt       # Wait for human approval before running deploy command
-shell-exec: allow         # Allow running shell commands
+autonomy:
+  gates:
+    git-merge: allow          # Auto-merge PRs if tests pass
+    deploy-docker: prompt     # Wait for human approval before running deploy command
+    shell-exec: allow         # Allow running shell commands
 
 limits:
   max_daily_cost_usd: 5.0  # Hard stop if cost exceeds this
   max_test_retries: 3
 ```
 
-### 4. `TASKS.md`
+### `TASKS.md`
 
-The backlog of work.
+The agent's backlog of work.
 
 ```markdown
 # Tasks
-## Todo
+
 Status: id | priority | title | depends_on
+
+## Todo
+
 - [ ] 001 | P0 | Setup project structure |
+- [ ] 002 | P1 | Implement user authentication |
 ```
 
-### 5. `dev.yaml`
+### `dev.yaml`
 
-Development environment configuration. See some available pre-configured files in `templates/dev.*.yaml` to start from.
+Defines the development environment. See some available pre-configured files in `templates/` to start from.
 
 ```yaml
-package_manager: poetry
-linter: ruff
-formatter: black
+environment:
+  language: python
+  manager: poetry
+guidelines:
+  - "Use an `src` layout."
+  - "Follow PEP 8 via ruff."
 ```
 
-### 6. `secrets.env.yaml`
+### `secrets.env.yaml`
 
-You can use `.agent/secrets.env.EXAMPLE.yaml` as a template for your `secrets.env.yaml` file.
+**Never commit this file.** Contains API keys and tokens.
 
-Store this in `~/.blondie/` or `.agent/` (git-ignored).
+You can use `.agent/secrets.env.EXAMPLE.yaml` as a template.
+
+Store this in `~/.blondie/` or `.agent/` (which should be ignored by git).
 
 ```yaml
 llm:
@@ -232,15 +341,18 @@ llm:
     api_key: "sk-ant-..."
   groq:
     api_key: "gsk-..."
-
+git:
+  github_token: "ghp_..."
 cloud:
   vercel:
     token: "..."
 ```
 
-### 7. `llm_config.yaml`
+> ⚠️ Important: Ensure `.agent/secrets.env.yaml` is added to your `.gitignore` file to prevent accidental commit of credentials.
 
-Model definitions and model selection per different operation.
+### `llm_config.yaml`
+
+Defines model selection for different operations. See `templates/basic/llm_config.yaml` for a full example.
 
 ```yaml
 providers:
@@ -249,14 +361,8 @@ providers:
     temperature: 0.1
   groq:
     api_type: openai
-    base_url: https://api.groq.com/openai/v1
-    default_model: llama-3.3-70b-versatile
-  # To use OpenAI:
-  # openai:
-  #   model: gpt-4o
-  #   temperature: 0.1
-  
-  # You can add more providers here. Do not add multiple models here, instead edit `operations` section.
+    base_url: https://api.openai.com/v1
+    default_model: gpt-4o-mini
 
 operations:
   # You can add more provider/models under each operation. Make sure provider matches entry in `providers` section.
@@ -275,11 +381,9 @@ operations:
     # etc. ...
 ```
 
-> **⚠️ Important:** Ensure `.agent/secrets.env.yaml` is added to your `.gitignore` file to prevent accidental commit of credentials.
+## 8. Maintenance
 
-### 8. Maintenance
-
-#### Updating the Agent
+### Updating the Agent
 
 To upgrade to the latest version:
 
@@ -291,21 +395,21 @@ docker build -f docker/Dockerfile -t blondie:latest .
 docker stop blondie
 docker rm blondie
 
-# Start a new one with the updated image
-docker run -d --name blondie ... (see Start command above)
+# Start the new container
+docker run -d --name blondie
 ```
 
-### 9. Troubleshooting
+## 8. Troubleshooting
 
-#### Permission Denied (Linux)
+### Permission Denied (Linux)
 
-If you see permission errors writing to `.agent/`, ensure the container has the right UID/GID or run with `user: $(id -u):$(id -g)` in the docker command.
+If you see permission errors writing to `.agent/`, ensure the container has the right UID/GID or run with `user: $(id -u):$(id -g)` in the `docker run` command.
 
-#### API Key Errors
+### API Key Errors
 
-Check `docker logs blondie`. If you see 401/403 errors, verify your keys in `~/.blondie/secrets.env.yaml` and restart the container.
+Check `docker logs blondie`. If you see 401/403 errors, verify your keys in your `secrets.env.yaml` and restart the container.
 
-#### Agent Loop / Stuck
+### Agent Loop / Stuck
 
 If the agent seems stuck on a task:
 
@@ -313,7 +417,8 @@ If the agent seems stuck on a task:
 2. Restart: `docker restart blondie`
 3. If it persists, the agent may be in a logic loop. Edit `.agent/TASKS.md` to guide it differently: make the task description more specific, break it into smaller sub-tasks, or add a note about the failed approach.
 
-#### Windows Users
+### Windows Users
 
 If running on Windows Command Prompt, replace `$(pwd)` with `%cd%`.
+
 If running on PowerShell, use `${PWD}`.

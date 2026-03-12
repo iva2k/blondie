@@ -87,9 +87,7 @@ Status: id | priority | title | depends_on
 - [x] 084 | P2 | [FEATURE] pull git main branch in pick_task tool before checking TASKS.md when there is no claimed task in local agent sandbox. Needed for swarm coordination using git. |
 - [x] 091 | P3 | [Quality] After-sprint: Implement unit tests for low coverage modules used under loop2.py, increase modules low coverage to 80%. | 088, 092, 081, 089, 090, 082, 086, 084
 
-## Todo
-
-### [Sprint4 2026-0315] Easy Start Wizard
+### [Sprint4 2026-0311] Easy Start Wizard
 
 - [x] 101 | P0 | [CLI] Refactor `src/agent/cli.py` to use `click.group`. Move existing logic to `run` subcommand (update ALL files calling agent.cli run and agent/cli). Add empty `init` subcommand. |
 - [x] 102 | P0 | [Init] Implement `init_secrets` flow in `src/agent/cli.py init`. Prompt for keys, write to `/root/.blondie/secrets.env.yaml` (container path), and handle existing files. |
@@ -99,6 +97,20 @@ Status: id | priority | title | depends_on
 - [x] 106 | P1 | [Init] Implement `interview` flow. Prompt for Spec, Project ID, Git Identity, Model Provider, **Deployment Target**. Update config files. **Print final "Next Steps" with exact docker run command.** |
 - [x] 107 | P2 | [Init] Implement `stack_detection` for existing projects. Detect Python/Node, pre-fill `project.yaml` commands, and ask for confirmation. |
 - [x] 108 | P3 | [Dev] Enable debugging the wizard (`agent.cli init`) in local sandbox. |
+
+## Todo
+
+### [Sprint5 2026-0312] Local Easy Start Wizard
+
+- [ ] 110 | P0 | [HTML Wizard] Rename `init.html` to `init.template.html`. Create `scripts/build_wizard.py` to recursively read `templates/` directory and inject file contents into `init.template.html` as a JSON object (replacing a placeholder), build `init.html` to be checked in. Add script to poe tasks. |
+- [ ] 111 | P0 | [HTML Wizard] Update `init.template.html` UI: Add Template Selection dropdown (populated from injected JSON keys) and Initial Tasks textarea. |
+- [ ] 112 | P0 | [HTML Wizard] Refactor `init.template.html` logic: Remove hardcoded file strings. Use injected template files as base. Apply user inputs (Secrets, Project ID, Deploy Target, Tasks) on top of the selected template. |
+- [ ] 113 | P1 | [CLI Wizard] Update `src/agent/wizard.py` to list available subdirectories in `templates/` and prompt user to select one (defaulting to 'basic' or auto-detected stack). |
+- [ ] 114 | P1 | [CLI Wizard] Update `src/agent/wizard.py` interview to prompt for "Initial Tasks" and append them to `TASKS.md`. |
+- [ ] 115 | P1 | [Templates] Create `templates/python` and `templates/node` directories with specific `project.yaml` and `dev.yaml` configurations to support template selection in wizards. |
+- [ ] 116 | P1 | [HTML Wizard] Add "Use SSH for Git?" checkbox to UI and update the generated `docker run` command logic to include `-v ~/.ssh:/root/.ssh:ro`. |
+- [ ] 117 | P2 | [Build] Create E2E test to verify `scripts/build_wizard.py` correctly generates `init.html` and that the generated file passes `tests/test_init_html.py`. |
+- [ ] 118 | P2 | [Wizards] Add Groq API Key prompt to `setup_secrets` (CLI) and `init.template.html` (HTML) to match supported providers in `DEPLOY.md`. Make the list of providers dynamic based on `llm_config.yaml` |
 
 ### [GOAL]
 
@@ -128,3 +140,4 @@ Status: id | priority | title | depends_on
 - [ ] 098 | P5 | [FEATURE] Add "follow-up:" questions to skills frontmatter. LLM may improve results after initial answer if follow-ups are asked. |
 - [ ] 099 | P5 | [FEATURE] Add Docs update skill to orchestrator workflow |
 - [ ] 100 | P5 | [FEATURE] Add self-learning (save acquired knowledge to <TBD>.md ) to orchestrator workflow |
+- [ ] 109 | P1 | Move some config settings from project.yaml to POLICY.yaml |

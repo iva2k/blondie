@@ -100,28 +100,23 @@ Blondie is evolving from a procedural script in [Architecture v1](docs/ARCHITECT
 
 ## Quick Start (Deploy)
 
-To run Blondie against a repository using Docker:
+The easiest way to get started is with the **Local-First HTML Wizard**. It runs in your browser to securely configure your project, then gives you a simple Docker command to run the agent.
 
 ```bash
-# 1. Clone Blondie
-git clone https://github.com/iva2k/blondie.git
-cd blondie
+# 1. Download the Wizard
+# Go to the repository and save `init.html` to your computer.
 
-# 2. Build Docker Image
+# 2. Run the Wizard
+# Open init.html in your browser. It will guide you through setup and
+# provide a `blondie_config.zip` file to download.
+
+# 3. Prepare Your Project
+# mkdir my-project && cd my-project
+# unzip /path/to/your/blondie_config.zip
+
+# 4. Run the Agent
+# The wizard will provide the exact Docker command. It will look like this:
 docker build -f docker/Dockerfile -t blondie:latest .
-
-# 3. Run Setup Wizard
-#    Mounts ~/.blondie for secrets and $(pwd) for the repo
-#    - Sets up API Keys
-#    - Initializes .agent/ config (Templates or Auto-detect)
-#    - Configures Deployment (Vercel/Netlify/Docker)
-mkdir -p ~/.blondie
-docker run --rm -it \
-  -v ~/.blondie:/root/.blondie \
-  -v $(pwd):/workspace \
-  blondie:latest init
-
-# 4. Run Agent
 docker run -d --restart always \
            -v $(pwd):/workspace \
            -v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \

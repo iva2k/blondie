@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blondie Agent - Initialization Wizard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 2em; max-width: 800px; margin: auto; background: #f9f9f9; color: #333; }
+        h1, h2 { color: #111; }
+        .step { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 1.5em; margin-bottom: 2em; }
+        label { display: block; font-weight: bold; margin-top: 1em; }
+        input, select, textarea { width: 100%; padding: 0.8em; margin-top: 0.5em; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #005cbf; color: white; padding: 0.8em 1.5em; border: none; border-radius: 4px; font-size: 1em; cursor: pointer; margin-top: 1em; }
+        button:hover { background: #0056b3; }
+        #final-command { background: #222; color: #eee; padding: 1em; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🧙 Blondie Agent Initialization Wizard</h1>
+    <p>This wizard runs entirely in your browser. No data is sent to any server. It will generate a <code>.zip</code> file with your configuration.</p>
+
+    <div style="background: #e9ecef; padding: 1.5em; border-radius: 8px; margin-bottom: 2em; border: 1px solid #ddd;">
+        <h3 style="margin-top: 0;">📂 Resume Configuration</h3>
+        <p>Already have a <code>blondie_config.zip</code>? Open it here to edit your settings.</p>
+        <input type="file" id="zip-input" accept=".zip" style="display: none;" onchange="loadZip(this)">
+        <button onclick="document.getElementById('zip-input').click()" style="margin-top: 0; background-color: #6c757d;">Open Zip File</button>
+    </div>
+
+    <div id="wizard-steps">
+        <!-- Step 1: Secrets -->
+        <div class="step">
+            <h2>Step 1: Secrets</h2>
+            <p>Enter your API keys. These will be saved locally in <code>.agent/secrets.env.yaml</code>.</p>
+            <label for="openai-key">OpenAI API Key</label>
+            <input type="password" id="openai-key" placeholder="sk-...">
+            <label for="anthropic-key">Anthropic API Key</label>
+            <input type="password" id="anthropic-key" placeholder="sk-ant-...">
+            <label for="github-token">GitHub Token (for private repos/PRs)</label>
+            <input type="password" id="github-token" placeholder="ghp_...">
+        </div>
+
+        <!-- Step 2: Project Details -->
+        <div class="step">
+            <h2>Step 2: Project Details</h2>
+            <label for="project-id">Project ID (e.g., my-app)</label>
+            <input type="text" id="project-id" placeholder="my-app">
+            <label for="project-goal">What are you building? (High-level goal)</label>
+            <textarea id="project-goal" rows="3" placeholder="A web app that helps users track their reading habits."></textarea>
+        </div>
+
+        <!-- Step 3: Configuration -->
+        <div class="step">
+            <h2>Step 3: Configuration</h2>
+            <label for="deployment-target">Primary Deployment Target</label>
+            <select id="deployment-target">
+                <option value="docker" selected>Docker</option>
+                <option value="vercel">Vercel</option>
+                <option value="netlify">Netlify</option>
+                <option value="custom">Custom</option>
+            </select>
+        </div>
+
+        <button onclick="generateConfig()">Generate & Download Configuration</button>
+    </div>
+
+    <div id="next-steps" class="step hidden">
+        <h2>🚀 Success! Your configuration is ready.</h2>
+        <p>Your <code>blondie_config.zip</code> file has been downloaded.</p>
+        <h3>Next Steps:</h3>
+        <ol>
+            <li>Create a new folder for your project: <code>mkdir my-project && cd my-project</code></li>
+            <li>Unzip the downloaded file here. You should now have a <code>.agent</code> directory.</li>
+            <li>Initialize a git repository: <code>git init</code></li>
+            <li>Run the agent using Docker with the command below.</li>
+        </ol>
+        <h3>Docker Run Command:</h3>
+        <pre id="final-command"></pre>
+    </div>
+
+    <script>
+        async function generateConfig() {
+            const projectId = document.getElementById('project-id').value || 'my-project';
+            const goal = document.getElementById('project-goal').value;
+            const deployTarget = document.getElementById('deployment-target').value;
+
+            // 1. Create secrets.env.yaml content
+            const secrets = {
+                llm: {
+                    openai: { api_key: document.getElementById('openai-key').value || "" },
+                    anthropic: { api_key: document.getElementById('anthropic-key').value || "" }
+                },
+                git: {
+                    github_token: document.getElementById('github-token').value || ""
+                }
+            };
+            const secretsYaml = jsyaml.dump(secrets);
+
+            // 2. Create project.yaml content
+            const project = {
+                id: projectId,
+                name: projectId,
+                languages: [],
+                git_user: "Blondie Bot",
+                git_email: "blondie@agent.local",
+                task_source: "TASKS.md",
+                commands: {
+                    install: 'echo "Install command not configured"',
+                    test: 'echo "Test command not configured"'
+                },
+                policy: "POLICY.yaml",
+                dev_config: "dev.yaml",
+                docs: ["README.md"]
+            };
+
+            if (deployTarget === 'vercel') {
+                project.commands.deploy = "vercel --prod --token {{secret:cloud.vercel.token}}";
+            } else if (deployTarget === 'netlify') {
+                project.commands.deploy = "netlify deploy --prod --dir=dist --auth={{secret:cloud.netlify.token}}";
+            } else if (deployTarget === 'docker') {
+                project.deploy = { docker: `docker build -t ${projectId}:latest .` };
+                project.commands.deploy = "echo 'Deploy via Docker'";
+            } else {
+                project.commands.deploy = 'echo "Deploy command not configured"';
+            }
+            
+            const projectYaml = jsyaml.dump(project);
+
+            // 3. Create SPEC.md content
+            const specMd = `# Product Spec\n\nGoal: ${goal}`;
+
+            // 4. Create other default files (POLICY.yaml, TASKS.md, etc.)
+            const policyYaml = `# Blondie Self-Policy\nautonomy:\n  gates:\n    git-merge: allow\n    deploy-docker: allow\n    install-binary: prompt\n    add-package: allow\n    shell: allow\n  test_retries: 3\n  coordination: git\n\nlimits:\n  max_daily_cost_usd: 5.0\n  max_total_cost_usd: 100.0\n  max_test_retries: 3\n  max_concurrent_tasks: 5`;
+            const tasksMd = `# Tasks\n\nStatus: id | priority | title | depends_on\n\n## Todo\n- [ ] 001 | P0 | Setup project structure |`;
+
+            // 5. Use JSZip to create a zip file in memory
+            const zip = new JSZip();
+            const agentFolder = zip.folder(".agent");
+            agentFolder.file("secrets.env.yaml", secretsYaml);
+            agentFolder.file("project.yaml", projectYaml);
+            agentFolder.file("SPEC.md", specMd);
+            agentFolder.file("POLICY.yaml", policyYaml);
+            agentFolder.file("TASKS.md", tasksMd);
+            // ... add all other template files
+
+            // 6. Trigger the download
+            const content = await zip.generateAsync({ type: "blob" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(content);
+            link.download = "blondie_config.zip";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            // 7. Show next steps
+            showNextSteps();
+        }
+
+        async function loadZip(input) {
+            const file = input.files[0];
+            if(!file) return;
+            
+            try {
+                const zip = await JSZip.loadAsync(file);
+                
+                // 1. Secrets
+                const secretsFile = zip.file(".agent/secrets.env.yaml");
+                if(secretsFile) {
+                    const txt = await secretsFile.async("string");
+                    const data = jsyaml.load(txt);
+                    document.getElementById('openai-key').value = data?.llm?.openai?.api_key || "";
+                    document.getElementById('anthropic-key').value = data?.llm?.anthropic?.api_key || "";
+                    document.getElementById('github-token').value = data?.git?.github_token || "";
+                }
+                
+                // 2. Project
+                const projectFile = zip.file(".agent/project.yaml");
+                if(projectFile) {
+                    const txt = await projectFile.async("string");
+                    const data = jsyaml.load(txt);
+                    document.getElementById('project-id').value = data?.id || "";
+                    
+                    // Infer deployment
+                    const commands = data?.commands || {};
+                    const deploy = data?.deploy || {};
+                    
+                    if (deploy.docker) {
+                        document.getElementById('deployment-target').value = 'docker';
+                    } else if (commands.deploy && commands.deploy.includes('vercel')) {
+                        document.getElementById('deployment-target').value = 'vercel';
+                    } else if (commands.deploy && commands.deploy.includes('netlify')) {
+                        document.getElementById('deployment-target').value = 'netlify';
+                    } else {
+                        document.getElementById('deployment-target').value = 'custom';
+                    }
+                }
+                
+                // 3. Spec
+                const specFile = zip.file(".agent/SPEC.md");
+                if(specFile) {
+                    const txt = await specFile.async("string");
+                    const match = txt.match(/Goal:\s*(.*)/);
+                    if(match) document.getElementById('project-goal').value = match[1].trim();
+                }
+                
+                alert("Configuration loaded!");
+                input.value = ""; // Reset to allow reloading same file
+                
+            } catch(e) {
+                console.error(e);
+                alert("Error loading zip: " + e);
+            }
+        }
+
+        function showNextSteps() {
+            document.getElementById('wizard-steps').classList.add('hidden');
+            const nextStepsDiv = document.getElementById('next-steps');
+            nextStepsDiv.classList.remove('hidden');
+
+            const command = `
+docker run -d \\
+  --name blondie \\
+  --restart always \\
+  -v $(pwd):/workspace \\
+  -v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \\
+  blondie:latest run
+            `.trim();
+
+            document.getElementById('final-command').textContent = command;
+        }
+    </script>
+</body>
+</html>

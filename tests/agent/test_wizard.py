@@ -20,13 +20,13 @@ def mock_home(tmp_path):
 def test_setup_secrets_new_file(mock_home):
     """Test creating a new secrets file with interactive input."""
     # Simulate user inputs:
-    # 1. Storage? 2 (Project)
+    # 1. Storage? 1 (Global)
     # 2. OpenAI? Yes
     # 3. Key: sk-test
     # 4. Anthropic? No
     # 5. Vercel? No
     # 6. GitHub? No
-    inputs = "2\ny\nsk-test\nn\nn\nn\n"
+    inputs = "1\ny\nsk-test\nn\nn\nn\n"
 
     runner = CliRunner()
     # We invoke a dummy command to run the function in a click context,
@@ -67,12 +67,12 @@ def test_setup_secrets_existing_file(mock_home):
         yaml.safe_dump(existing_data, f)
 
     # Inputs:
-    # Storage? 2
+    # Storage? 1 (Global)
     # OpenAI check (skipped because exists)
     # Anthropic? Yes -> sk-ant
     # Vercel? No
     # GitHub? Yes -> gh-token
-    inputs = "2\ny\nsk-ant\nn\ny\ngh-token\n"
+    inputs = "1\ny\nsk-ant\nn\ny\ngh-token\n"
 
     @click.command()
     def cmd():
@@ -122,15 +122,16 @@ def test_validate_secrets_success(mock_fetch):
 def test_setup_secrets_errors(mock_home):
     """Test error handling in setup_secrets."""
     # 1. Test mkdir OSError
-    with patch("pathlib.Path.mkdir", side_effect=OSError("Permission denied")):
-        runner = CliRunner()
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with patch("pathlib.Path.mkdir", side_effect=OSError("Permission denied")):
 
-        @click.command()
-        def cmd():
-            setup_secrets()
+            @click.command()
+            def cmd():
+                setup_secrets()
 
-        result = runner.invoke(cmd, input="2\nn\nn\nn\nn\n")
-        assert "Warning: Could not create" in result.output
+            result = runner.invoke(cmd, input="2\nn\nn\nn\nn\n")
+            assert "Warning: Could not create" in result.output
 
     # 2. Test yaml load error
     secrets_dir = mock_home / ".blondie"
@@ -138,13 +139,11 @@ def test_setup_secrets_errors(mock_home):
         secrets_dir.mkdir()
     (secrets_dir / "secrets.env.yaml").write_text(":", encoding="utf-8")  # Invalid YAML
 
-    runner = CliRunner()
-
     @click.command()
     def cmd_load():
         setup_secrets()
 
-    result = runner.invoke(cmd_load, input="2\nn\nn\nn\nn\n")
+    result = runner.invoke(cmd_load, input="1\nn\nn\nn\nn\n")
     assert "Error loading secrets" in result.output
 
 

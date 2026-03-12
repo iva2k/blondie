@@ -12,6 +12,15 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Launch Init Wizard (Chrome)",
+            "request": "launch",
+            "type": "chrome",
+            "file": "${workspaceFolder}/init.html",
+            "runtimeArgs": [
+                "--allow-file-access-from-files"
+            ]
+        },
+        {
             "name": "Pytest: Current File",
             "type": "debugpy",
             "request": "launch",
