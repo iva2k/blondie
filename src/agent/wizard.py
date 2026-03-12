@@ -40,6 +40,7 @@ def setup_secrets() -> dict[str, Any]:
     # Ensure structure
     secrets.setdefault("llm", {})
     secrets.setdefault("cloud", {})
+    secrets.setdefault("git", {})
 
     # OpenAI
     if not secrets["llm"].get("openai", {}).get("api_key"):
@@ -58,6 +59,12 @@ def setup_secrets() -> dict[str, Any]:
         if click.confirm("Do you want to set up Vercel Token?", default=False):
             token = click.prompt("Vercel Token", hide_input=True)
             secrets["cloud"]["vercel"] = {"token": token}
+
+    # Git
+    if not secrets["git"].get("github_token"):
+        if click.confirm("Do you want to set up GitHub Token (for Push/PR)?", default=False):
+            token = click.prompt("GitHub Token", hide_input=True)
+            secrets["git"]["github_token"] = token
 
     # Save
     try:

@@ -24,7 +24,8 @@ def test_setup_secrets_new_file(mock_home):
     # 2. Key: sk-test
     # 3. Anthropic? No
     # 4. Vercel? No
-    inputs = "y\nsk-test\nn\nn\n"
+    # 5. GitHub? No
+    inputs = "y\nsk-test\nn\nn\nn\n"
 
     runner = CliRunner()
     # We invoke a dummy command to run the function in a click context,
@@ -51,6 +52,7 @@ def test_setup_secrets_new_file(mock_home):
     assert data["llm"]["openai"]["api_key"] == "sk-test"
     assert "anthropic" not in data["llm"]
     assert "vercel" not in data["cloud"]
+    assert "github_token" not in data.get("git", {})
 
 
 def test_setup_secrets_existing_file(mock_home):
@@ -67,7 +69,8 @@ def test_setup_secrets_existing_file(mock_home):
     # OpenAI check (skipped because exists)
     # Anthropic? Yes -> sk-ant
     # Vercel? No
-    inputs = "y\nsk-ant\nn\n"
+    # GitHub? Yes -> gh-token
+    inputs = "y\nsk-ant\nn\ny\ngh-token\n"
 
     @click.command()
     def cmd():
@@ -84,6 +87,7 @@ def test_setup_secrets_existing_file(mock_home):
 
     assert data["llm"]["openai"]["api_key"] == "sk-existing"
     assert data["llm"]["anthropic"]["api_key"] == "sk-ant"
+    assert data["git"]["github_token"] == "gh-token"
 
 
 @patch("agent.wizard.fetch_and_save_models")
@@ -123,7 +127,7 @@ def test_setup_secrets_errors(mock_home):
         def cmd():
             setup_secrets()
 
-        result = runner.invoke(cmd, input="n\nn\nn\n")
+        result = runner.invoke(cmd, input="n\nn\nn\nn\n")
         assert "Warning: Could not create" in result.output
 
     # 2. Test yaml load error
@@ -138,7 +142,7 @@ def test_setup_secrets_errors(mock_home):
     def cmd_load():
         setup_secrets()
 
-    result = runner.invoke(cmd_load, input="n\nn\nn\n")
+    result = runner.invoke(cmd_load, input="n\nn\nn\nn\n")
     assert "Error loading secrets" in result.output
 
 

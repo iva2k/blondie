@@ -31,6 +31,7 @@ Implement a seamless "Quick Start" onboarding wizard (`blondie init`) that autom
    - `llm.anthropic.api_key`
    - `llm.groq.api_key`
    - `cloud.vercel.token`
+   - `git.github_token` (for HTTPS push/PR)
 3. Action: Generate and write YAML file.
    - *Note*: If `secrets.env.yaml` exists, load it and only prompt for missing keys or confirm existing ones.
 4. **Validation & Model Discovery**:
@@ -84,6 +85,7 @@ Implement a seamless "Quick Start" onboarding wizard (`blondie init`) that autom
 
 - Print success message.
 - Output the exact `docker run` command to copy-paste, ensuring paths match the user's configuration.
+  - Include `-v ~/.ssh:/root/.ssh:ro` if the user intends to use SSH for Git.
 
 ## 3. Template Structure
 

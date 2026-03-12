@@ -71,6 +71,30 @@ It asks where the final product should be deployed:
 
 ---
 
+## Git Authentication
+
+Blondie needs credentials to push code and create Pull Requests.
+
+### Option A: HTTPS Token (Recommended)
+
+For HTTPS repositories (e.g., `https://github.com/user/repo.git`), use a Personal Access Token (PAT). The `init` wizard can set this up, or you can add it manually to `secrets.env.yaml`:
+
+```yaml
+git:
+  github_token: "ghp_..."
+  gitlab_token: "glpat-..."
+```
+
+### Option B: SSH Keys
+
+If your repository uses SSH (e.g., `git@github.com:user/repo.git`), you must mount your SSH keys into the container.
+
+```bash
+docker run -d \
+  -v ~/.ssh:/root/.ssh:ro \
+  ...
+```
+
 ## 3. Run the Agent
 
 Once initialized, run Blondie in background (daemon) mode.
