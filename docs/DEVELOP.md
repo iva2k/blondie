@@ -59,7 +59,7 @@ poe run
 ```
 
 This command equates to:
-`python -m agent.cli _tmp/repo --journal-dir _tmp/repo/_logs --v2`
+`python -m agent.cli run _tmp/repo --journal-dir _tmp/repo/_logs --v2`
 
 ### C. Debugging with VS Code
 

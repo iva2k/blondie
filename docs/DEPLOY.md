@@ -81,7 +81,7 @@ docker run -d \
   --restart always \
   -v $(pwd):/workspace \
   -v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \
-  blondie:latest
+  blondie:latest run
 ```
 
 Blondie is now running. It will read `SPEC.md` and `TASKS.md` to begin working on the first available task.

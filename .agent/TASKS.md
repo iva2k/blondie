@@ -91,8 +91,8 @@ Status: id | priority | title | depends_on
 
 ### [Sprint4 2026-0315] Easy Start Wizard
 
-- [ ] 101 | P0 | [CLI] Refactor `src/agent/cli.py` to use `click.group`. Move existing logic to `run` subcommand (update ALL files calling agent.cli and agent/cli). Add empty `init` subcommand. |
-- [ ] 102 | P0 | [Init] Implement `init_secrets` flow in `src/agent/cli/init.py`. Prompt for keys, write to `/root/.blondie/secrets.env.yaml` (container path), and handle existing files. |
+- [x] 101 | P0 | [CLI] Refactor `src/agent/cli.py` to use `click.group`. Move existing logic to `run` subcommand (update ALL files calling agent.cli run and agent/cli). Add empty `init` subcommand. |
+- [ ] 102 | P0 | [Init] Implement `init_secrets` flow in `src/agent/cli.py init`. Prompt for keys, write to `/root/.blondie/secrets.env.yaml` (container path), and handle existing files. |
 - [ ] 103 | P0 | [Init] Implement `validate_secrets` flow. call `scripts/fetch_models.py` logic to test connectivity and generate `.agent/llm.yaml` in workspace. |
 - [ ] 104 | P0 | [Templates] Create `templates/basic` directory structure with default config files (`project.yaml`, `POLICY.yaml`, `TASKS.md`, `SPEC.md`, `ISSUES.md`, `llm_config.yaml`, `dev.yaml`, `.gitignore`). |
 - [ ] 105 | P1 | [Init] Implement `setup_workspace` flow. Detect if empty/git repo. Run `git init` if needed. Copy `templates/basic` files (overwrite protection, `.gitignore` appending). **Fix file permissions (chown) for Docker usage.** |

@@ -67,7 +67,7 @@ def main() -> None:
     print(f"   Working Repo: {repo_dir}")
     print(f"   Remote:       {remote_dir}")
     print("\nTo run agent against this repo:")
-    print(f"   poetry run python -m agent.cli {repo_dir} --journal-dir {repo_dir}/_logs --v2")
+    print(f"   poetry run python -m agent.cli run {repo_dir} --journal-dir {repo_dir}/_logs --v2")
 
 
 if __name__ == "__main__":

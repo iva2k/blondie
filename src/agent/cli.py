@@ -20,7 +20,12 @@ async def main(repo_path: str, journal_dir: str | None = None, use_v2: bool = Fa
         await agent.run()
 
 
-@click.command()
+@click.group()
+def entry_point() -> None:
+    """Blondie Agent CLI."""
+
+
+@entry_point.command()
 @click.argument("repo_path", default=".", type=click.Path(exists=True, file_okay=False, dir_okay=True))
 @click.option(
     "--journal-dir",
@@ -29,9 +34,15 @@ async def main(repo_path: str, journal_dir: str | None = None, use_v2: bool = Fa
     type=click.Path(file_okay=False, dir_okay=True),
 )
 @click.option("--v2", is_flag=True, help="Run v2 recursive coding_orchestrator.")
-def entry_point(repo_path: str = ".", journal_dir: str | None = None, v2: bool = False) -> None:
-    """Blondie Agent CLI."""
+def run(repo_path: str = ".", journal_dir: str | None = None, v2: bool = False) -> None:
+    """Run the Blondie Agent loop."""
     asyncio.run(main(repo_path, journal_dir, v2))
+
+
+@entry_point.command()
+def init() -> None:
+    """Initialize a new Blondie agent workspace."""
+    click.echo("Initializing Blondie agent... (Not implemented yet)")
 
 
 if __name__ == "__main__":

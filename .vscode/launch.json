@@ -113,6 +113,7 @@
             "request": "launch",
             "module": "src.agent.cli",
             "args": [
+                "run",
                 "${workspaceFolder}/_tmp/repo",
                 "--journal-dir", "${workspaceFolder}/_tmp/repo/_logs",
             ],
@@ -130,6 +131,7 @@
             "request": "launch",
             "module": "src.agent.cli",
             "args": [
+                "run",
                 "${workspaceFolder}/_tmp/repo",
                 "--journal-dir", "${workspaceFolder}/_tmp/repo/_logs",
                 "--v2",

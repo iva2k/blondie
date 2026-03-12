@@ -19,7 +19,7 @@ Implement a seamless "Quick Start" onboarding wizard (`blondie init`) that autom
 2. **`init`**: The wizard.
    - `python -m agent.cli init`
 
-## 2. Wizard Logic (`src/agent/cli/init.py`)
+## 2. Wizard Logic (`src/agent/cli.py init`)
 
 ### A. Secrets Setup
 
@@ -107,4 +107,4 @@ templates/
 
 - [ ] Create `templates/basic/` structure.
 - [ ] Refactor `src/agent/cli.py` to `click.group`.
-- [ ] Implement `init` command in `src/agent/cli/init.py`.
+- [ ] Implement `init` command in `src/agent/cli.py init`.
