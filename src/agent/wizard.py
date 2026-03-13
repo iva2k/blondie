@@ -336,7 +336,9 @@ def setup_workspace(target_dir: Path | None = None, project_def: dict[str, str] 
 
                 # Configure git remote
                 if project_def.get("git_repo") and (workspace / ".git").exists():
-                    res = subprocess.run(["git", "-C", str(workspace), "remote"], capture_output=True, text=True)
+                    res = subprocess.run(
+                        ["git", "-C", str(workspace), "remote"], check=False, capture_output=True, text=True
+                    )
                     if "origin" not in res.stdout:
                         subprocess.run(
                             ["git", "-C", str(workspace), "remote", "add", "origin", project_def["git_repo"]],
@@ -344,7 +346,7 @@ def setup_workspace(target_dir: Path | None = None, project_def: dict[str, str] 
                             capture_output=True,
                         )
                         click.echo(f"✅ Added git remote origin: {project_def['git_repo']}")
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 click.echo(f"⚠️  Failed to apply project definition: {e}")
 
 

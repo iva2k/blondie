@@ -103,7 +103,7 @@ def test_setup_secrets_existing_file(mock_home):
     assert data["git"]["github_token"] == "gh-token"
 
 
-def test_setup_secrets_with_config(mock_home):
+def test_setup_secrets_with_config():
     """Test secrets setup picking up providers from llm_config.yaml."""
     runner = CliRunner()
 
@@ -146,7 +146,7 @@ providers:
         assert data["llm"]["custom_prov"]["api_key"] == "sk-custom"
 
 
-def test_define_project(mock_home):
+def test_define_project():
     """Test define_project prompt."""
     runner = CliRunner()
 
@@ -269,6 +269,9 @@ def test_setup_workspace_fresh(mock_run, tmp_path):
 @patch("agent.wizard.subprocess.run")
 def test_setup_workspace_with_def(mock_run, tmp_path):
     """Test workspace setup applying project definition."""
+    # Ensure stdout is a string so 'in' checks don't raise TypeError on MagicMock
+    mock_run.return_value.stdout = ""
+
     runner = CliRunner()
 
     project_def = {"id": "new-id", "git_repo": "https://git.com/repo.git"}
