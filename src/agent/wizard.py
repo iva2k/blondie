@@ -138,12 +138,34 @@ def setup_workspace(target_dir: Path | None = None) -> None:
         click.echo("✅ Git repository detected")
 
     # 2. Copy Templates
-    # Resolves to .../blondie/templates/basic assuming src/agent/wizard.py location
-    template_dir = Path(__file__).parents[2] / "templates" / "basic"
+    # Resolves to .../blondie/templates assuming src/agent/wizard.py location
+    templates_root = Path(__file__).parents[2] / "templates"
 
-    if not template_dir.exists():
-        click.echo(f"⚠️  Templates not found at {template_dir}. Skipping template copy.")
+    if not templates_root.exists():
+        click.echo(f"⚠️  Templates root not found at {templates_root}. Skipping template copy.")
         return
+
+    # Discover available templates
+    available_templates = [d.name for d in templates_root.iterdir() if d.is_dir() and not d.name.startswith(".")]
+    if not available_templates:
+        click.echo(f"⚠️  No templates found in {templates_root}.")
+        return
+
+    # Default to 'basic' if available, otherwise first one
+    default_template = "basic" if "basic" in available_templates else available_templates[0]
+
+    click.echo("Select a template:")
+    for i, name in enumerate(available_templates, 1):
+        click.echo(f"  [{i}] {name}")
+
+    choice_idx = click.prompt(
+        "Template",
+        default=str(available_templates.index(default_template) + 1),
+        type=click.IntRange(1, len(available_templates)),
+    )
+    selected_template = available_templates[choice_idx - 1]
+
+    template_dir = templates_root / selected_template
 
     agent_dir = workspace / ".agent"
     agent_dir.mkdir(exist_ok=True)
