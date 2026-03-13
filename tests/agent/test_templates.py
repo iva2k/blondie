@@ -5,14 +5,16 @@ from pathlib import Path
 import pytest
 import yaml
 
+# Discover templates dynamically
+ROOT_DIR = Path(__file__).parents[2]
+TEMPLATES_DIR = ROOT_DIR / "templates"
+TEMPLATES = [d.name for d in TEMPLATES_DIR.iterdir() if d.is_dir() and not d.name.startswith(".")]
 
-def test_basic_template_structure():
-    """Ensure templates/basic has all required files."""
-    root = Path(__file__).parents[2]
-    template_dir = root / "templates" / "basic"
 
-    assert template_dir.exists(), "Basic template directory missing"
-
+@pytest.mark.parametrize("template_name", TEMPLATES)
+def test_template_structure(template_name):
+    """Ensure template has all required files."""
+    template_dir = TEMPLATES_DIR / template_name
     required_files = [
         ".agent/project.yaml",
         ".agent/POLICY.yaml",
@@ -27,20 +29,19 @@ def test_basic_template_structure():
 
     for filename in required_files:
         file_path = template_dir / filename
-        assert file_path.exists(), f"Missing {filename} in basic template"
+        assert file_path.exists(), f"Missing {filename} in {template_name} template"
 
 
-def test_basic_template_valid_yaml():
+@pytest.mark.parametrize("template_name", TEMPLATES)
+def test_template_valid_yaml(template_name):
     """Ensure YAML files in template are valid."""
-    root = Path(__file__).parents[2]
-    template_dir = root / "templates" / "basic"
+    template_dir = TEMPLATES_DIR / template_name
+    # Find all yaml files in the template directory recursively
+    yaml_files = list(template_dir.rglob("*.yaml")) + list(template_dir.rglob("*.yml"))
 
-    yaml_files = ["project.yaml", "POLICY.yaml", "llm_config.yaml", "dev.yaml", "secrets.env.EXAMPLE.yaml"]
-
-    for filename in yaml_files:
-        path = template_dir / ".agent" / filename
-        with open(path, encoding="utf-8") as f:
+    for file_path in yaml_files:
+        with open(file_path, encoding="utf-8") as f:
             try:
                 yaml.safe_load(f)
             except yaml.YAMLError as e:
-                pytest.fail(f"Invalid YAML in {filename}: {e}")
+                pytest.fail(f"Invalid YAML in {template_name}/{file_path.name}: {e}")

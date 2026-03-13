@@ -98,8 +98,6 @@ Status: id | priority | title | depends_on
 - [x] 107 | P2 | [Init] Implement `stack_detection` for existing projects. Detect Python/Node, pre-fill `project.yaml` commands, and ask for confirmation. |
 - [x] 108 | P3 | [Dev] Enable debugging the wizard (`agent.cli init`) in local sandbox. |
 
-## Todo
-
 ### [Sprint5 2026-0312] Local Easy Start Wizard
 
 - [x] 110 | P0 | [HTML Wizard] Rename `blondie.html` to `blondie.template.html`. Create `scripts/build_wizard.py` to recursively read `templates/` directory and inject file contents into `blondie.template.html` as a JSON object (replacing a placeholder), build `blondie.html` to be checked in. Add script to poe tasks. |
@@ -111,7 +109,16 @@ Status: id | priority | title | depends_on
 - [x] 116 | P1 | [HTML Wizard] Add "Use SSH for Git?" checkbox to UI and update the generated `docker run` command logic to include `-v ~/.ssh:/root/.ssh:ro`. |
 - [x] 117 | P2 | [Build] Create E2E test to verify `scripts/build_wizard.py` correctly generates `blondie.html` and that the generated file passes `tests/test_init_html.py`. |
 - [x] 118 | P2 | [Wizards] Add Groq API Key prompt to `setup_secrets` (CLI) and `blondie.template.html` (HTML) to match supported providers in `DEPLOY.md`. Make the list of providers dynamic based on `llm_config.yaml` from the template |
+
 - [x] 119 | P2 | [Wizards] Add unit and e2e tests for 80% coverage of 110, 111, 112, 113, 114, 115, 116, 117, 118. |
+
+## Todo
+
+### [Sprint6 2026-0312] Wizard and Actual Deployment
+
+- [ ] 120 | P1 | [HTML Wizard] "Use SSH for Git (mounts ~/.ssh)" should be grouped with GIT token field (the group should precede API keys group) - if SSH is selected, we should have a file selector / dropbox for cert file, if not selected, token field entry. The file should be copied into the zip folder under `./home/$USER/.ssh/id_rsa`. |
+- [ ] 121 | P1 | [CLI Wizard] Similar to HTML, add "Use SSH for Git (mounts ~/.ssh)" which should choose either a file name to copy, or GIT token prompt (the group should precede API keys group) - if SSH is selected, the file should be copied into the zip folder under `./home/$USER/.ssh/id_rsa`. |
+- [ ] 122 | P1 | [Agent Startup] The agent should detect running the first time (marked "unconfigured"). We need a mechanism to receive the configuration zip file from the wizard. Upon receipt of the file, it should install the content, including the cert file for GIT, and configure GIT to use the cert file, and mark itself as "configured", so upon consequent starts it will go into runnning state. |
 
 ### [GOAL]
 
