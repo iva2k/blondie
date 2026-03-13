@@ -53,7 +53,7 @@ def main() -> None:
 
     # Inject data
     placeholder = "// __TEMPLATES_JSON_PLACEHOLDER__"
-    injection = f"const TEMPLATES = {json_data};"
+    injection = f"TEMPLATES = {json_data};"
 
     if placeholder not in html_content:
         print("❌ Placeholder '// __TEMPLATES_JSON_PLACEHOLDER__' not found in HTML template.")

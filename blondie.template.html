@@ -93,13 +93,14 @@
     </div>
 
     <script>
+        var TEMPLATES;
         // The build script replaces this comment with the actual templates JSON object.
         // __TEMPLATES_JSON_PLACEHOLDER__
 
         // Populate templates dropdown
-        window.addEventListener('DOMContentLoaded', () => {
+        (function populateTemplates() {
             const select = document.getElementById('template-select');
-            if (select && typeof TEMPLATES !== 'undefined') {
+            if (select && TEMPLATES) {
                 select.innerHTML = '';
                 Object.keys(TEMPLATES).forEach(name => {
                     const option = document.createElement('option');
@@ -109,14 +110,98 @@
                     select.appendChild(option);
                 });
             }
-        });
+        })();
+
+        function processProjectYaml(content, projectId, deployTarget) {
+            try {
+                const data = jsyaml.load(content);
+                data.id = projectId;
+                data.name = projectId;
+                
+                data.commands = data.commands || {};
+                data.deploy = data.deploy || {};
+
+                if (deployTarget === 'vercel') {
+                    data.commands.deploy = "vercel --prod --token {{secret:cloud.vercel.token}}";
+                } else if (deployTarget === 'netlify') {
+                    data.commands.deploy = "netlify deploy --prod --dir=dist --auth={{secret:cloud.netlify.token}}";
+                } else if (deployTarget === 'docker') {
+                    data.deploy.docker = `docker build -t ${projectId}:latest .`;
+                    data.commands.deploy = "echo 'Deploy via Docker'";
+                } else {
+                    data.commands.deploy = 'echo "Deploy command not configured"';
+                }
+                return jsyaml.dump(data);
+            } catch (e) {
+                console.error("Error parsing project.yaml", e);
+                return content;
+            }
+        }
+
+        function processSpec(content, goal) {
+            let fileContent = content.replace(/^Goal:.*$/m, `Goal: ${goal}`);
+            if (fileContent === content && !content.includes(goal)) {
+                    fileContent += `\nGoal: ${goal}`;
+            }
+            return fileContent;
+        }
+
+        function processTasks(content, initialTasks) {
+            const todoHeader = "## Todo";
+            const parts = content.split(todoHeader);
+            if (parts.length > 1) {
+                let newTasks = "\n";
+                initialTasks.split('\n').filter(t => t.trim()).forEach((task, idx) => {
+                    const id = String(idx + 1).padStart(3, '0');
+                    newTasks += `- [ ] ${id} | P1 | ${task.trim()} |\n`;
+                });
+                return parts[0] + todoHeader + newTasks;
+            }
+            return content;
+        }
 
         async function generateConfig() {
+            if (!TEMPLATES) {
+                alert("Error: Templates not loaded. Please use the built blondie.html file.");
+                return;
+            }
+
+            const templateName = document.getElementById('template-select').value;
+            const templateFiles = TEMPLATES[templateName];
+            
+            if (!templateFiles) {
+                alert("Error: Selected template '" + templateName + "' not found.");
+                return;
+            }
+
             const projectId = document.getElementById('project-id').value || 'my-project';
             const goal = document.getElementById('project-goal').value;
+            const initialTasks = document.getElementById('initial-tasks').value;
             const deployTarget = document.getElementById('deployment-target').value;
+            
+            const zip = new JSZip();
 
-            // 1. Create secrets.env.yaml content
+            // 1. Process Template Files
+            for (const [filepath, content] of Object.entries(templateFiles)) {
+                let fileContent = content;
+
+                // A. Modify project.yaml
+                if (filepath === '.agent/project.yaml') {
+                    fileContent = processProjectYaml(content, projectId, deployTarget);
+                }
+                // B. Modify SPEC.md
+                else if (filepath === '.agent/SPEC.md' && goal.trim()) {
+                    fileContent = processSpec(content, goal);
+                }
+                // C. Modify TASKS.md
+                else if (filepath === '.agent/TASKS.md' && initialTasks.trim()) {
+                    fileContent = processTasks(content, initialTasks);
+                }
+
+                zip.file(filepath, fileContent);
+            }
+
+            // 2. Create secrets.env.yaml (Always dynamic)
             const secrets = {
                 llm: {
                     openai: { api_key: document.getElementById('openai-key').value || "" },
@@ -127,55 +212,9 @@
                 }
             };
             const secretsYaml = jsyaml.dump(secrets);
+            zip.file(".agent/secrets.env.yaml", secretsYaml);
 
-            // 2. Create project.yaml content
-            const project = {
-                id: projectId,
-                name: projectId,
-                languages: [],
-                git_user: "Blondie Bot",
-                git_email: "blondie@agent.local",
-                task_source: "TASKS.md",
-                commands: {
-                    install: 'echo "Install command not configured"',
-                    test: 'echo "Test command not configured"'
-                },
-                policy: "POLICY.yaml",
-                dev_config: "dev.yaml",
-                docs: ["README.md"]
-            };
-
-            if (deployTarget === 'vercel') {
-                project.commands.deploy = "vercel --prod --token {{secret:cloud.vercel.token}}";
-            } else if (deployTarget === 'netlify') {
-                project.commands.deploy = "netlify deploy --prod --dir=dist --auth={{secret:cloud.netlify.token}}";
-            } else if (deployTarget === 'docker') {
-                project.deploy = { docker: `docker build -t ${projectId}:latest .` };
-                project.commands.deploy = "echo 'Deploy via Docker'";
-            } else {
-                project.commands.deploy = 'echo "Deploy command not configured"';
-            }
-            
-            const projectYaml = jsyaml.dump(project);
-
-            // 3. Create SPEC.md content
-            const specMd = `# Product Spec\n\nGoal: ${goal}`;
-
-            // 4. Create other default files (POLICY.yaml, TASKS.md, etc.)
-            const policyYaml = `# Blondie Self-Policy\nautonomy:\n  gates:\n    git-merge: allow\n    deploy-docker: allow\n    install-binary: prompt\n    add-package: allow\n    shell: allow\n  test_retries: 3\n  coordination: git\n\nlimits:\n  max_daily_cost_usd: 5.0\n  max_total_cost_usd: 100.0\n  max_test_retries: 3\n  max_concurrent_tasks: 5`;
-            const tasksMd = `# Tasks\n\nStatus: id | priority | title | depends_on\n\n## Todo\n- [ ] 001 | P0 | Setup project structure |`;
-
-            // 5. Use JSZip to create a zip file in memory
-            const zip = new JSZip();
-            const agentFolder = zip.folder(".agent");
-            agentFolder.file("secrets.env.yaml", secretsYaml);
-            agentFolder.file("project.yaml", projectYaml);
-            agentFolder.file("SPEC.md", specMd);
-            agentFolder.file("POLICY.yaml", policyYaml);
-            agentFolder.file("TASKS.md", tasksMd);
-            // ... add all other template files
-
-            // 6. Trigger the download
+            // 3. Trigger the download
             const content = await zip.generateAsync({ type: "blob" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(content);
