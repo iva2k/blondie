@@ -8,8 +8,12 @@
   "python.analysis.typeCheckingMode": "standard",
   "python.useEnvironmentsExtension": true,
   "[markdown]": {
-    //   "editor.defaultFormatter": "yzhang.markdown-all-in-one"
-    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint",
+    "editor.formatOnSave": true
+  },
+  "markdownlint.config": {
+    "default": true,
+    "MD004": { "style": "asterisk" }
   },
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff"

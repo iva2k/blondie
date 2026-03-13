@@ -53,7 +53,9 @@ blondie = "agent.cli:entry_point"
 [tool.poe.tasks]
 test = "pytest"
 lint = "ruff check ."
-format = "ruff format ."
+format-python = "ruff format ."
+format-md = "python scripts/format_md.py"
+format = ["format-python", "format-md"]
 typecheck = "mypy ."
 check = ["format", "lint", "typecheck", "test"]
 coverage = "pytest --cov=src --cov-report=term-missing --cov-report=html"

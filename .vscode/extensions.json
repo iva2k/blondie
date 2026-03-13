@@ -1,0 +1,10 @@
+{
+        "recommendations": [
+                "DavidAnson.vscode-markdownlint",
+                "charliermarsh.ruff",
+                "tamasfe.even-better-toml",
+                "bierner.markdown-preview-github-styles",
+                "yzhang.markdown-all-in-one",
+                "huntertran.auto-markdown-toc"
+        ]
+}
