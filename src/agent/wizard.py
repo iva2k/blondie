@@ -30,6 +30,19 @@ def _get_workspace(target_dir: Path | None = None) -> Path:
     return workspace
 
 
+def define_project(target_dir: Path | None = None) -> dict[str, str]:
+    """Ask for Project ID and Git Repo URL early (Task 133)."""
+    click.echo("\n📝 Step 1: Project Definition")
+    workspace = _get_workspace(target_dir)
+
+    default_id = workspace.name
+    project_id = click.prompt("Project ID", default=default_id)
+
+    git_repo = click.prompt("Git Repository URL (Optional)", default="", show_default=False)
+
+    return {"id": project_id, "git_repo": git_repo}
+
+
 def setup_secrets() -> dict[str, Any]:
     """Interactive secrets setup."""
     click.echo("\n🔑 Secrets Setup")
@@ -178,7 +191,7 @@ def validate_secrets(secrets: dict[str, Any]) -> None:
         click.echo("⚠️  Could not verify any API keys. Please check your secrets.")
 
 
-def setup_workspace(target_dir: Path | None = None) -> None:
+def setup_workspace(target_dir: Path | None = None, project_def: dict[str, str] | None = None) -> None:
     """Initialize workspace with git and templates (Task 105)."""
     click.echo("\n🛠️  Workspace Setup")
 
@@ -295,6 +308,44 @@ def setup_workspace(target_dir: Path | None = None) -> None:
             click.echo("✅ Fixed file permissions")
         except Exception as e:  # pylint: disable=broad-exception-caught
             click.echo(f"⚠️  Failed to set permissions: {e}")
+
+    # 4. Apply Project Definition (ID, Git Repo)
+    if project_def:
+        project_file = agent_dir / "project.yaml"
+        if project_file.exists():
+            try:
+                data = yaml.safe_load(project_file.read_text(encoding="utf-8")) or {}
+
+                if project_def.get("id"):
+                    data["id"] = project_def["id"]
+                    # Update name if it looks default
+                    current_name = data.get("name", "")
+                    if not current_name or current_name in [
+                        "My New Project",
+                        "My Python Project",
+                        "My Node.js Project",
+                        "my-project",
+                    ]:
+                        data["name"] = project_def["id"]
+
+                if project_def.get("git_repo"):
+                    data["git_repo"] = project_def["git_repo"]
+
+                project_file.write_text(yaml.safe_dump(data), encoding="utf-8")
+                click.echo("✅ Applied project definition to project.yaml")
+
+                # Configure git remote
+                if project_def.get("git_repo") and (workspace / ".git").exists():
+                    res = subprocess.run(["git", "-C", str(workspace), "remote"], capture_output=True, text=True)
+                    if "origin" not in res.stdout:
+                        subprocess.run(
+                            ["git", "-C", str(workspace), "remote", "add", "origin", project_def["git_repo"]],
+                            check=False,
+                            capture_output=True,
+                        )
+                        click.echo(f"✅ Added git remote origin: {project_def['git_repo']}")
+            except Exception as e:
+                click.echo(f"⚠️  Failed to apply project definition: {e}")
 
 
 def stack_detection(target_dir: Path | None = None) -> None:
@@ -420,11 +471,7 @@ def interview(target_dir: Path | None = None) -> None:
     if project_file.exists():
         project_data = yaml.safe_load(project_file.read_text(encoding="utf-8")) or {}
 
-    default_id = project_data.get("id", workspace.name)
-    project_id = click.prompt("Project ID", default=default_id)
-    project_data["id"] = project_id
-    if "name" not in project_data or project_data["name"] == "My New Project":
-        project_data["name"] = project_id
+    project_id = project_data.get("id", workspace.name)
 
     git_user = click.prompt("Bot Git Name", default=project_data.get("git_user", "Blondie Bot"))
     project_data["git_user"] = git_user
@@ -557,7 +604,8 @@ docker run -d \\
 
 def run_init_wizard() -> None:
     """Run the full initialization wizard."""
-    setup_workspace()
+    project_def = define_project()
+    setup_workspace(project_def=project_def)
     stack_detection()
     # Run secrets setup after workspace so we can detect template providers
     secrets = setup_secrets()

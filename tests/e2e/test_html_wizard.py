@@ -12,7 +12,7 @@ from playwright.sync_api import sync_playwright
 @pytest.fixture(scope="module", autouse=True)
 def build_wizard():
     """Ensure blondie.html is built before running tests."""
-    root_dir = Path(__file__).parents[1]
+    root_dir = Path(__file__).parents[2]
     script_path = root_dir / "scripts" / "build_wizard.py"
 
     # Run the build script
@@ -25,7 +25,7 @@ def test_init_html_wizard_flow(tmp_path):
     click generate, and verify the downloaded zip file structure.
     """
     # Locate blondie.html relative to this test file
-    root_dir = Path(__file__).parents[1]
+    root_dir = Path(__file__).parents[2]
     init_html_path = root_dir / "blondie.html"
 
     if not init_html_path.exists():
@@ -163,7 +163,7 @@ def test_init_html_load_existing_zip(tmp_path):
     """
     Test loading a pre-existing zip file populates the form correctly.
     """
-    root_dir = Path(__file__).parents[1]
+    root_dir = Path(__file__).parents[2]
     init_html_path = root_dir / "blondie.html"
 
     if not init_html_path.exists():

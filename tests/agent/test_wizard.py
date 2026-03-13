@@ -8,7 +8,14 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from agent.wizard import interview, setup_secrets, setup_workspace, stack_detection, validate_secrets
+from agent.wizard import (
+    define_project,
+    interview,
+    setup_secrets,
+    setup_workspace,
+    stack_detection,
+    validate_secrets,
+)
 
 
 @pytest.fixture
@@ -139,6 +146,21 @@ providers:
         assert data["llm"]["custom_prov"]["api_key"] == "sk-custom"
 
 
+def test_define_project(mock_home):
+    """Test define_project prompt."""
+    runner = CliRunner()
+
+    @click.command()
+    def cmd():
+        res = define_project()
+        click.echo(f"ID: {res['id']}, Repo: {res['git_repo']}")
+
+    # Input: ID=my-app, Repo=http://git
+    result = runner.invoke(cmd, input="my-app\nhttp://git\n")
+    assert result.exit_code == 0
+    assert "ID: my-app, Repo: http://git" in result.output
+
+
 @patch("agent.wizard.fetch_and_save_models")
 def test_validate_secrets_success(mock_fetch):
     """Test validation success path."""
@@ -245,6 +267,28 @@ def test_setup_workspace_fresh(mock_run, tmp_path):
 
 
 @patch("agent.wizard.subprocess.run")
+def test_setup_workspace_with_def(mock_run, tmp_path):
+    """Test workspace setup applying project definition."""
+    runner = CliRunner()
+
+    project_def = {"id": "new-id", "git_repo": "https://git.com/repo.git"}
+
+    @click.command()
+    def cmd():
+        setup_workspace(target_dir=tmp_path, project_def=project_def)
+
+    # Confirm git init: Yes, Template: 1
+    result = runner.invoke(cmd, input="y\n1\n")
+    assert result.exit_code == 0
+    assert "Applied project definition" in result.output
+
+    agent_dir = tmp_path / ".agent"
+    project_data = yaml.safe_load((agent_dir / "project.yaml").read_text(encoding="utf-8"))
+    assert project_data["id"] == "new-id"
+    assert project_data["git_repo"] == "https://git.com/repo.git"
+
+
+@patch("agent.wizard.subprocess.run")
 def test_setup_workspace_existing(mock_run, tmp_path):
     """Test workspace setup in an existing directory with collisions."""
     # 1. Setup existing state
@@ -333,13 +377,12 @@ operations: {}
 
     # Inputs:
     # 1. Spec: "My App"
-    # 2. Project ID: "app-id"
-    # 3. Git Name: "Agent Smith"
-    # 4. Add Tasks? "y" -> "Task 1" -> ""
-    # 5. Provider: "anthropic"
-    # 6. Deployment: "vercel"
-    # 7. SSH: "n"
-    inputs = "My App\napp-id\nAgent Smith\ny\nTask 1\n\nanthropic\nvercel\nn\n"
+    # 2. Git Name: "Agent Smith"
+    # 3. Add Tasks? "y" -> "Task 1" -> ""
+    # 4. Provider: "anthropic"
+    # 5. Deployment: "vercel"
+    # 6. SSH: "n"
+    inputs = "My App\nAgent Smith\ny\nTask 1\n\nanthropic\nvercel\nn\n"
 
     runner = CliRunner()
 
@@ -358,7 +401,7 @@ operations: {}
 
     # Verify project.yaml
     project_data = yaml.safe_load((agent_dir / "project.yaml").read_text(encoding="utf-8"))
-    assert project_data["id"] == "app-id"
+    assert project_data["id"] == "old"
     assert project_data["git_user"] == "Agent Smith"
     assert "vercel --prod" in project_data["commands"]["deploy"]
 
