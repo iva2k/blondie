@@ -124,7 +124,7 @@ Status: id | priority | title | depends_on
 
 * [x] 135 | P1 | Setup markdown auto-format in VSCode and in poe tasks, add .vscode/extensions.json. Setup .md format rules to reformat all markdown bulet lists from "-" to "*" (hoping to improve AI extension markdown diffs breaking out of container) |
 
-### [Sprint7 2026-0313] Agent Deployment Architecture
+### [Sprint7 2026-0313] Agent Deployment Architecture with continuous server and extensible messaging
 
 * [x] 125 | P1 | [HTML wizard] Specify git repo and working folder in the top of wizard process, before API keys. |
 * [x] 133 | P1 | [CLI wizard] Specify git repo and working folder in the top of wizard process, before API keys. |
