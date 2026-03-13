@@ -270,15 +270,17 @@ def test_interview_flow(tmp_path):
     (agent_dir / "SPEC.md").write_text("# Spec\nGoal: <Describe your product goal here>\n", encoding="utf-8")
     (agent_dir / "project.yaml").write_text("id: old\ncommands: {}\n", encoding="utf-8")
     (agent_dir / "llm_config.yaml").write_text("operations: {}\n", encoding="utf-8")
+    (agent_dir / "TASKS.md").write_text("# Tasks\n## Todo\n", encoding="utf-8")
 
     # Inputs:
     # 1. Spec: "My App"
     # 2. Project ID: "app-id"
     # 3. Git Name: "Agent Smith"
-    # 4. Provider: "anthropic"
-    # 5. Deployment: "vercel"
-    # 6. SSH: "n"
-    inputs = "My App\napp-id\nAgent Smith\nanthropic\nvercel\nn\n"
+    # 4. Add Tasks? "y" -> "Task 1" -> ""
+    # 5. Provider: "anthropic"
+    # 6. Deployment: "vercel"
+    # 7. SSH: "n"
+    inputs = "My App\napp-id\nAgent Smith\ny\nTask 1\n\nanthropic\nvercel\nn\n"
 
     runner = CliRunner()
 
@@ -300,6 +302,10 @@ def test_interview_flow(tmp_path):
     assert project_data["id"] == "app-id"
     assert project_data["git_user"] == "Agent Smith"
     assert "vercel --prod" in project_data["commands"]["deploy"]
+
+    # Verify TASKS.md
+    tasks_content = (agent_dir / "TASKS.md").read_text(encoding="utf-8")
+    assert "Task 1" in tasks_content
 
     # Verify llm_config.yaml
     llm_data = yaml.safe_load((agent_dir / "llm_config.yaml").read_text(encoding="utf-8"))

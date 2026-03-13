@@ -15,6 +15,7 @@ import click
 import yaml
 
 from agent.lib.models import fetch_and_save_models
+from agent.tasks import Task, TasksManager, TaskStatus
 
 
 def _get_workspace(target_dir: Path | None = None) -> Path:
@@ -367,7 +368,45 @@ def interview(target_dir: Path | None = None) -> None:
     git_user = click.prompt("Bot Git Name", default=project_data.get("git_user", "Blondie Bot"))
     project_data["git_user"] = git_user
 
-    # 3. Model Provider
+    # 3. Initial Tasks
+    tasks_file = agent_dir / "TASKS.md"
+    if tasks_file.exists():
+        if click.confirm("Do you want to add initial tasks?", default=True):
+            click.echo("Enter tasks to add to the backlog (leave empty to finish):")
+
+            new_task_titles = []
+            while True:
+                task_input = click.prompt("Task", default="", show_default=False)
+                if not task_input.strip():
+                    break
+                new_task_titles.append(task_input.strip())
+
+            if new_task_titles:
+                tasks_manager = TasksManager(tasks_file, project_id=project_id.upper())
+
+                next_id = 1
+                existing_ids = [int(t.id) for t in tasks_manager.tasks if t.id.isdigit()]
+                if existing_ids:
+                    next_id = max(existing_ids) + 1
+
+                for title in new_task_titles:
+                    task_id = f"{next_id:03d}"
+                    new_task = Task(
+                        id=task_id,
+                        priority="P1",
+                        title=title,
+                        depends_on=[],
+                        status=TaskStatus.TODO,
+                        raw_line="",
+                        project_id=project_id.upper(),
+                    )
+                    tasks_manager.tasks.append(new_task)
+                    next_id += 1
+
+                tasks_manager._save()  # pylint: disable=protected-access
+                click.echo(f"✅ Added {len(new_task_titles)} tasks to TASKS.md")
+
+    # 4. Model Provider
     llm_file = agent_dir / "llm_config.yaml"
     if llm_file.exists():
         llm_data = yaml.safe_load(llm_file.read_text(encoding="utf-8")) or {}
@@ -397,7 +436,7 @@ def interview(target_dir: Path | None = None) -> None:
 
         llm_file.write_text(yaml.safe_dump(llm_data), encoding="utf-8")
 
-    # 4. Deployment
+    # 5. Deployment
     deploy_target = click.prompt(
         "Deployment Target", default="docker", type=click.Choice(["docker", "vercel", "netlify", "custom"])
     )

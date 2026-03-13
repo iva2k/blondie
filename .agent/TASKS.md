@@ -106,7 +106,7 @@ Status: id | priority | title | depends_on
 - [x] 111 | P0 | [HTML Wizard] Update `blondie.template.html` UI: Add Template Selection dropdown (populated from injected JSON keys) and Initial Tasks textarea. |
 - [x] 112 | P0 | [HTML Wizard] Refactor `blondie.template.html` logic: Remove hardcoded file strings. Use injected template files as base. Apply user inputs (Secrets, Project ID, Deploy Target, Tasks) on top of the selected template. |
 - [x] 113 | P1 | [CLI Wizard] Update `src/agent/wizard.py` to list available subdirectories in `templates/` and prompt user to select one (defaulting to 'basic' or auto-detected stack). |
-- [ ] 114 | P1 | [CLI Wizard] Update `src/agent/wizard.py` interview to prompt for "Initial Tasks" and append them to `TASKS.md`. |
+- [x] 114 | P1 | [CLI Wizard] Update `src/agent/wizard.py` interview to prompt for "Initial Tasks" and append them to `TASKS.md`. |
 - [x] 115 | P1 | [Templates] Create `templates/python` and `templates/node` directories with specific `project.yaml` and `dev.yaml` configurations to support template selection in wizards. |
 - [ ] 116 | P1 | [HTML Wizard] Add "Use SSH for Git?" checkbox to UI and update the generated `docker run` command logic to include `-v ~/.ssh:/root/.ssh:ro`. |
 - [ ] 117 | P2 | [Build] Create E2E test to verify `scripts/build_wizard.py` correctly generates `blondie.html` and that the generated file passes `tests/test_init_html.py`. |
