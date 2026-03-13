@@ -108,7 +108,7 @@ Status: id | priority | title | depends_on
 - [x] 113 | P1 | [CLI Wizard] Update `src/agent/wizard.py` to list available subdirectories in `templates/` and prompt user to select one (defaulting to 'basic' or auto-detected stack). |
 - [x] 114 | P1 | [CLI Wizard] Update `src/agent/wizard.py` interview to prompt for "Initial Tasks" and append them to `TASKS.md`. |
 - [x] 115 | P1 | [Templates] Create `templates/python` and `templates/node` directories with specific `project.yaml` and `dev.yaml` configurations to support template selection in wizards. |
-- [ ] 116 | P1 | [HTML Wizard] Add "Use SSH for Git?" checkbox to UI and update the generated `docker run` command logic to include `-v ~/.ssh:/root/.ssh:ro`. |
+- [x] 116 | P1 | [HTML Wizard] Add "Use SSH for Git?" checkbox to UI and update the generated `docker run` command logic to include `-v ~/.ssh:/root/.ssh:ro`. |
 - [ ] 117 | P2 | [Build] Create E2E test to verify `scripts/build_wizard.py` correctly generates `blondie.html` and that the generated file passes `tests/test_init_html.py`. |
 - [ ] 118 | P2 | [Wizards] Add Groq API Key prompt to `setup_secrets` (CLI) and `blondie.template.html` (HTML) to match supported providers in `DEPLOY.md`. Make the list of providers dynamic based on `llm_config.yaml` |
 - [ ] 119 | P2 | [Wizards] Add unit and e2e tests for 80% coverage of 110, 111, 112, 113, 114, 115, 116, 117, 118. |

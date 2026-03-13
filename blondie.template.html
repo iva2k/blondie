@@ -73,6 +73,10 @@
                 <option value="netlify">Netlify</option>
                 <option value="custom">Custom</option>
             </select>
+            <div style="margin-top: 1em;">
+                <input type="checkbox" id="use-ssh" style="width: auto; margin-right: 0.5em;">
+                <label for="use-ssh" style="display: inline;">Use SSH for Git (mounts ~/.ssh)</label>
+            </div>
         </div>
 
         <button onclick="generateConfig()">Generate & Download Configuration</button>
@@ -288,12 +292,15 @@
             const nextStepsDiv = document.getElementById('next-steps');
             nextStepsDiv.classList.remove('hidden');
 
+            const useSsh = document.getElementById('use-ssh').checked;
+            const sshVol = useSsh ? '  -v ~/.ssh:/root/.ssh:ro \\\n' : '';
+
             const command = `
 docker run -d \\
   --name blondie \\
   --restart always \\
   -v $(pwd):/workspace \\
-  -v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \\
+${sshVol}  -v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \\
   blondie:latest run
             `.trim();
 
