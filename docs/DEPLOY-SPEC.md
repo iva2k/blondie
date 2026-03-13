@@ -55,7 +55,9 @@ This is the primary and recommended onboarding method.
 2. **Edit (Optional)**: User can click "Open Zip File" to load a previously generated `blondie_config.zip`, which populates the form fields with the existing configuration.
 3. **Template Selection**: User selects a project template (e.g., Basic, Python, Node.js) which determines the base configuration files loaded from `templates/<name>/`.
 4. **Interview**: The user fills out a web form with:
-   - **Secrets**: OpenAI Key, Anthropic Key, GitHub Token.
+   - **Secrets**:
+     - **Git Auth**: Choice of HTTPS Token (Input) or SSH Key (File Upload -> bundled to `.agent/ssh/id_rsa`).
+     - **LLM Keys**: OpenAI Key, Anthropic Key, etc.
    - **Project Details**: Project ID, high-level goal.
    - **Initial Tasks**: List of starting tasks to populate `TASKS.md`.
    - **Configuration**: Primary deployment target (Docker, Vercel, etc.).
@@ -191,8 +193,8 @@ The agent container requires specific mounts to function:
    - Project-local: `-v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml`
    - Global: `-v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml`
 
-3. **SSH Keys (Optional)**: `-v ~/.ssh:/root/.ssh:ro`
-   - Required if git remote uses SSH.
+3. **SSH Keys (Optional)**: `-v $(pwd)/.agent/ssh/id_rsa:/root/.ssh/id_rsa:ro`
+   - Required if git remote uses SSH and key was bundled via wizard.
 
 ### C. Maintenance
 

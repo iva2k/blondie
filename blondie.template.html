@@ -33,10 +33,33 @@
         <!-- Step 1: Secrets -->
         <div class="step">
             <h2>Step 1: Secrets</h2>
-            <p>Enter your API keys. These will be saved inside the downloaded <code>.zip</code> file in <code>.agent/secrets.env.yaml</code>.</p>
+            <p>Enter your credentials. These will be saved inside the downloaded <code>.zip</code> file.</p>
+
+            <h3>Git Authentication</h3>
+            <div style="margin-bottom: 1em;">
+                <label style="display:inline-block; margin-right: 1em;">
+                    <input type="radio" name="git-auth" value="token" checked onchange="toggleGitAuth()"> HTTPS Token
+                </label>
+                <label style="display:inline-block;">
+                    <input type="radio" name="git-auth" value="ssh" onchange="toggleGitAuth()"> SSH Key
+                </label>
+            </div>
+
+            <div id="git-token-section">
+                <label for="github-token">GitHub Token (for private repos/PRs)</label>
+                <input type="password" id="github-token" placeholder="ghp_...">
+            </div>
+
+            <div id="git-ssh-section" class="hidden">
+                <label for="ssh-key-file">SSH Private Key (id_rsa)</label>
+                <p style="font-size: 0.9em; color: #666; margin-top: 0.5em;">Upload your private key. It will be bundled into <code>.agent/ssh/id_rsa</code>.</p>
+                <input type="file" id="ssh-key-file">
+            </div>
+
+            <hr style="margin: 1.5em 0; border: 0; border-top: 1px solid #eee;">
+
+            <h3>LLM API Keys</h3>
             <div id="dynamic-secrets"></div>
-            <label for="github-token">GitHub Token (for private repos/PRs)</label>
-            <input type="password" id="github-token" placeholder="ghp_...">
         </div>
 
         <!-- Step 2: Template Selection -->
@@ -70,10 +93,6 @@
                 <option value="netlify">Netlify</option>
                 <option value="custom">Custom</option>
             </select>
-            <div style="margin-top: 1em;">
-                <input type="checkbox" id="use-ssh" style="width: auto; margin-right: 0.5em;">
-                <label for="use-ssh" style="display: inline;">Use SSH for Git (mounts ~/.ssh)</label>
-            </div>
         </div>
 
         <button onclick="generateConfig()">Generate & Download Configuration</button>
@@ -112,6 +131,20 @@
                 });
             }
         })();
+
+        function toggleGitAuth() {
+            const authType = document.querySelector('input[name="git-auth"]:checked').value;
+            const tokenSection = document.getElementById('git-token-section');
+            const sshSection = document.getElementById('git-ssh-section');
+            
+            if (authType === 'ssh') {
+                tokenSection.classList.add('hidden');
+                sshSection.classList.remove('hidden');
+            } else {
+                tokenSection.classList.remove('hidden');
+                sshSection.classList.add('hidden');
+            }
+        }
 
         function updateSecretsInputs() {
             if (!TEMPLATES) return;
@@ -244,11 +277,27 @@
                 zip.file(filepath, fileContent);
             }
 
+            // Handle Git Auth
+            const gitAuth = document.querySelector('input[name="git-auth"]:checked').value;
+            let gitToken = "";
+
+            if (gitAuth === 'token') {
+                gitToken = document.getElementById('github-token').value || "";
+            } else {
+                // SSH Logic - bundle key
+                const sshFileInput = document.getElementById('ssh-key-file');
+                if (sshFileInput.files.length > 0) {
+                    const file = sshFileInput.files[0];
+                    const content = await file.text();
+                    zip.file(".agent/ssh/id_rsa", content);
+                }
+            }
+
             // 2. Create secrets.env.yaml (Always dynamic)
             const secrets = {
                 llm: {},
                 git: {
-                    github_token: document.getElementById('github-token').value || ""
+                    github_token: gitToken
                 }
             };
             
@@ -343,8 +392,8 @@
             const nextStepsDiv = document.getElementById('next-steps');
             nextStepsDiv.classList.remove('hidden');
 
-            const useSsh = document.getElementById('use-ssh').checked;
-            const sshVol = useSsh ? '  -v ~/.ssh:/root/.ssh:ro \\\n' : '';
+            const gitAuth = document.querySelector('input[name="git-auth"]:checked').value;
+            const sshVol = (gitAuth === 'ssh') ? '  -v $(pwd)/.agent/ssh/id_rsa:/root/.ssh/id_rsa:ro \\\n' : '';
 
             const command = `
 docker run -d \\

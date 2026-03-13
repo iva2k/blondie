@@ -56,9 +56,9 @@ For HTTPS repositories (e.g., `https://github.com/user/repo.git`), create a Pers
 - **GitHub**: Settings -> Developer Settings -> Personal Access Tokens (Classic). Scopes: `repo`.
 - **GitLab**: User Settings -> Access Tokens. Scopes: `api`, `write_repository`.
 
-#### Option B: SSH Keys
+#### Option B: SSH Keys (Bundled)
 
-If you prefer SSH (e.g., `git@github.com:user/repo.git`), you will skip the token setup in the wizard. Instead, you will have to copy your SSH key to the instance's `~/.ssh` directory and mount it when running the container.
+If you prefer SSH (e.g., `git@github.com:user/repo.git`), you can provide your private key (`id_rsa`) during the wizard. It will be bundled into the configuration zip file and mounted securely into the container at runtime.
 
 ---
 
@@ -97,11 +97,11 @@ The wizard page will guide you through the following steps. It runs entirely in 
 
 _**NO DATA IS EVER TRANSMITTED OVER THE NETWORK.**_
 
-Copy-paste your tokens and keys to avoid typos.
-
 1. **Secrets Setup**:
+   - **Git Authentication**: Choose between **HTTPS Token** or **SSH Key**.
+     - If **SSH**: Upload your private key file. It is bundled locally into the zip.
+     - If **HTTPS**: Enter your GitHub Token.
    - Enter your API Keys (OpenAI, Anthropic, etc.).
-   - Enter your GitHub Token (if using HTTPS).
 2. **Template Selection**:
    - Choose a starter template (e.g., Basic, Python, Node.js) to pre-fill configuration.
 3. **Project Details**:
