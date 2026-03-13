@@ -24,9 +24,10 @@ def test_setup_secrets_new_file(mock_home):
     # 2. OpenAI? Yes
     # 3. Key: sk-test
     # 4. Anthropic? No
-    # 5. Vercel? No
-    # 6. GitHub? No
-    inputs = "1\ny\nsk-test\nn\nn\nn\n"
+    # 5. Groq? No
+    # 6. Vercel? No
+    # 7. GitHub? No
+    inputs = "1\ny\nsk-test\nn\nn\nn\nn\n"
 
     runner = CliRunner()
     # We invoke a dummy command to run the function in a click context,
@@ -70,9 +71,10 @@ def test_setup_secrets_existing_file(mock_home):
     # Storage? 1 (Global)
     # OpenAI check (skipped because exists)
     # Anthropic? Yes -> sk-ant
+    # Groq? No
     # Vercel? No
     # GitHub? Yes -> gh-token
-    inputs = "1\ny\nsk-ant\nn\ny\ngh-token\n"
+    inputs = "1\ny\nsk-ant\nn\nn\ny\ngh-token\n"
 
     @click.command()
     def cmd():
@@ -143,7 +145,7 @@ def test_setup_secrets_errors(mock_home):
     def cmd_load():
         setup_secrets()
 
-    result = runner.invoke(cmd_load, input="1\nn\nn\nn\nn\n")
+    result = runner.invoke(cmd_load, input="1\nn\nn\nn\nn\nn\n")
     assert "Error loading secrets" in result.output
 
 
@@ -173,10 +175,11 @@ def test_setup_workspace_fresh(mock_run, tmp_path):
     @click.command()
     def cmd():
         # Confirm git init: Yes
+        # Template: 1 (Basic)
         # (Templates copy proceeds automatically without overwrite prompt since dest doesn't exist)
         setup_workspace(target_dir=tmp_path)
 
-    result = runner.invoke(cmd, input="y\n")
+    result = runner.invoke(cmd, input="y\n1\n")
 
     assert result.exit_code == 0
     assert "Initialized empty git repository" in result.output
@@ -213,12 +216,13 @@ def test_setup_workspace_existing(mock_run, tmp_path):
     def cmd():
         # Confirm git init? (Skipped logic, but input stream might need alignment if logic changed)
         # Logic says: if .git exists, it prints "Git repository detected" and doesn't prompt.
+        # Template: 1
 
         # Overwrite project.yaml? No
         setup_workspace(target_dir=tmp_path)
 
-    # Input 'n' for overwrite confirmation of project.yaml
-    result = runner.invoke(cmd, input="n\n")
+    # 1 for template, 'n' for overwrite confirmation
+    result = runner.invoke(cmd, input="1\nn\n")
 
     assert result.exit_code == 0
     assert "Git repository detected" in result.output
@@ -254,7 +258,7 @@ def test_setup_workspace_permissions(mock_walk, mock_chown, _mock_getuid, tmp_pa
     def cmd():
         setup_workspace(target_dir=tmp_path)
 
-    result = runner.invoke(cmd, input="y\n")
+    result = runner.invoke(cmd, input="y\n1\n")
 
     assert result.exit_code == 0
     assert "Fixed file permissions" in result.output
@@ -269,7 +273,17 @@ def test_interview_flow(tmp_path):
 
     (agent_dir / "SPEC.md").write_text("# Spec\nGoal: <Describe your product goal here>\n", encoding="utf-8")
     (agent_dir / "project.yaml").write_text("id: old\ncommands: {}\n", encoding="utf-8")
-    (agent_dir / "llm_config.yaml").write_text("operations: {}\n", encoding="utf-8")
+
+    # Mock llm_config with providers to test dynamic lookup
+    (agent_dir / "llm_config.yaml").write_text(
+        """
+providers:
+  anthropic:
+    default_model: claude-3-5-sonnet-20240620
+operations: {}
+""",
+        encoding="utf-8",
+    )
     (agent_dir / "TASKS.md").write_text("# Tasks\n## Todo\n", encoding="utf-8")
 
     # Inputs:

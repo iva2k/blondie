@@ -197,7 +197,7 @@ def setup_workspace(target_dir: Path | None = None) -> None:
     ]
 
     for filename in config_files:
-        src = template_dir / filename
+        src = template_dir / ".agent" / filename
         dest = agent_dir / filename
 
         if not src.exists():

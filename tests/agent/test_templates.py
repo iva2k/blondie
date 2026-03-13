@@ -14,15 +14,15 @@ def test_basic_template_structure():
     assert template_dir.exists(), "Basic template directory missing"
 
     required_files = [
-        "project.yaml",
-        "POLICY.yaml",
-        "llm_config.yaml",
-        "dev.yaml",
-        "TASKS.md",
-        "SPEC.md",
-        "ISSUES.md",
+        ".agent/project.yaml",
+        ".agent/POLICY.yaml",
+        ".agent/llm_config.yaml",
+        ".agent/dev.yaml",
+        ".agent/TASKS.md",
+        ".agent/SPEC.md",
+        ".agent/ISSUES.md",
         ".gitignore",
-        "secrets.env.EXAMPLE.yaml",
+        ".agent/secrets.env.EXAMPLE.yaml",
     ]
 
     for filename in required_files:
@@ -38,7 +38,7 @@ def test_basic_template_valid_yaml():
     yaml_files = ["project.yaml", "POLICY.yaml", "llm_config.yaml", "dev.yaml", "secrets.env.EXAMPLE.yaml"]
 
     for filename in yaml_files:
-        path = template_dir / filename
+        path = template_dir / ".agent" / filename
         with open(path, encoding="utf-8") as f:
             try:
                 yaml.safe_load(f)
