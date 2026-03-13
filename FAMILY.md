@@ -11,4 +11,4 @@ Specialized AI bots work on each product. Specialization makes each bot super-fo
 
 ## Random Thoughts
 
-- ?
+* ?

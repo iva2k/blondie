@@ -52,8 +52,8 @@ Your primary loop is as follows:
 3. **Plan**: Call `coding_plan_task` to generate a detailed implementation plan.
 4. **Architect**: Call `coding_get_file_edits` to convert the plan into a structured list of file edits and shell commands.
 5. **Execute**:
-   - For file changes, call `coding_generate_code` to create and write the new file content.
-   - For shell commands, call `run_shell`.
+   * For file changes, call `coding_generate_code` to create and write the new file content.
+   * For shell commands, call `run_shell`.
 6. **Verify**: Call `run_tests` to ensure the changes work and meet the success criteria.
 7. **Debug**: If tests or any shell commands fail, call `coding_debug_error` with the error log (both stdio and stdout) to get a fix plan. Go back to step 3 with the new plan.
 8. **Finalize**: Once tests pass, call `finalize_task` with the `task_id` to commit, push, complete, and merge your work. If the merge fails, the task is still considered done and you should move on.
@@ -61,10 +61,10 @@ Your primary loop is as follows:
 
 ## INSTRUCTIONS
 
-- **Be methodical**: Follow the workflow step-by-step. Do not skip steps based on assumptions. Do not skip verification.
-- **Be resilient**: If a step fails, analyze the output and decide on the next best action. Use the `coding_debug_error` skill for complex failures.
-- **Be efficient**: Use `read_file` to understand existing code before calling `coding_generate_code`. Use `run_shell` with `ls` or `find` to explore the file system.
-- **Think step-by-step**: Your thought process should be clear. Explain which tool you are calling and why.
-- **Manage Context**: If the conversation gets too long, use `summarize_and_restart` to clear context while preserving knowledge.
-- **Always finish your work**: Use `finalize_task` to ensure your work is saved and the task is marked as complete.
-- If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
+* **Be methodical**: Follow the workflow step-by-step. Do not skip steps based on assumptions. Do not skip verification.
+* **Be resilient**: If a step fails, analyze the output and decide on the next best action. Use the `coding_debug_error` skill for complex failures.
+* **Be efficient**: Use `read_file` to understand existing code before calling `coding_generate_code`. Use `run_shell` with `ls` or `find` to explore the file system.
+* **Think step-by-step**: Your thought process should be clear. Explain which tool you are calling and why.
+* **Manage Context**: If the conversation gets too long, use `summarize_and_restart` to clear context while preserving knowledge.
+* **Always finish your work**: Use `finalize_task` to ensure your work is saved and the task is marked as complete.
+* If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"

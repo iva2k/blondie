@@ -10,10 +10,10 @@ Blondie implements a recursive orchestrator using **Skills as Tools** for dynami
 
 ## Documentation
 
-- [**Deployment Guide**](docs/DEPLOY.md): How to deploy Blondie to manage your repo.
-- [**Development Guide**](docs/DEVELOP.md): How to contribute to Blondie's codebase or debug it locally.
-- [**Architecture v2**](docs/ARCHITECTURE2.md): The current recursive skill orchestration architecture.
-- [**Skills System**](docs/SKILLS.md): How to write and modify agent skills.
+* [**Deployment Guide**](docs/DEPLOY.md): How to deploy Blondie to manage your repo.
+* [**Development Guide**](docs/DEVELOP.md): How to contribute to Blondie's codebase or debug it locally.
+* [**Architecture v2**](docs/ARCHITECTURE2.md): The current recursive skill orchestration architecture.
+* [**Skills System**](docs/SKILLS.md): How to write and modify agent skills.
 
 ## Project Structure
 

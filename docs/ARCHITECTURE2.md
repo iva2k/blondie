@@ -39,9 +39,9 @@ Initially, `skill.py` defined a prompt template. In the new architecture, a **Sk
 
 To solve "Context Rot" and "Nested Loop" issues:
 
-- **The Stack**: Execution is a stack of `ChatSessions`.
-- **Isolation**: The Orchestrator does not see the intermediate steps (tool calls) of the Sub-Agent. It only sees the input (Task) and the output (Result).
-- **Benefit**: If the `debug_error` skill takes 50 turns to find a missing semicolon, the Orchestrator's context only grows by 1 turn (The call and the fix).
+* **The Stack**: Execution is a stack of `ChatSessions`.
+* **Isolation**: The Orchestrator does not see the intermediate steps (tool calls) of the Sub-Agent. It only sees the input (Task) and the output (Result).
+* **Benefit**: If the `debug_error` skill takes 50 turns to find a missing semicolon, the Orchestrator's context only grows by 1 turn (The call and the fix).
 
 ### 2.3. Looping and Exiting
 
@@ -49,8 +49,8 @@ LLM is not very reliable for looping. For providing continuous operation for ful
 
 For additional control, these tools are available:
 
-- `agent_sleep`
-- `agent_exit`
+* `agent_sleep`
+* `agent_exit`
 
 ### 2.4. Summarized Restart
 
@@ -65,16 +65,16 @@ If a Sub-Agent skill hits a token limit or gets stuck, it can use the `summarize
 
 To prevent context bloat in the Orchestrator, we adopt an **"Action over Data Transfer"** principle.
 
-- **Problem**: If `generate_code` returns the full file content to the Orchestrator, the Orchestrator's context fills up with code it doesn't need to read, just to pass it to a `write_file` tool.
-- **Solution**: Skills should be side-effect heavy. The `generate_code` skill should use a `write_file` tool *internally* to apply changes and return a concise summary (e.g., "Updated src/main.py") to the Orchestrator.
-- **Pattern - Pass References, Not Values**:
-  - Large Data (Code, Plans) -> File System.
-  - Small Data (Status, Paths) -> LLM Context.
-  - *Example*: `plan_task` writes `docs/plan.md` and returns "Plan saved to docs/plan.md". The Orchestrator passes that path to `generate_code`.
-- **Implication**:
-  - We need a primitive `write_file` tool available to Sub-Agents.
-  - Skill prompts must be updated to prefer tool usage over returning content.
-  - The Orchestrator acts as a manager (delegating tasks), not a pipe (moving data).
+* **Problem**: If `generate_code` returns the full file content to the Orchestrator, the Orchestrator's context fills up with code it doesn't need to read, just to pass it to a `write_file` tool.
+* **Solution**: Skills should be side-effect heavy. The `generate_code` skill should use a `write_file` tool *internally* to apply changes and return a concise summary (e.g., "Updated src/main.py") to the Orchestrator.
+* **Pattern - Pass References, Not Values**:
+  * Large Data (Code, Plans) -> File System.
+  * Small Data (Status, Paths) -> LLM Context.
+  * *Example*: `plan_task` writes `docs/plan.md` and returns "Plan saved to docs/plan.md". The Orchestrator passes that path to `generate_code`.
+* **Implication**:
+  * We need a primitive `write_file` tool available to Sub-Agents.
+  * Skill prompts must be updated to prefer tool usage over returning content.
+  * The Orchestrator acts as a manager (delegating tasks), not a pipe (moving data).
 
 ## 3. Component Architecture
 
@@ -119,8 +119,8 @@ user-content: ""  # Legacy user prompt template
 
 The `ToolHandler` supports a dynamic registry of tools, merging the existing hardcoded primitives (`run_shell`, `read_file`, `write_file`) with dynamically loaded Skill-Tools.
 
-- **Registry**: A dynamic dictionary mapping `tool_name` → `Executable`.
-- **Skill Adapter**: A wrapper that converts a `Skill` object into a callable tool that spawns a `ChatSession`.
+* **Registry**: A dynamic dictionary mapping `tool_name` → `Executable`.
+* **Skill Adapter**: A wrapper that converts a `Skill` object into a callable tool that spawns a `ChatSession`.
 
 ### 3.3. Recursive Router (`src/agent/router.py`)
 
@@ -128,9 +128,9 @@ The `ToolHandler` supports a dynamic registry of tools, merging the existing har
 
 The `LLMRouter` supports nested sessions. This allows a `ChatSession` to pause, execute a Skill-Tool (which spins up a child `ChatSession`), and resume with the result.
 
-- execute_tool_call(call):
-  - If tool is "primitive" (shell, file): Execute directly.
-  - If tool is "skill" (planner, coder):
+* execute_tool_call(call):
+  * If tool is "primitive" (shell, file): Execute directly.
+  * If tool is "skill" (planner, coder):
     1. Instantiate new ChatSession with that Skill's prompt.
     2. Inject arguments from the tool call into the session context.
     3. **Context Injection**: Automatically trigger `ContextGatherer` for the new session based on the target Skill's `context` requirements (e.g., inject `files`, `policy` into the sub-agent's system prompt).
@@ -149,11 +149,11 @@ A new entry point that replaces `loop.py` for v2 execution. It initializes the r
 
 To allow the Orchestrator to manage the lifecycle without reimplementing logic in prompts, existing Python logic is exposed as tools. These are hardcoded in Python but are callable by the LLM:
 
-- **Task Management**: `pick_task`, `finalize_task` (wraps `TasksManager` and `GitCLI`).
-- **Task Completion**: `complete_task` (wraps `TasksManager`).
-- **Git Operations**: `git_checkout`, `git_commit`, `git_push`, `git_merge` (wraps `GitCLI`).
-- **Execution**: `run_tests` (wraps `Executor.run_tests`).
-- **State**: `check_run_limit` (wraps `LLMRouter` to check daily/total cost).
+* **Task Management**: `pick_task`, `finalize_task` (wraps `TasksManager` and `GitCLI`).
+* **Task Completion**: `complete_task` (wraps `TasksManager`).
+* **Git Operations**: `git_checkout`, `git_commit`, `git_push`, `git_merge` (wraps `GitCLI`).
+* **Execution**: `run_tests` (wraps `Executor.run_tests`).
+* **State**: `check_run_limit` (wraps `LLMRouter` to check daily/total cost).
 
 These tools allow the Orchestrator to say (by tool calls) "I am done, mark task complete" or "I need to start working on task X".
 
@@ -161,30 +161,30 @@ These tools allow the Orchestrator to say (by tool calls) "I am done, mark task 
 
 Recursive execution requires hierarchical logging.
 
-- **Journal**: Supports `journal.span(name)` context manager for creating indented log blocks.
-- **Router/ToolHandler**: Uses `journal.span()` and `journal.indent()`/`dedent()` to track execution depth and maintain the trace tree.
-- **Output**: Logs should be indented or visually grouped to distinguish between the Orchestrator's thoughts and a Sub-Agent's thoughts, and sub-sub-agents.
+* **Journal**: Supports `journal.span(name)` context manager for creating indented log blocks.
+* **Router/ToolHandler**: Uses `journal.span()` and `journal.indent()`/`dedent()` to track execution depth and maintain the trace tree.
+* **Output**: Logs should be indented or visually grouped to distinguish between the Orchestrator's thoughts and a Sub-Agent's thoughts, and sub-sub-agents.
 
 ## 4. Migration Strategy
 
 ### Phase 1: Infrastructure Enhancements (Incremental)
 
-- Update `Skill` class in `skill.py` to parse `input_schema`.
-- Update `ToolHandler` in `tooled.py` to support dynamic tool registration.
+* Update `Skill` class in `skill.py` to parse `input_schema`.
+* Update `ToolHandler` in `tooled.py` to support dynamic tool registration.
 
 ### Phase 2: The Orchestrator (New Module)
 
-- Create `src/agent/loop2.py` implementing the Orchestrator pattern.
-- **Implement System Tools**: Wrap `TasksManager`, `GitCLI`, and `Executor` methods into tools in `tooled.py`.
-- Create `coding_orchestrator.skill.md` with access to `coding_plan_task`, `coding_generate_code`, `coding_debug_error` as tools.
+* Create `src/agent/loop2.py` implementing the Orchestrator pattern.
+* **Implement System Tools**: Wrap `TasksManager`, `GitCLI`, and `Executor` methods into tools in `tooled.py`.
+* Create `coding_orchestrator.skill.md` with access to `coding_plan_task`, `coding_generate_code`, `coding_debug_error` as tools.
 
 ### Phase 2: Recursive Runtime (Core)
 
-- Enhance `router.py` to handle the "Skill-as-Tool" execution flow via recursion.
+* Enhance `router.py` to handle the "Skill-as-Tool" execution flow via recursion.
 
 ### Phase 3: Advanced Runtime
 
-- Implement the explicit Context Stack (for debugging/observability).
+* Implement the explicit Context Stack (for debugging/observability).
 
 ## 5. Workflow Comparison
 
@@ -198,5 +198,5 @@ Recursive execution requires hierarchical logging.
 
 ## 6. Open Questions
 
-- **Cost Control**: Recursive agents can burn tokens fast. We need strict budget passing (e.g., "You have $0.50 for this sub-task").
-- **Infinite Loops**: The Orchestrator might keep calling `debug_error` forever. The current implementation in `ToolHandler.run_loop` has a hardcoded `max_cycles = 15` to prevent runaway tool execution within a single session. A more sophisticated "Supervisor" or "Max Depth/Retry" policy across sessions is not yet implemented.
+* **Cost Control**: Recursive agents can burn tokens fast. We need strict budget passing (e.g., "You have $0.50 for this sub-task").
+* **Infinite Loops**: The Orchestrator might keep calling `debug_error` forever. The current implementation in `ToolHandler.run_loop` has a hardcoded `max_cycles = 15` to prevent runaway tool execution within a single session. A more sophisticated "Supervisor" or "Max Depth/Retry" policy across sessions is not yet implemented.

@@ -6,10 +6,10 @@ This guide covers how to set up your environment to develop, debug, and test the
 
 ## 1. Prerequisites
 
-- **Python 3.10+**
-- **Poetry**: Dependency management (`pip install poetry`), will install task runner `poe`.
-- **Git**: Version control.
-- **Docker**: (Optional) For building the container image.
+* **Python 3.10+**
+* **Poetry**: Dependency management (`pip install poetry`), will install task runner `poe`.
+* **Git**: Version control.
+* **Docker**: (Optional) For building the container image.
 
 ## 2. Setup
 
@@ -38,8 +38,8 @@ poe setup-dev
 
 The `_tmp/repo` will contain:
 
-- `.agent/`: Configuration files copied from `templates/project-calculator/.agent` and `secrets.env.yaml` copied from the project workspace `.agent/` folder if file exists.
-- `README.md`, `.gitignore`, etc.
+* `.agent/`: Configuration files copied from `templates/project-calculator/.agent` and `secrets.env.yaml` copied from the project workspace `.agent/` folder if file exists.
+* `README.md`, `.gitignore`, etc.
 
 If your project workspace `.agent/secrets.env.yaml` does not include API keys, you must provide secrets for the agent to use:
 
@@ -65,8 +65,8 @@ This command equates to:
 
 The project includes a `.vscode/launch.json` with pre-configured debug profiles:
 
-- **Blondie: Run Orchestrator (_tmp/repo)**: Runs the agent in debug mode against the `_tmp/repo`.
-- **Python: Debug Tests**: Run pytest with debugger.
+* **Blondie: Run Orchestrator (_tmp/repo)**: Runs the agent in debug mode against the `_tmp/repo`.
+* **Python: Debug Tests**: Run pytest with debugger.
 
 **Recommended Loop:**
 
@@ -124,10 +124,10 @@ This `.agent/llm.yaml` file is also copied into `_tmp/repo/.agent/` for debug ru
 
 ## 6. Architecture Overview for Developers
 
-- **Entry Point**: `src/agent/cli.py` handles argument parsing.
-- **Orchestrator**: `src/agent/loop2.py` initializes the system.
-- **Skills**: located in `skills/`. If you modify a `.skill.md` file, the changes are picked up on the next run (parsed by `src/llm/skill.py`).
-- **Tools**: `src/agent/tooled.py` contains the Python implementation of tools like `run_shell` or `git_commit`.
+* **Entry Point**: `src/agent/cli.py` handles argument parsing.
+* **Orchestrator**: `src/agent/loop2.py` initializes the system.
+* **Skills**: located in `skills/`. If you modify a `.skill.md` file, the changes are picked up on the next run (parsed by `src/llm/skill.py`).
+* **Tools**: `src/agent/tooled.py` contains the Python implementation of tools like `run_shell` or `git_commit`.
 
 ### Adding a New Skill
 

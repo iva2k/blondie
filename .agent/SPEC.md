@@ -10,40 +10,40 @@ These are standalone test scenarios to verify the full product works. Implement 
 
 1. Single-repo loop
 
-   - Deploy agent via Docker.
-   - Add TASKS.md entry.
-   - Agent claims task, creates branch, implements/tests/deploys, opens PR.
-   - Verify: PR opened with changes, deploy URL live, docs updated.
+   * Deploy agent via Docker.
+   * Add TASKS.md entry.
+   * Agent claims task, creates branch, implements/tests/deploys, opens PR.
+   * Verify: PR opened with changes, deploy URL live, docs updated.
 
 2. Multi-repo management
 
-   - Configure list of 2 repos.
-   - Agent cycles through backlogs independently.
-   - Verify: Tasks progress in parallel across repos.
+   * Configure list of 2 repos.
+   * Agent cycles through backlogs independently.
+   * Verify: Tasks progress in parallel across repos.
 
 3. Swarm coordination
 
-   - Run 2+ Docker agents on same repo.
-   - POLICY.yaml mandates feature branches + regression gating.
-   - Verify: No task overlap, merges only after full tests, conflicts resolved.
+   * Run 2+ Docker agents on same repo.
+   * POLICY.yaml mandates feature branches + regression gating.
+   * Verify: No task overlap, merges only after full tests, conflicts resolved.
 
 4. Autonomy toggle
 
-   - Run with --full-autonomy=false: Agent proposes shell commands for approval.
-   - Verify: No destructive actions taken without confirm.
+   * Run with --full-autonomy=false: Agent proposes shell commands for approval.
+   * Verify: No destructive actions taken without confirm.
 
 5. Agent crashes
 
-   - Run on 1 repo.
-   - Agent crashes (for any reason, even external, like when the host instance dies).
-   - The local state could be in task progress (both remote and local branches exist for git-branch based coordination method).
-   - Verify: Agent picks up the same task without creating new branch and continues work.
+   * Run on 1 repo.
+   * Agent crashes (for any reason, even external, like when the host instance dies).
+   * The local state could be in task progress (both remote and local branches exist for git-branch based coordination method).
+   * Verify: Agent picks up the same task without creating new branch and continues work.
 
 6. Agent loops
 
-   - Run on 1 repo.
-   - Task is too complicated, Agent cannot solve and keeps going in a loop.
-   - Verify: Agent detects the loop and marks task as too complicated for breaking it up.
+   * Run on 1 repo.
+   * Task is too complicated, Agent cannot solve and keeps going in a loop.
+   * Verify: Agent detects the loop and marks task as too complicated for breaking it up.
 
 ## Directory Structure
 
@@ -208,10 +208,10 @@ Human responds via email, slack, stdin, web UI, or timeout→skip. (Chat backend
 
 No SQLite/local DB. Swarm coordination via git:
 
-- Task locks: .git/LOCKS/task-ID.lock (advisory file locks)
-- Task status: TASKS.md as source of truth
-- Coordination: POLICY.yaml coordination: git (default)
-- Conflict resolution: Git rebase + LLM review
+* Task locks: .git/LOCKS/task-ID.lock (advisory file locks)
+* Task status: TASKS.md as source of truth
+* Coordination: POLICY.yaml coordination: git (default)
+* Conflict resolution: Git rebase + LLM review
 
 Other coordination strategies could be chosen in POLICY.yaml
 

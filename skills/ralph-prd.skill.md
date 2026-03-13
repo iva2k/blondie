@@ -25,10 +25,10 @@ Create detailed Product Requirements Documents that are clear, actionable, and s
 
 Ask only critical questions where the initial prompt is ambiguous. Focus on:
 
-- **Problem/Goal:** What problem does this solve?
-- **Core Functionality:** What are the key actions?
-- **Scope/Boundaries:** What should it NOT do?
-- **Success Criteria:** How do we know it's done?
+* **Problem/Goal:** What problem does this solve?
+* **Core Functionality:** What are the key actions?
+* **Scope/Boundaries:** What should it NOT do?
+* **Success Criteria:** How do we know it's done?
 
 ### Format Questions Like This:
 
@@ -72,9 +72,9 @@ Specific, measurable objectives (bullet list).
 
 Each story needs:
 
-- **Title:** Short descriptive name
-- **Description:** "As a [user], I want [feature] so that [benefit]"
-- **Acceptance Criteria:** Verifiable checklist of what "done" means
+* **Title:** Short descriptive name
+* **Description:** "As a [user], I want [feature] so that [benefit]"
+* **Acceptance Criteria:** Verifiable checklist of what "done" means
 
 Each story should be small enough to implement in one focused session.
 
@@ -93,15 +93,15 @@ Each story should be small enough to implement in one focused session.
 
 **Important:**
 
-- Acceptance criteria must be verifiable, not vague. "Works correctly" is bad. "Button shows confirmation dialog before deleting" is good.
-- **For any story with UI changes:** Always include "Verify in browser using dev-browser skill" as acceptance criteria. This ensures visual verification of frontend work.
+* Acceptance criteria must be verifiable, not vague. "Works correctly" is bad. "Button shows confirmation dialog before deleting" is good.
+* **For any story with UI changes:** Always include "Verify in browser using dev-browser skill" as acceptance criteria. This ensures visual verification of frontend work.
 
 ### 4. Functional Requirements
 
 Numbered list of specific functionalities:
 
-- "FR-1: The system must allow users to..."
-- "FR-2: When a user clicks X, the system must..."
+* "FR-1: The system must allow users to..."
+* "FR-2: When a user clicks X, the system must..."
 
 Be explicit and unambiguous.
 
@@ -111,22 +111,22 @@ What this feature will NOT include. Critical for managing scope.
 
 ### 6. Design Considerations (Optional)
 
-- UI/UX requirements
-- Link to mockups if available
-- Relevant existing components to reuse
+* UI/UX requirements
+* Link to mockups if available
+* Relevant existing components to reuse
 
 ### 7. Technical Considerations (Optional)
 
-- Known constraints or dependencies
-- Integration points with existing systems
-- Performance requirements
+* Known constraints or dependencies
+* Integration points with existing systems
+* Performance requirements
 
 ### 8. Success Metrics
 
 How will success be measured?
 
-- "Reduce time to complete X by 50%"
-- "Increase conversion rate by 10%"
+* "Reduce time to complete X by 50%"
+* "Increase conversion rate by 10%"
 
 ### 9. Open Questions
 
@@ -138,19 +138,19 @@ Remaining questions or areas needing clarification.
 
 The PRD reader may be a junior developer or AI agent. Therefore:
 
-- Be explicit and unambiguous
-- Avoid jargon or explain it
-- Provide enough detail to understand purpose and core logic
-- Number requirements for easy reference
-- Use concrete examples where helpful
+* Be explicit and unambiguous
+* Avoid jargon or explain it
+* Provide enough detail to understand purpose and core logic
+* Number requirements for easy reference
+* Use concrete examples where helpful
 
 ---
 
 ## Output
 
-- **Format:** Markdown (`.md`)
-- **Location:** `tasks/`
-- **Filename:** `prd-[feature-name].md` (kebab-case)
+* **Format:** Markdown (`.md`)
+* **Location:** `tasks/`
+* **Filename:** `prd-[feature-name].md` (kebab-case)
 
 ---
 
@@ -252,9 +252,9 @@ Add priority levels to tasks so users can focus on what matters most. Tasks can 
 
 Before saving the PRD:
 
-- [ ] Asked clarifying questions with lettered options
-- [ ] Incorporated user's answers
-- [ ] User stories are small and specific
-- [ ] Functional requirements are numbered and unambiguous
-- [ ] Non-goals section defines clear boundaries
-- [ ] Saved to `tasks/prd-[feature-name].md`
+* [ ] Asked clarifying questions with lettered options
+* [ ] Incorporated user's answers
+* [ ] User stories are small and specific
+* [ ] Functional requirements are numbered and unambiguous
+* [ ] Non-goals section defines clear boundaries
+* [ ] Saved to `tasks/prd-[feature-name].md`

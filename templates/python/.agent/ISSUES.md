@@ -1,3 +1,3 @@
 # Issues
 
-- [ ] Initial issue
+* [ ] Initial issue

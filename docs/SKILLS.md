@@ -105,8 +105,8 @@ Skills can be equipped with tools defined in `src/agent/tooled.py` or other skil
 
 **Common Tools:**
 
-- `run_shell`: Execute shell commands.
-- `read_file`: Read file content.
-- `write_file`: Write content to file.
-- `pick_task`, `finalize_task`: Task lifecycle management.
-- `run_tests`: Execute test suite.
+* `run_shell`: Execute shell commands.
+* `read_file`: Read file content.
+* `write_file`: Write content to file.
+* `pick_task`, `finalize_task`: Task lifecycle management.
+* `run_tests`: Execute test suite.

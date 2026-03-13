@@ -19,15 +19,15 @@ If you are a fan of Orthodox File Managers and keyboard-centric workflows, this 
 
 ## Download Links
 
-- **Git for Windows:** [gitforwindows.org](https://gitforwindows.org/)
-- **MSYS2:** [MSYS2](https://www.msys2.org/)
-- **Miniconda:** [docs.anaconda.com/miniconda/](https://docs.anaconda.com/miniconda/)
-- **FAR Manager:** [farmanager.com/download.php](https://www.farmanager.com/download.php)
-- **ConEmu:** [conemu.github.io](https://conemu.github.io/)
-- **FarCall plugin:** [FarCall on Plugring](https://plugring.farmanager.com/plugin.php?pid=823&l=en)
-- **GitBranch plugin:** [GitBranch on Plugring](https://plugring.farmanager.com/plugin.php?pid=978&l=en)
-- **GitShell plugin:** [GitShell on Plugring](https://plugring.farmanager.com/plugin.php?pid=972&l=en)
-- **GitAutocomplete plugin:** [GitAutocomplete on Plugring](https://plugring.farmanager.com/plugin.php?pid=967&l=en)
+* **Git for Windows:** [gitforwindows.org](https://gitforwindows.org/)
+* **MSYS2:** [MSYS2](https://www.msys2.org/)
+* **Miniconda:** [docs.anaconda.com/miniconda/](https://docs.anaconda.com/miniconda/)
+* **FAR Manager:** [farmanager.com/download.php](https://www.farmanager.com/download.php)
+* **ConEmu:** [conemu.github.io](https://conemu.github.io/)
+* **FarCall plugin:** [FarCall on Plugring](https://plugring.farmanager.com/plugin.php?pid=823&l=en)
+* **GitBranch plugin:** [GitBranch on Plugring](https://plugring.farmanager.com/plugin.php?pid=978&l=en)
+* **GitShell plugin:** [GitShell on Plugring](https://plugring.farmanager.com/plugin.php?pid=972&l=en)
+* **GitAutocomplete plugin:** [GitAutocomplete on Plugring](https://plugring.farmanager.com/plugin.php?pid=967&l=en)
 
 ## Step 1: The Foundation (Git & MSYS2)
 
@@ -37,7 +37,7 @@ First, install **Git for Windows**. During installation, ensure you select the o
 
 Download and install **Miniconda**.
 
-- **Crucial Step:** Do *not* add Conda to your system PATH during installation. It messes up other tools. We will inject it surgically later.
+* **Crucial Step:** Do *not* add Conda to your system PATH during installation. It messes up other tools. We will inject it surgically later.
 
 ## Step 3: The Commander (FAR Manager)
 

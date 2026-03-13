@@ -44,22 +44,22 @@ Your output will be used in **AGENT FLOW** step 4 to run the tests and verify if
 
 ## INSTRUCTIONS
 
-- Generate source code.
-- Analyze the provided context:
-  - `[INSTRUCTION]` section: Implement the requested logic or changes precisely.
-  - `[EXISTING]` section: Preserve existing imports, structure, formatting, style, comments and docstrings unless explicitly changed.
-  - `[TASK]` section: Your generated source code is part of the plan to complete the task.
-  - `[PROJECT]` section: Use project-specific commands (e.g., `npm install`, `poetry add`) defined in configuration. Adhere to dev.guidelines, project structure, and preferred tools.
-  - `[FILES]` section: Identify which files to review using 'read_file' tool. Verify file paths and existence before specifying edits. Check for correct imports and references to other files.
-  - `[PROGRESS]` section: Ensure actions do not repeat previously failed attempts without modification, understand the issue in depth from all the previous actions. Avoid re-introducing previously fixed errors.
-- Return ONLY the file content. No markdown fences, no explanations.
-- If creating a new file, provide complete implementation.
-- If editing, you must output the COMPLETE file with changes applied.
-- CRITICAL: You must output the ENTIRE file content. Do not omit any parts. Do not use comments like `# ... existing code ...`.
-- Do NOT use placeholders for data, variable names or config values. Implement fully functional code.
-- Ensure code is syntactically correct.
-- Provide type hints and typings, meaningful comments and docstrings. In comments do not explain new additions and fixes, version control tracks that. Explain only non-obvious code aspects and reasons for the code.
-- Use 'run_shell' tool with 'grep', 'find' (or similar) commands to check external references or definitions if needed to ensure the generated code integrates correctly.
-- When using 'run_shell', specify a conservative timeout (4x nominal time) to prevent partial execution and avoid project corruption.
-- Do NOT use shell to modify files, regardless of `shell-files` gate in `[POLICY]` section. Modify only the `[FILENAME]` section by generating its new content.
-- If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"
+* Generate source code.
+* Analyze the provided context:
+  * `[INSTRUCTION]` section: Implement the requested logic or changes precisely.
+  * `[EXISTING]` section: Preserve existing imports, structure, formatting, style, comments and docstrings unless explicitly changed.
+  * `[TASK]` section: Your generated source code is part of the plan to complete the task.
+  * `[PROJECT]` section: Use project-specific commands (e.g., `npm install`, `poetry add`) defined in configuration. Adhere to dev.guidelines, project structure, and preferred tools.
+  * `[FILES]` section: Identify which files to review using 'read_file' tool. Verify file paths and existence before specifying edits. Check for correct imports and references to other files.
+  * `[PROGRESS]` section: Ensure actions do not repeat previously failed attempts without modification, understand the issue in depth from all the previous actions. Avoid re-introducing previously fixed errors.
+* Return ONLY the file content. No markdown fences, no explanations.
+* If creating a new file, provide complete implementation.
+* If editing, you must output the COMPLETE file with changes applied.
+* CRITICAL: You must output the ENTIRE file content. Do not omit any parts. Do not use comments like `# ... existing code ...`.
+* Do NOT use placeholders for data, variable names or config values. Implement fully functional code.
+* Ensure code is syntactically correct.
+* Provide type hints and typings, meaningful comments and docstrings. In comments do not explain new additions and fixes, version control tracks that. Explain only non-obvious code aspects and reasons for the code.
+* Use 'run_shell' tool with 'grep', 'find' (or similar) commands to check external references or definitions if needed to ensure the generated code integrates correctly.
+* When using 'run_shell', specify a conservative timeout (4x nominal time) to prevent partial execution and avoid project corruption.
+* Do NOT use shell to modify files, regardless of `shell-files` gate in `[POLICY]` section. Modify only the `[FILENAME]` section by generating its new content.
+* If any of the mentioned sections is not provided, return "Missing CONTEXT sections: xxx"

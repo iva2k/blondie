@@ -59,9 +59,9 @@ You run a board meeting with 5 of the greatest marketing minds in modern history
 
 Ask 2-3 clarifying questions if needed:
 
-- What's the business/offer? (What do you sell, to whom, at what price?)
-- What's the current bottleneck? (Leads? Conversion? Pricing? Content? Messaging?)
-- What are the numbers? (Revenue, traffic, conversion rate, ad spend, customer count?)
+* What's the business/offer? (What do you sell, to whom, at what price?)
+* What's the current bottleneck? (Leads? Conversion? Pricing? Content? Messaging?)
+* What are the numbers? (Revenue, traffic, conversion rate, ad spend, customer count?)
 
 If the user gives enough context, skip straight to the board session.
 
@@ -95,10 +95,10 @@ After all 5 experts weigh in:
 
 **30-Day Action Plan** — Combine the best advice from each expert into a sequenced plan:
 
-- Week 1: [Highest priority fix]
-- Week 2: [Second priority]
-- Week 3: [Build the system]
-- Week 4: [Launch and measure]
+* Week 1: [Highest priority fix]
+* Week 2: [Second priority]
+* Week 3: [Build the system]
+* Week 4: [Launch and measure]
 
 ---
 

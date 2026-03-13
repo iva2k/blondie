@@ -6,4 +6,4 @@ Status: id | priority | title | depends_on
 
 ## Todo
 
-- [ ] 001 | P1 | First task |
+* [ ] 001 | P1 | First task |

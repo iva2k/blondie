@@ -11,10 +11,10 @@ Rigorous self-critique of recent work. Challenges assumptions, questions decisio
 
 ## When to Use
 
-- Before creating a PR
-- After completing a feature/fix
-- When something feels "off" but works
-- When you want to challenge mediocre solutions
+* Before creating a PR
+* After completing a feature/fix
+* When something feels "off" but works
+* When you want to challenge mediocre solutions
 
 ## Instructions
 
@@ -22,10 +22,10 @@ Rigorous self-critique of recent work. Challenges assumptions, questions decisio
 
 Determine scope based on arguments:
 
-- No args: Review current feature branch vs main
-- `--session`: Review work from current session (today's commits)
-- `--commits N`: Review last N commits
-- `--files path1 path2`: Review specific files
+* No args: Review current feature branch vs main
+* `--session`: Review work from current session (today's commits)
+* `--commits N`: Review last N commits
+* `--files path1 path2`: Review specific files
 
 Run appropriate git commands to gather the diff.
 
@@ -97,13 +97,13 @@ Then write a **detailed spec** for the better approach:
 
 Before approving for PR, verify:
 
-- [ ] No TODOs that should be done now
-- [ ] No commented-out code
-- [ ] No magic numbers/strings without constants
-- [ ] No copy-paste that should be abstracted
-- [ ] Error messages are helpful, not cryptic
-- [ ] Logging is appropriate (not too verbose, not silent)
-- [ ] Tests exist and test the right things
+* [ ] No TODOs that should be done now
+* [ ] No commented-out code
+* [ ] No magic numbers/strings without constants
+* [ ] No copy-paste that should be abstracted
+* [ ] Error messages are helpful, not cryptic
+* [ ] Logging is appropriate (not too verbose, not silent)
+* [ ] Tests exist and test the right things
 
 ### Step 6: Output
 
@@ -144,9 +144,9 @@ Grade: C
 
 What's Concerning:
 
-- Added a boolean flag to handle special case - this will grow into a mess
-- Three nested if statements that should be strategy pattern
-- "Helper" method that's doing two unrelated things
+* Added a boolean flag to handle special case - this will grow into a mess
+* Three nested if statements that should be strategy pattern
+* "Helper" method that's doing two unrelated things
 
 The Hard Question:
 
@@ -164,19 +164,19 @@ Grade: A
 
 What's Good:
 
-- Clean separation between parsing and validation
-- Error messages include context for debugging
-- Edge cases handled with early returns, not nested ifs
+* Clean separation between parsing and validation
+* Error messages include context for debugging
+* Edge cases handled with early returns, not nested ifs
 
 What's Concerning:
 
-- Minor: Variable name 'x' in line 42 could be more descriptive
+* Minor: Variable name 'x' in line 42 could be more descriptive
 
 Recommendation: Ready for PR (fix the variable name first)
 
 ## Notes
 
-- Be your own toughest critic - it's easier to fix now than after merge
-- "It works" is necessary but not sufficient
-- Technical debt is a choice, not an accident - make it consciously
-- The elegant solution often has LESS code, not more
+* Be your own toughest critic - it's easier to fix now than after merge
+* "It works" is necessary but not sufficient
+* Technical debt is a choice, not an accident - make it consciously
+* The elegant solution often has LESS code, not more

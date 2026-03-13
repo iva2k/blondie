@@ -51,16 +51,16 @@ Ralph spawns a fresh Amp instance per iteration with no memory of previous work.
 
 ### Right-sized stories:
 
-- Add a database column and migration
-- Add a UI component to an existing page
-- Update a server action with new logic
-- Add a filter dropdown to a list
+* Add a database column and migration
+* Add a UI component to an existing page
+* Update a server action with new logic
+* Add a filter dropdown to a list
 
 ### Too big (split these):
 
-- "Build the entire dashboard" - Split into: schema, queries, UI components, filters
-- "Add authentication" - Split into: schema, middleware, login UI, session handling
-- "Refactor the API" - Split into one story per endpoint or pattern
+* "Build the entire dashboard" - Split into: schema, queries, UI components, filters
+* "Add authentication" - Split into: schema, middleware, login UI, session handling
+* "Refactor the API" - Split into one story per endpoint or pattern
 
 **Rule of thumb:** If you cannot describe the change in 2-3 sentences, it is too big.
 
@@ -90,18 +90,18 @@ Each criterion must be something Ralph can CHECK, not something vague.
 
 ### Good criteria (verifiable):
 
-- "Add `status` column to tasks table with default 'pending'"
-- "Filter dropdown has options: All, Active, Completed"
-- "Clicking delete shows confirmation dialog"
-- "Typecheck passes"
-- "Tests pass"
+* "Add `status` column to tasks table with default 'pending'"
+* "Filter dropdown has options: All, Active, Completed"
+* "Clicking delete shows confirmation dialog"
+* "Typecheck passes"
+* "Tests pass"
 
 ### Bad criteria (vague):
 
-- "Works correctly"
-- "User can do X easily"
-- "Good UX"
-- "Handles edge cases"
+* "Works correctly"
+* "User can do X easily"
+* "Good UX"
+* "Handles edge cases"
 
 ### Always include as final criterion:
 
@@ -249,9 +249,9 @@ Add ability to mark tasks with different statuses.
 1. Read the current `prd.json` if it exists
 2. Check if `branchName` differs from the new feature's branch name
 3. If different AND `progress.txt` has content beyond the header:
-   - Create archive folder: `archive/YYYY-MM-DD-feature-name/`
-   - Copy current `prd.json` and `progress.txt` to archive
-   - Reset `progress.txt` with fresh header
+   * Create archive folder: `archive/YYYY-MM-DD-feature-name/`
+   * Copy current `prd.json` and `progress.txt` to archive
+   * Reset `progress.txt` with fresh header
 
 **The ralph.sh script handles this automatically** when you run it, but if you are manually updating prd.json between runs, archive first.
 
@@ -261,10 +261,10 @@ Add ability to mark tasks with different statuses.
 
 Before writing prd.json, verify:
 
-- [ ] **Previous run archived** (if prd.json exists with different branchName, archive it first)
-- [ ] Each story is completable in one iteration (small enough)
-- [ ] Stories are ordered by dependency (schema to backend to UI)
-- [ ] Every story has "Typecheck passes" as criterion
-- [ ] UI stories have "Verify in browser using dev-browser skill" as criterion
-- [ ] Acceptance criteria are verifiable (not vague)
-- [ ] No story depends on a later story
+* [ ] **Previous run archived** (if prd.json exists with different branchName, archive it first)
+* [ ] Each story is completable in one iteration (small enough)
+* [ ] Stories are ordered by dependency (schema to backend to UI)
+* [ ] Every story has "Typecheck passes" as criterion
+* [ ] UI stories have "Verify in browser using dev-browser skill" as criterion
+* [ ] Acceptance criteria are verifiable (not vague)
+* [ ] No story depends on a later story

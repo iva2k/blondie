@@ -13,13 +13,13 @@ This guide explains how to deploy and configure the Blondie agent to manage your
 
 Blondie's configuration lives in an `.agent/` directory at the root of your project. This directory contains all the necessary files for the agent to understand its goals, policies, and environment.
 
-- `SPEC.md`: The high-level product specification (What to build).
-- `TASKS.md`: The backlog of work items (What to do next).
-- `ISSUES.md`: A scratchpad for the agent to log observations or problems (optional).
-- `POLICY.yaml`: The rules of engagement (Autonomy levels/Safety gates).
-- `dev.yaml`: Language and development tools configuration (Linters, formatters, coding standard).
-- `llm_config.yaml`: Model selection and parameters (e.g. GPT-4o, Claude 3.5).
-- `project.yaml`: Project definition (Commands, metadata).
+* `SPEC.md`: The high-level product specification (What to build).
+* `TASKS.md`: The backlog of work items (What to do next).
+* `ISSUES.md`: A scratchpad for the agent to log observations or problems (optional).
+* `POLICY.yaml`: The rules of engagement (Autonomy levels/Safety gates).
+* `dev.yaml`: Language and development tools configuration (Linters, formatters, coding standard).
+* `llm_config.yaml`: Model selection and parameters (e.g. GPT-4o, Claude 3.5).
+* `project.yaml`: Project definition (Commands, metadata).
 
 ---
 
@@ -27,9 +27,9 @@ First, collect all [**Prerequisites**](#1-prerequisites) and perform the [**Inst
 
 Then, choose an onboarding method:
 
-- The recommended [**HTML Wizard**](#3-onboarding-the-html-wizard-recommended)
-- or the [**CLI Wizard**](#4-onboarding-the-cli-wizard-advanced).
-- For advanced users, [**Manual Configuration**](#7-manual-configuration-advanced) is also an option.
+* The recommended [**HTML Wizard**](#3-onboarding-the-html-wizard-recommended)
+* or the [**CLI Wizard**](#4-onboarding-the-cli-wizard-advanced).
+* For advanced users, [**Manual Configuration**](#7-manual-configuration-advanced) is also an option.
 
 ---
 
@@ -41,9 +41,9 @@ Before starting, gather the following credentials.
 
 You need at least one LLM provider, but using a few allows you to leverage their individual strengths.
 
-- **OpenAI**: `sk-...`
-- **Anthropic**: `sk-ant-...`
-- **Groq** (Optional): `gsk-...`
+* **OpenAI**: `sk-...`
+* **Anthropic**: `sk-ant-...`
+* **Groq** (Optional): `gsk-...`
 
 ### Git Authentication
 
@@ -53,8 +53,8 @@ Blondie needs credentials to push code and create Pull Requests.
 
 For HTTPS repositories (e.g., `https://github.com/user/repo.git`), create a Personal Access Token (PAT).
 
-- **GitHub**: Settings -> Developer Settings -> Personal Access Tokens (Classic). Scopes: `repo`.
-- **GitLab**: User Settings -> Access Tokens. Scopes: `api`, `write_repository`.
+* **GitHub**: Settings -> Developer Settings -> Personal Access Tokens (Classic). Scopes: `repo`.
+* **GitLab**: User Settings -> Access Tokens. Scopes: `api`, `write_repository`.
 
 #### Option B: SSH Keys (Bundled)
 
@@ -98,18 +98,18 @@ The wizard page will guide you through the following steps. It runs entirely in 
 _**NO DATA IS EVER TRANSMITTED OVER THE NETWORK.**_
 
 1. **Secrets Setup**:
-   - **Git Authentication**: Choose between **HTTPS Token** or **SSH Key**.
-     - If **SSH**: Upload your private key file. It is bundled locally into the zip.
-     - If **HTTPS**: Enter your GitHub Token.
-   - Enter your API Keys (OpenAI, Anthropic, etc.).
+   * **Git Authentication**: Choose between **HTTPS Token** or **SSH Key**.
+     * If **SSH**: Upload your private key file. It is bundled locally into the zip.
+     * If **HTTPS**: Enter your GitHub Token.
+   * Enter your API Keys (OpenAI, Anthropic, etc.).
 2. **Template Selection**:
-   - Choose a starter template (e.g., Basic, Python, Node.js) to pre-fill configuration.
+   * Choose a starter template (e.g., Basic, Python, Node.js) to pre-fill configuration.
 3. **Project Details**:
-   - **Project ID**: A unique name for your agent/project.
-   - **Goal**: A high-level description of what you are building (populates `SPEC.md`).
-   - **Initial Tasks**: Define the first few tasks for the agent's backlog (`TASKS.md`).
+   * **Project ID**: A unique name for your agent/project.
+   * **Goal**: A high-level description of what you are building (populates `SPEC.md`).
+   * **Initial Tasks**: Define the first few tasks for the agent's backlog (`TASKS.md`).
 4. **Configuration**:
-   - **Deployment Target**: Choose where your app will live (Docker, Vercel, Netlify). This configures the `deploy` command in `project.yaml`.
+   * **Deployment Target**: Choose where your app will live (Docker, Vercel, Netlify). This configures the `deploy` command in `project.yaml`.
 
 ### Step 3: Download Configuration
 
@@ -245,8 +245,8 @@ Edit `.agent/TASKS.md` in your favorite editor and commit/push to the `main` bra
 
 The agent persists its state and logs within its workspace:
 
-- `.agent/logs/`: Detailed execution logs and LLM conversations (Journal).
-- `.agent/progress.txt`: A summary of recent actions.
+* `.agent/logs/`: Detailed execution logs and LLM conversations (Journal).
+* `.agent/progress.txt`: A summary of recent actions.
 
 ## 7. Manual Configuration (Advanced)
 

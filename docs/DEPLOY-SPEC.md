@@ -30,11 +30,11 @@ The agent relies on a strict directory structure at the root of the workspace. T
 
 ### B. Secrets Handling
 
-- **Location**:
-  - Runtime: `/workspace/.agent/secrets.env.yaml` (Container).
-  - Storage (Local): `~/.blondie/secrets.env.yaml` OR `<project>/.agent/secrets.env.yaml`.
-- **Interpolation**: The agent supports substituting secrets into `project.yaml` commands using syntax `{{secret:section.key}}`.
-  - Example: `deploy: vercel --token {{secret:cloud.vercel.token}}`
+* **Location**:
+  * Runtime: `/workspace/.agent/secrets.env.yaml` (Container).
+  * Storage (Local): `~/.blondie/secrets.env.yaml` OR `<project>/.agent/secrets.env.yaml`.
+* **Interpolation**: The agent supports substituting secrets into `project.yaml` commands using syntax `{{secret:section.key}}`.
+  * Example: `deploy: vercel --token {{secret:cloud.vercel.token}}`
 
 ## 2. Onboarding Specification
 
@@ -44,10 +44,10 @@ This is the primary and recommended onboarding method.
 
 #### 1. Architecture & Goal
 
-- **Goal**: Provide a zero-installation, maximally secure onboarding experience that runs entirely on the user's local machine.
-- **Implementation**: A single, self-contained `blondie.html` file that uses client-side JavaScript.
-- **Dependencies**: Leverages `JSZip.js` and `js-yaml.js`. **Templates are injected into the HTML file at build time** to allow single-file offline usage.
-- **Security**: No data is ever transmitted. All secrets and configurations are handled in the browser's memory and are packaged locally for download.
+* **Goal**: Provide a zero-installation, maximally secure onboarding experience that runs entirely on the user's local machine.
+* **Implementation**: A single, self-contained `blondie.html` file that uses client-side JavaScript.
+* **Dependencies**: Leverages `JSZip.js` and `js-yaml.js`. **Templates are injected into the HTML file at build time** to allow single-file offline usage.
+* **Security**: No data is ever transmitted. All secrets and configurations are handled in the browser's memory and are packaged locally for download.
 
 #### 2. User Flow
 
@@ -55,33 +55,33 @@ This is the primary and recommended onboarding method.
 2. **Edit (Optional)**: User can click "Open Zip File" to load a previously generated `blondie_config.zip`, which populates the form fields with the existing configuration.
 3. **Template Selection**: User selects a project template (e.g., Basic, Python, Node.js) which determines the base configuration files loaded from `templates/<name>/`.
 4. **Interview**: The user fills out a web form with:
-   - **Secrets**:
-     - **Git Auth**: Choice of HTTPS Token (Input) or SSH Key (File Upload -> bundled to `.agent/ssh/id_rsa`).
-     - **LLM Keys**: OpenAI Key, Anthropic Key, etc.
-   - **Project Details**: Project ID, high-level goal.
-   - **Initial Tasks**: List of starting tasks to populate `TASKS.md`.
-   - **Configuration**: Primary deployment target (Docker, Vercel, etc.).
+   * **Secrets**:
+     * **Git Auth**: Choice of HTTPS Token (Input) or SSH Key (File Upload -> bundled to `.agent/ssh/id_rsa`).
+     * **LLM Keys**: OpenAI Key, Anthropic Key, etc.
+   * **Project Details**: Project ID, high-level goal.
+   * **Initial Tasks**: List of starting tasks to populate `TASKS.md`.
+   * **Configuration**: Primary deployment target (Docker, Vercel, etc.).
 5. **Generate & Download**:
-   - User clicks "Generate & Download Configuration".
-   - The JavaScript logic gathers all form data.
-   - It reads base files from the embedded templates data (populated by build script from `templates/` directory).
-   - It generates/updates content for `.agent/` files (`project.yaml`, `secrets.env.yaml`, `SPEC.md`, `POLICY.yaml`, etc.) in memory.
-     - `project.yaml`: Configured with ID, Name, and Deployment command (Docker/Vercel/Netlify).
-     - `secrets.env.yaml`: Populated with provided keys.
-     - `SPEC.md`: Populated with the Project Goal.
-     - `POLICY.yaml`: Generated from template file with default autonomy gates (Git: allow, Deploy: prompt) and limits.
-     - `TASKS.md`: Generated with the user-provided tasks (replaces template defaults).
-     - `dev.yaml`: Generated from template file with default environment settings.
-     - `llm_config.yaml`: Generated from template file with default provider configurations.
-     - `ISSUES.md`: Generated as a placeholder.
-   - It uses JSZip to create a `blondie_config.zip` file containing the complete `.agent/` directory.
-   - The browser triggers a download of the zip file.
+   * User clicks "Generate & Download Configuration".
+   * The JavaScript logic gathers all form data.
+   * It reads base files from the embedded templates data (populated by build script from `templates/` directory).
+   * It generates/updates content for `.agent/` files (`project.yaml`, `secrets.env.yaml`, `SPEC.md`, `POLICY.yaml`, etc.) in memory.
+     * `project.yaml`: Configured with ID, Name, and Deployment command (Docker/Vercel/Netlify).
+     * `secrets.env.yaml`: Populated with provided keys.
+     * `SPEC.md`: Populated with the Project Goal.
+     * `POLICY.yaml`: Generated from template file with default autonomy gates (Git: allow, Deploy: prompt) and limits.
+     * `TASKS.md`: Generated with the user-provided tasks (replaces template defaults).
+     * `dev.yaml`: Generated from template file with default environment settings.
+     * `llm_config.yaml`: Generated from template file with default provider configurations.
+     * `ISSUES.md`: Generated as a placeholder.
+   * It uses JSZip to create a `blondie_config.zip` file containing the complete `.agent/` directory.
+   * The browser triggers a download of the zip file.
 6. **Next Steps**: The UI updates to show the user the final `docker run` command and instructions on how to prepare their project folder.
 
 #### 3. Limitations
 
-- **No Live Validation**: API keys cannot be validated live from the browser due to CORS and security constraints. Validation occurs on the agent's first run.
-- **No Filesystem Access**: The wizard cannot access target file system and auto-detect an existing project's stack (language/tools) or run `git init`. The user is advised to do this manually, and may need to edit `project.yaml` and `dev.yaml` after download to match their specific stack if it differs from the defaults.
+* **No Live Validation**: API keys cannot be validated live from the browser due to CORS and security constraints. Validation occurs on the agent's first run.
+* **No Filesystem Access**: The wizard cannot access target file system and auto-detect an existing project's stack (language/tools) or run `git init`. The user is advised to do this manually, and may need to edit `project.yaml` and `dev.yaml` after download to match their specific stack if it differs from the defaults.
 
 ### B. CLI Wizard (`blondie init`)
 
@@ -89,9 +89,9 @@ This is the advanced onboarding method for users who prefer a terminal-based wor
 
 #### Architecture
 
-- The main entry point `src/agent/cli.py` is a `click.group`.
-- The wizard is implemented as the `init` subcommand (`blondie init`).
-- The agent's main loop is the `run` subcommand (`blondie run`).
+* The main entry point `src/agent/cli.py` is a `click.group`.
+* The wizard is implemented as the `init` subcommand (`blondie init`).
+* The agent's main loop is the `run` subcommand (`blondie run`).
 
 #### Wizard Logic (`src/agent/wizard.py`)
 
@@ -101,61 +101,61 @@ The `init` command executes the following sequence of functions:
 
 #### 1. Secrets Setup (`setup_secrets`)
 
-- **Storage Location**: Prompts the user to choose between:
-  - **Global**: `~/.blondie/secrets.env.yaml` (shared across projects).
-  - **Project-local**: `./.agent/secrets.env.yaml` (portable, recommended for deployment).
-- **Interactive Prompts**: If keys are missing from the selected file, it prompts for:
-  - `llm.openai.api_key`
-  - `llm.anthropic.api_key`
-  - `cloud.vercel.token`
-  - `git.github_token`
-- **Action**: Writes the collected secrets to the chosen YAML file.
+* **Storage Location**: Prompts the user to choose between:
+  * **Global**: `~/.blondie/secrets.env.yaml` (shared across projects).
+  * **Project-local**: `./.agent/secrets.env.yaml` (portable, recommended for deployment).
+* **Interactive Prompts**: If keys are missing from the selected file, it prompts for:
+  * `llm.openai.api_key`
+  * `llm.anthropic.api_key`
+  * `cloud.vercel.token`
+  * `git.github_token`
+* **Action**: Writes the collected secrets to the chosen YAML file.
 
 #### 2. Secrets Validation (`validate_secrets`)
 
-- **Action**: Uses the provided secrets to connect to LLM provider APIs.
-- **Goal**: Serves as a connectivity test and fetches the list of available models.
-- **Output**: Generates `.agent/llm.yaml` in the workspace with model and cost data.
-- **Failure**: If validation fails, it warns the user to check their keys.
+* **Action**: Uses the provided secrets to connect to LLM provider APIs.
+* **Goal**: Serves as a connectivity test and fetches the list of available models.
+* **Output**: Generates `.agent/llm.yaml` in the workspace with model and cost data.
+* **Failure**: If validation fails, it warns the user to check their keys.
 
 #### 3. Workspace Setup (`setup_workspace`)
 
-- **Target**: The current working directory (`/workspace` in Docker).
-- **Git Init**: If the directory is not a git repository, it prompts to run `git init`.
-- **Templating**:
-  - Prompts user to select a template (defaulting based on stack detection if possible).
-  - Copies default configuration files from `templates/<selected>` into the `.agent/` directory.
-  - Files: `project.yaml`, `POLICY.yaml`, `TASKS.md`, `SPEC.md`, `ISSUES.md`, `llm_config.yaml`, `dev.yaml`, `secrets.env.EXAMPLE.yaml`.
-  - Provides overwrite protection for existing files.
-  - Appends necessary entries to `.gitignore` if it exists, or creates one if it doesn't.
-- **Permissions**: If running as root (Docker default), it attempts to `chown` the generated files to match the workspace owner, preventing permission issues on the host.
+* **Target**: The current working directory (`/workspace` in Docker).
+* **Git Init**: If the directory is not a git repository, it prompts to run `git init`.
+* **Templating**:
+  * Prompts user to select a template (defaulting based on stack detection if possible).
+  * Copies default configuration files from `templates/<selected>` into the `.agent/` directory.
+  * Files: `project.yaml`, `POLICY.yaml`, `TASKS.md`, `SPEC.md`, `ISSUES.md`, `llm_config.yaml`, `dev.yaml`, `secrets.env.EXAMPLE.yaml`.
+  * Provides overwrite protection for existing files.
+  * Appends necessary entries to `.gitignore` if it exists, or creates one if it doesn't.
+* **Permissions**: If running as root (Docker default), it attempts to `chown` the generated files to match the workspace owner, preventing permission issues on the host.
 
 #### 4. Stack Detection (`stack_detection`)
 
-- **Goal**: To pre-fill project commands for existing repositories.
-- **Detection**: Analyzes the workspace for common project files:
-  - `pyproject.toml` -> Python (Poetry)
-  - `requirements.txt` -> Python (Pip)
-  - `package.json` -> Node.js (npm/yarn/pnpm)
-- **Action**: If a stack is detected, it prompts the user to accept the suggested default commands (`install`, `test`, `lint`), which are then written to `project.yaml` and `dev.yaml`.
-  - Updates `project.yaml`: Sets `languages` list and `commands` dictionary.
-  - Updates `dev.yaml`: Sets `environment` section (language, manager).
+* **Goal**: To pre-fill project commands for existing repositories.
+* **Detection**: Analyzes the workspace for common project files:
+  * `pyproject.toml` -> Python (Poetry)
+  * `requirements.txt` -> Python (Pip)
+  * `package.json` -> Node.js (npm/yarn/pnpm)
+* **Action**: If a stack is detected, it prompts the user to accept the suggested default commands (`install`, `test`, `lint`), which are then written to `project.yaml` and `dev.yaml`.
+  * Updates `project.yaml`: Sets `languages` list and `commands` dictionary.
+  * Updates `dev.yaml`: Sets `environment` section (language, manager).
 
 #### 5. Customization Interview (`interview`)
 
-- **Goal**: To customize the project configuration based on user input.
-- **Prompts**:
-  - "What are you building?" -> Updates `SPEC.md`.
-  - "Project ID" -> Updates `project.yaml`.
-  - "First tasks?" -> Populates `TASKS.md`.
-  - "Bot Git Name" -> Updates `project.yaml`.
-  - "Primary AI Provider" -> Updates `llm_config.yaml` to prioritize the selected provider.
-  - "Deployment Target" -> Updates the `deploy` command in `project.yaml`.
+* **Goal**: To customize the project configuration based on user input.
+* **Prompts**:
+  * "What are you building?" -> Updates `SPEC.md`.
+  * "Project ID" -> Updates `project.yaml`.
+  * "First tasks?" -> Populates `TASKS.md`.
+  * "Bot Git Name" -> Updates `project.yaml`.
+  * "Primary AI Provider" -> Updates `llm_config.yaml` to prioritize the selected provider.
+  * "Deployment Target" -> Updates the `deploy` command in `project.yaml`.
 
 #### 6. Completion (`interview`)
 
-- **Output**: Prints a "Ready for liftoff!" message.
-- **Command Generation**: Displays the exact `docker run` command for the user to copy-paste. The command is tailored based on whether secrets are stored locally in the project or globally, and whether the user indicated they use SSH for Git.
+* **Output**: Prints a "Ready for liftoff!" message.
+* **Command Generation**: Displays the exact `docker run` command for the user to copy-paste. The command is tailored based on whether secrets are stored locally in the project or globally, and whether the user indicated they use SSH for Git.
 
 ### C. Template Structure
 
@@ -178,48 +178,48 @@ templates/
 
 ### D. Upload Client (`blondie upload`)
 
-- **Purpose**: To send a configuration zip file to an unconfigured agent running the remote setup server.
-- **Command**: `blondie upload <path_to_zip> [--host <host>] [--port <port>]`
-- **Action**:
-  - Reads the zip file from the local filesystem.
-  - Sends the file content in a `POST` request to `http://<host>:<port>/configure`.
-  - Reports success or failure based on the HTTP response.
+* **Purpose**: To send a configuration zip file to an unconfigured agent running the remote setup server.
+* **Command**: `blondie upload <path_to_zip> [--host <host>] [--port <port>]`
+* **Action**:
+  * Reads the zip file from the local filesystem.
+  * Sends the file content in a `POST` request to `http://<host>:<port>/configure`.
+  * Reports success or failure based on the HTTP response.
 
 ## 3. Runtime Specification
 
 ### A. Docker Image
 
-- **Tag**: `blondie:latest`
-- **Base**: Python 3.12-slim (as per `Dockerfile`).
-- **Entrypoint**: `blondie run` (via `docker-entrypoint.sh` or CMD).
-- **Behavior**: If `/workspace/.agent/project.yaml` exists, starts the agent loop. If not, starts the remote configuration server.
+* **Tag**: `blondie:latest`
+* **Base**: Python 3.12-slim (as per `Dockerfile`).
+* **Entrypoint**: `blondie run` (via `docker-entrypoint.sh` or CMD).
+* **Behavior**: If `/workspace/.agent/project.yaml` exists, starts the agent loop. If not, starts the remote configuration server.
 
 ### B. Volume Mounts
 
 The agent container requires specific mounts to function:
 
 1. **Workspace**: `-v $(pwd):/workspace` (RW)
-   - Maps host project directory to container workspace.
+   * Maps host project directory to container workspace.
 
 2. **Secrets**:
-   - Project-local: `-v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml`
-   - Global: `-v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml`
+   * Project-local: `-v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml`
+   * Global: `-v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml`
 
 3. **SSH Keys (Optional)**: `-v $(pwd)/.agent/ssh/id_rsa:/root/.ssh/id_rsa:ro`
-   - Required if git remote uses SSH and key was bundled via wizard.
+   * Required if git remote uses SSH and key was bundled via wizard.
 
 ### C. Maintenance
 
-- **Logs**: Container logs (`docker logs blondie`) and Internal Journal (`.agent/logs/`).
-- **Updates**: Re-build `blondie:latest` and restart container.
+* **Logs**: Container logs (`docker logs blondie`) and Internal Journal (`.agent/logs/`).
+* **Updates**: Re-build `blondie:latest` and restart container.
 
 ### D. Remote Configuration Server
 
-- **Trigger**: `blondie run` is executed in a workspace where `.agent/project.yaml` is not found.
-- **Mechanism**: A temporary `http.server.HTTPServer` is started on port 8000 (configurable).
-- **Endpoint**: Listens for `POST /configure`.
-- **Payload**: Expects a `zip` file (as `application/zip` or `application/octet-stream`) in the request body.
-- **Action on Receive**:
+* **Trigger**: `blondie run` is executed in a workspace where `.agent/project.yaml` is not found.
+* **Mechanism**: A temporary `http.server.HTTPServer` is started on port 8000 (configurable).
+* **Endpoint**: Listens for `POST /configure`.
+* **Payload**: Expects a `zip` file (as `application/zip` or `application/octet-stream`) in the request body.
+* **Action on Receive**:
   1. Validates the zip contains `.agent/project.yaml`.
   2. Extracts the zip's contents to the workspace root (`/workspace`).
   3. If `.agent/ssh/id_rsa` was extracted, it is copied to `/root/.ssh/id_rsa` and permissions are set to `600`.
