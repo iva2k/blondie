@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blondie Agent - Initialization Wizard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 2em; max-width: 800px; margin: auto; background: #f9f9f9; color: #333; }
+        h1, h2 { color: #111; }
+        .step { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 1.5em; margin-bottom: 2em; }
+        label { display: block; font-weight: bold; margin-top: 1em; }
+        input, select, textarea { width: 100%; padding: 0.8em; margin-top: 0.5em; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #005cbf; color: white; padding: 0.8em 1.5em; border: none; border-radius: 4px; font-size: 1em; cursor: pointer; margin-top: 1em; }
+        button:hover { background: #0056b3; }
+        #final-command { background: #222; color: #eee; padding: 1em; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🧙 Blondie Agent Initialization Wizard</h1>
+    <p>This wizard runs entirely in your browser. No data is sent to any server. It will generate a <code>.zip</code> file with your configuration.</p>
+
+    <div style="background: #e9ecef; padding: 1.5em; border-radius: 8px; margin-bottom: 2em; border: 1px solid #ddd;">
+        <h3 style="margin-top: 0;">📂 Resume Configuration</h3>
+        <p>Already have a <code>blondie_config.zip</code>? Open it here to edit your settings.</p>
+        <input type="file" id="zip-input" accept=".zip" style="display: none;" onchange="loadZip(this)">
+        <button onclick="document.getElementById('zip-input').click()" style="margin-top: 0; background-color: #6c757d;">Open Zip File</button>
+    </div>
+
+    <div id="wizard-steps">
+        <!-- Step 1: Project Definition -->
+        <div class="step">
+            <h2>Step 1: Project Definition</h2>
+            <p>Define the core identity of your project. The Project ID will be used for directory names and configuration.</p>
+            <label for="project-id">Project ID (e.g., my-app)</label>
+            <input type="text" id="project-id" placeholder="my-app">
+            <label for="git-repo-url">Git Repository URL (Optional)</label>
+            <input type="text" id="git-repo-url" placeholder="https://github.com/user/repo.git">
+        </div>
+
+        <!-- Step 2: Secrets -->
+        <div class="step">
+            <h2>Step 2: Secrets</h2>
+            <p>Enter your credentials. These will be saved inside the downloaded <code>.zip</code> file.</p>
+
+            <h3>Git Authentication</h3>
+            <div style="margin-bottom: 1em;">
+                <label style="display:inline-block; margin-right: 1em;">
+                    <input type="radio" name="git-auth" value="token" checked onchange="toggleGitAuth()"> HTTPS Token
+                </label>
+                <label style="display:inline-block;">
+                    <input type="radio" name="git-auth" value="ssh" onchange="toggleGitAuth()"> SSH Key
+                </label>
+            </div>
+
+            <div id="git-token-section">
+                <label for="github-token">GitHub Token (for private repos/PRs)</label>
+                <input type="password" id="github-token" placeholder="ghp_...">
+            </div>
+
+            <div id="git-ssh-section" class="hidden">
+                <label for="ssh-key-file">SSH Private Key (id_rsa)</label>
+                <p style="font-size: 0.9em; color: #666; margin-top: 0.5em;">Upload your private key. It will be bundled into <code>.agent/ssh/id_rsa</code>.</p>
+                <input type="file" id="ssh-key-file">
+            </div>
+
+            <hr style="margin: 1.5em 0; border: 0; border-top: 1px solid #eee;">
+
+            <h3>LLM API Keys</h3>
+            <div id="dynamic-secrets"></div>
+        </div>
+
+        <!-- Step 3: Template Selection -->
+        <div class="step">
+            <h2>Step 3: Template</h2>
+            <p>Select a starting template for your project configuration.</p>
+            <label for="template-select">Template</label>
+            <select id="template-select" onchange="updateSecretsInputs()">
+                <option value="basic">Basic</option>
+            </select>
+        </div>
+
+        <!-- Step 4: Project Details -->
+        <div class="step">
+            <h2>Step 4: Project Details</h2>
+            <label for="project-goal">What are you building? (High-level goal)</label>
+            <textarea id="project-goal" rows="3" placeholder="A web app that helps users track their reading habits."></textarea>
+            <label for="initial-tasks">Initial Tasks (One per line)</label>
+            <textarea id="initial-tasks" rows="5" placeholder="Setup project structure&#10;Implement user login"></textarea>
+        </div>
+
+        <!-- Step 5: Configuration -->
+        <div class="step">
+            <h2>Step 5: Configuration</h2>
+            <label for="deployment-target">Primary Deployment Target</label>
+            <select id="deployment-target">
+                <option value="docker" selected>Docker</option>
+                <option value="vercel">Vercel</option>
+                <option value="netlify">Netlify</option>
+                <option value="custom">Custom</option>
+            </select>
+        </div>
+
+        <button onclick="generateConfig()">Generate & Download Configuration</button>
+    </div>
+
+    <div id="next-steps" class="step hidden">
+        <h2>🚀 Success! Your configuration is ready.</h2>
+        <p>Your <code>blondie_config.zip</code> file has been downloaded.</p>
+        <h3>Next Steps:</h3>
+        <ol>
+            <li id="next-step-mkdir">Create a new folder for your project: <code>mkdir my-project && cd my-project</code></li>
+            <li>Unzip the downloaded file here. You should now have a <code>.agent</code> directory.</li>
+            <li>Initialize a git repository: <code>git init</code></li>
+            <li>Run the agent using Docker with the command below.</li>
+        </ol>
+        <h3>Docker Run Command:</h3>
+        <pre id="final-command"></pre>
+    </div>
+
+    <script>
+        var TEMPLATES;
+        // The build script replaces this comment with the actual templates JSON object.
+        TEMPLATES = {"basic": {".gitignore": ".agent/secrets.env.yaml\n.agent/llm.yaml\n.agent/usage.yaml", ".agent/dev.yaml": "package_manager: custom\nlinter: echo \"Linter not configured\"\nformatter: echo \"Formatter not configured\"", ".agent/ISSUES.md": "# Issues\n\n* [ ] Initial issue\n", ".agent/llm_config.yaml": "providers:\n  openai:\n    model: gpt-4o\n    temperature: 0.1\n  anthropic:\n    model: claude-3-5-sonnet-20240620\n    temperature: 0.1\n  groq:\n    api_type: openai\n    base_url: https://api.groq.com/openai/v1\n    default_model: llama-3.3-70b-versatile\n\noperations:\n  planning:\n    - provider: openai\n      model: gpt-4o\n  coding:\n    - provider: openai\n      model: gpt-4o\n  # The init wizard will update the provider selection based on user input", ".agent/POLICY.yaml": "# Blondie Self-Policy\nautonomy:\n  gates:\n    git-merge: allow\n    deploy-docker: allow\n    install-binary: prompt\n    add-package: allow\n    shell: allow\n  test_retries: 3\n  coordination: git\n\nlimits:\n  max_daily_cost_usd: 5.0\n  max_total_cost_usd: 100.0\n  max_test_retries: 3\n  max_concurrent_tasks: 5", ".agent/project.yaml": "id: my-project\nname: My New Project\nlanguages: []\ngit_user: \"Blondie Bot\"\ngit_email: \"blondie@agent.local\"\nmain_branch: main\ntask_source: TASKS.md\ncommands:\n  install: echo \"Install command not configured\"\n  test: echo \"Test command not configured\"\n  deploy: echo \"Deploy command not configured\"\npolicy: POLICY.yaml\ndev_config: dev.yaml\ndocs:\n  - README.md", ".agent/secrets.env.EXAMPLE.yaml": "# Blondie Secrets Template - COPY TO secrets.env.yaml and fill values\n# Mount at runtime: docker run -v ./secrets.env.yaml:/workspace/.agent/secrets.env.yaml\n# Never commit real values - add to .gitignore\n\nllm:\n  # OpenAI-compatible endpoints (Anthropic, Grok, local Ollama, in-house)\n  openai:\n    api_base: \"https://api.openai.com/v1\"  # or your proxy/ollama endpoint\n    api_key: \"sk-proj-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\"\n  \n  anthropic:\n    api_base: \"https://api.anthropic.com/v1\"\n    api_key: \"claude-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\"\n  \n  # Generic HTTP LLM (in-house models)\n  custom:\n    endpoint: \"https://your-llm.company/api/v1/chat/completions\"\n    api_key: \"Bearer your-custom-token\"\n\ncloud:\n  vercel:\n    # Vercel CLI token (vercel login --token)\n    token: \"V3rC3l_t0k3n_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\"\n    # Optional: team ID for org projects\n    team_id: \"\"\n  \n  netlify:\n    # Netlify CLI token (netlify login --token) \n    token: \"N3tL1fY_t0k3n_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\"\n    site_id: \"your-site-id-optional\"\n\ngit:\n  # GitHub/GitLab Personal Access Token for PR creation\n  github_token: \"ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\"\n  gitlab_token: \"glp4t_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\"\n\n# Global limits (optional overrides)\nlimits:\n  max_daily_cost_usd: 10.0\n  max_concurrent_tasks: 5\n  max_retries_per_task: 3\n\n# Observability (optional)\nobservability:\n  slack_webhook: \"https://hooks.slack.com/services/T000/B000/C000\"  # Task completion alerts\n  log_level: \"INFO\"  # DEBUG, INFO, WARN, ERROR", ".agent/SPEC.md": "# Product Spec\n\nGoal: <Describe your product goal here>\nUsers: <Target users>\n", ".agent/TASKS.md": "# Tasks\n\nStatus: id | priority | title | depends_on\n\n## Todo\n\n* [ ] 001 | P0 | Setup project structure |\n"}, "node": {".gitignore": ".agent/secrets.env.yaml\n.agent/llm.yaml\n.agent/usage.yaml\n", ".agent/dev.yaml": "environment:\n  language: javascript\n  manager: npm\n  linter: eslint\n  formatter: prettier\n  unit_test: jest\nguidelines:\n  - \"Use npm for dependency management\"\n  - \"Follow coding standards via eslint and prettier.\"\n", ".agent/ISSUES.md": "# Issues\n\n* [ ] Initial issue\n", ".agent/llm_config.yaml": "providers:\n  openai:\n    model: gpt-4o\n    temperature: 0.1\n  anthropic:\n    model: claude-3-5-sonnet-20240620\n    temperature: 0.1\n  groq:\n    api_type: openai\n    base_url: https://api.groq.com/openai/v1\n    default_model: llama-3.3-70b-versatile\n\noperations:\n  planning:\n    - provider: openai\n      model: gpt-4o\n  coding:\n    - provider: openai\n      model: gpt-4o\n  # The init wizard will update the provider selection based on user input\n", ".agent/POLICY.yaml": "# Blondie Self-Policy\nautonomy:\n  gates:\n    git-merge: allow\n    deploy-docker: allow\n    install-binary: prompt\n    add-package: allow\n    shell: allow\n  test_retries: 3\n  coordination: git\n\nlimits:\n  max_daily_cost_usd: 5.0\n  max_total_cost_usd: 100.0\n  max_test_retries: 3\n  max_concurrent_tasks: 5\n", ".agent/project.yaml": "id: my-node-project\nname: \"My Node.js Project\"\nlanguages: [javascript, typescript]\ngit_user: \"Blondie Bot\"\ngit_email: \"blondie@agent.local\"\nmain_branch: main\ntask_source: TASKS.md\ncommands:\n  install: npm install\n  test: npm test\n  lint: npm run lint\n  deploy: echo \"Deploy command not configured\"\npolicy: POLICY.yaml\ndev_config: dev.yaml\ndocs:\n  - README.md\nprotected_files:\n  - .agent/llm.yaml\n  - .agent/POLICY.yaml\n  - .agent/project.yaml\n  - .agent/secrets.env.yaml\n  - .agent/dev.yaml\n", ".agent/secrets.env.EXAMPLE.yaml": "# Blondie Secrets Template - COPY TO secrets.env.yaml and fill values\n# Mount at runtime: docker run -v ./secrets.env.yaml:/workspace/.agent/secrets.env.yaml\n# Never commit real values - add to .gitignore\n\nllm:\n  openai:\n    api_key: \"sk-proj-...\"\n  anthropic:\n    api_key: \"claude-...\"\ngit:\n  github_token: \"ghp_...\"\n", ".agent/SPEC.md": "# Product Spec\n\nGoal: <Describe your product goal here>\n", ".agent/TASKS.md": "# Tasks\n\nStatus: id | priority | title | depends_on\n\n## Todo\n\n* [ ] 001 | P0 | Setup project structure |\n"}, "project-calculator": {".gitignore": ".agent/secrets.env.yaml\n.agent/llm.yaml\n.agent/usage.yaml\n", ".agent/dev.yaml": "environment:\n  language: python\n  manager: poetry\n  python_version: \">=3.10\"\n  linter: ruff\n  formatter: ruff\n  types: mypy\n  scripts: poethepoet\n  unit_test: pytest\n  gui: tkinter\n  env: conda\nguidelines:\n  - \"Use poetry for dependency management\"\n  - \"Run `poetry init --no-interaction` for project scaffolding\"\n  - \"Add `poethepoet` as a dev dependency (`poetry add --group dev poethepoet`).\"\n  - \"Configure poetry to use the active Conda environment: `poetry config virtualenvs.create false --local`.\"\n  - \"Ensure `pyproject.toml` python version matches the Conda environment.\"\n  - \"Use poe (poethepoet) for scripts.\"\n  - \"Use an `src` layout.\"\n  - \"Follow PEP 8 via ruff\"\n  - \"Use typing for type hints\"\n  - \"Use mypy for type checking\"\n  - \"Use pytest for testing `poetry run pytest`\"\n  - \"Imports should be direct (e.g. `from mymodule import ...`) and NOT prefixed with `src.`.\"\n  - \"Guard global executable code in a main() function with `if __name__ == '__main__': main()` to prevent crashes during test collection (especially for GUI apps).\"\n  - \"Use `#!/usr/bin/env python3` shebang in files with main() function.\"\n  - \"Ensure shell commands are compatible with the current `[OS]`/`[ARCH]`/`[SHELL]` sections.\"\n  - \"Ensure all code is compatible with Windows/Linux/MacOS\"\ndebugging_hints:\n  - \"Are you using poetry environment? Always use `poetry run ...` to execute commands.\"\n  - \"If `ModuleNotFoundError` occurs after installation, check if you are running the command inside the same environment (e.g. `poetry run pytest` vs `pytest`).\"\n  - \"If a GUI app test times out, ensure you are not waiting for `mainloop()` to finish. Use `subprocess.Popen` and kill the process after verification.\"\n", ".agent/ISSUES.md": "# Issues\n\n* [ ] Initial issue\n", ".agent/llm_config.yaml": "# LLM Configuration\n\nproviders:\n  # Key matches 'llm' section in secrets.env.yaml\n  openai:\n    api_type: openai\n    base_url: https://api.openai.com/v1  # or your proxy/ollama endpoint\n    default_model: gpt-4o-mini\n  \n  anthropic:\n    api_type: anthropic\n    base_url: https://api.anthropic.com/v1\n    default_model: claude-3-5-sonnet-20240620\n  \n  # Example: Groq (OpenAI-compatible)\n  groq:\n    api_type: openai\n    base_url: https://api.groq.com/openai/v1\n    default_model: llama-3.3-70b-versatile\n\noperations:\n  # Priority order: First provider with available secret is used\n  planning:\n    - provider: anthropic\n    - provider: openai\n      model: gpt-4o\n    - provider: groq\n    - provider: groq\n      model: openai/gpt-oss-120b\n    - provider: groq\n      model: openai/gpt-oss-120b\n    - provider: groq\n      model: qwen/qwen3-32b\n  \n  coding:\n    - provider: openai\n      model: gpt-4o\n    - provider: anthropic\n    - provider: groq\n    - provider: groq\n      model: openai/gpt-oss-120b\n    - provider: groq\n      model: openai/gpt-oss-120b\n    - provider: groq\n      model: qwen/qwen3-32b\n    - provider: openai\n  \n  debugging:\n    - provider: anthropic\n    - provider: openai\n  \n  review:\n    - provider: anthropic\n    - provider: openai\n\n  execution:\n    - provider: anthropic\n    - provider: openai\n      model: gpt-4o\n    - provider: groq\n    - provider: groq\n      model: openai/gpt-oss-120b\n    - provider: groq\n      model: openai/gpt-oss-120b\n    - provider: groq\n      model: qwen/qwen3-32b\n", ".agent/POLICY.yaml": "# Test repo Self-Policy\nautonomy:\n  gates:\n    git-merge: allow\n    deploy-docker: allow        # Self-deploy OK\n    install-binary: prompt      # apt installs need review\n    add-package: allow          # pip requirements OK\n    shell: allow                # use of shell\n    shell-files: allow          # direct change of files\n  test_retries: 3\n  coordination: git             # git | filelock | none\n\ncommands:\n  install: poetry install\n  test: poetry run pytest tests/\n  build: python -m build\n  lint: ruff check .\n\ngit:\n  branch-prefix: \"task-\"\n  merge-strategy: rebase\n  test-gate: \"test && lint\"\n\ndocs:\n  always-update:\n    - README.md\n    - docs/CHANGELOG.md\n\nlimits:\n  max_test_retries: 3       # Max number of test-debug-fix loop\n  max_shell_retries: 3      # Max retries for failed shell commands\n  max_daily_cost_usd: 10.0\n  max_total_cost_usd: 100.0\n  max_concurrent_tasks: 5\n", ".agent/project.yaml": "id: Calculator\nname: \"Calculator project\"\nlanguages: [python]\ngit_user: \"Blondie Agent\"\ngit_email: \"blondie@agent.local\"\nmain_branch: main\ntask_source: TASKS.md\nsleep_no_connection: 30\nsleep_daily_limit: 3600\nexit_on_no_tasks: True\nexit_on_exception: True\ncommands:\n  install: poetry install\n  test: poetry run pytest tests/\n  build: python -m build\n  lint: ruff check .\npolicy: POLICY.yaml\ndev_config: dev.yaml\ndocs:\n  - README.md\n  - docs/\ndeploy:\n  docker: docker build -t blondie:v1 .\nprotected_files:\n  - .agent/llm.yaml\n  - .agent/POLICY.yaml\n  - .agent/project.yaml\n  - .agent/secrets.env.yaml\n  - .agent/dev.yaml\n  - .venv\n  - poetry.lock\n", ".agent/secrets.env.EXAMPLE.yaml": "# Blondie Secrets Template - COPY TO secrets.env.yaml and fill values\n# Mount at runtime: docker run -v ./secrets.env.yaml:/workspace/.agent/secrets.env.yaml\n# Never commit real values - add to .gitignore\n\nllm:\n  openai:\n    api_key: \"sk-proj-...\"\n  anthropic:\n    api_key: \"claude-...\"\ngit:\n  github_token: \"ghp_...\"\n", ".agent/SPEC.md": "# Calculator Spec\n\n\"Calculator\" is a simple Calculator project for Blondie testing.\n\n## Directory Structure\n\n```text\ntestproject/\n\u251c\u2500\u2500 .agent/                   # Self-config\n\u2502   \u251c\u2500\u2500 POLICY.yaml           # Autonomy rules  \n\u2502   \u251c\u2500\u2500 project.yaml          # Self-description\n\u2502   \u251c\u2500\u2500 secrets.env.yaml      # LLM keys, tokens\n\u2502   \u251c\u2500\u2500 SPEC.md               # Specifications doc\n\u2502   \u2514\u2500\u2500 TASKS.md              # Bootstrap backlog\n\u251c\u2500\u2500 src/                      # Core runtime\n\u251c\u2500\u2500 tests/                    # Tests\n\u251c\u2500\u2500 pyproject.toml            # Poetry 2.0+\n\u251c\u2500\u2500 pytest.ini                # pythonpath=src\n\u2514\u2500\u2500 README.md\n```\n", ".agent/TASKS.md": "# Project Tasks\n\nStatus: id | priority | title | depends_on\n\n## Done\n\n## Todo\n\n* [ ] 001 | P1 | Create a python project setup |\n* [ ] 002 | P1 | Create main script that opens GUI window |\n* [ ] 003 | P1 | Main functionality: Calulator UI - buttons and numeric / result deisplay |\n"}, "python": {".gitignore": ".agent/secrets.env.yaml\n.agent/llm.yaml\n.agent/usage.yaml\n", ".agent/dev.yaml": "environment:\n  language: python\n  manager: poetry\n  linter: ruff\n  formatter: ruff\n  unit_test: pytest\nguidelines:\n  - \"Use poetry for dependency management\"\n  - \"Use an `src` layout.\"\n  - \"Follow PEP 8 via ruff.\"\n", ".agent/ISSUES.md": "# Issues\n\n* [ ] Initial issue\n", ".agent/llm_config.yaml": "providers:\n  openai:\n    model: gpt-4o\n    temperature: 0.1\n  anthropic:\n    model: claude-3-5-sonnet-20240620\n    temperature: 0.1\n  groq:\n    api_type: openai\n    base_url: https://api.groq.com/openai/v1\n    default_model: llama-3.3-70b-versatile\n\noperations:\n  planning:\n    - provider: openai\n      model: gpt-4o\n  coding:\n    - provider: openai\n      model: gpt-4o\n  # The init wizard will update the provider selection based on user input\n", ".agent/POLICY.yaml": "# Blondie Self-Policy\nautonomy:\n  gates:\n    git-merge: allow\n    deploy-docker: allow\n    install-binary: prompt\n    add-package: allow\n    shell: allow\n  test_retries: 3\n  coordination: git\n\nlimits:\n  max_daily_cost_usd: 5.0\n  max_total_cost_usd: 100.0\n  max_test_retries: 3\n  max_concurrent_tasks: 5\n", ".agent/project.yaml": "id: my-python-project\nname: \"My Python Project\"\nlanguages: [python]\ngit_user: \"Blondie Bot\"\ngit_email: \"blondie@agent.local\"\nmain_branch: main\ntask_source: TASKS.md\ncommands:\n  install: poetry install\n  test: poetry run pytest\n  lint: poetry run ruff check .\n  format: poetry run ruff format .\n  deploy: echo \"Deploy command not configured\"\npolicy: POLICY.yaml\ndev_config: dev.yaml\ndocs:\n  - README.md\nprotected_files:\n  - .agent/llm.yaml\n  - .agent/POLICY.yaml\n  - .agent/project.yaml\n  - .agent/secrets.env.yaml\n  - .agent/dev.yaml\n", ".agent/secrets.env.EXAMPLE.yaml": "# Blondie Secrets Template - COPY TO secrets.env.yaml and fill values\n# Mount at runtime: docker run -v ./secrets.env.yaml:/workspace/.agent/secrets.env.yaml\n# Never commit real values - add to .gitignore\n\nllm:\n  openai:\n    api_key: \"sk-proj-...\"\n  anthropic:\n    api_key: \"claude-...\"\ngit:\n  github_token: \"ghp_...\"\n", ".agent/SPEC.md": "# Product Spec\n\nGoal: <Describe your product goal here>\n", ".agent/TASKS.md": "# Tasks\n\nStatus: id | priority | title | depends_on\n\n## Todo\n\n* [ ] 001 | P0 | Setup project structure |\n"}};
+
+        // Populate templates dropdown
+        (function populateTemplates() {
+            const select = document.getElementById('template-select');
+            if (select && TEMPLATES) {
+                select.innerHTML = '';
+                Object.keys(TEMPLATES).forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+                    if (name === 'basic') option.selected = true;
+                    select.appendChild(option);
+                });
+            }
+        })();
+
+        function toggleGitAuth() {
+            const authType = document.querySelector('input[name="git-auth"]:checked').value;
+            const tokenSection = document.getElementById('git-token-section');
+            const sshSection = document.getElementById('git-ssh-section');
+            
+            if (authType === 'ssh') {
+                tokenSection.classList.add('hidden');
+                sshSection.classList.remove('hidden');
+            } else {
+                tokenSection.classList.remove('hidden');
+                sshSection.classList.add('hidden');
+            }
+        }
+
+        function updateSecretsInputs() {
+            if (!TEMPLATES) return;
+            
+            const templateName = document.getElementById('template-select').value;
+            const templateFiles = TEMPLATES[templateName];
+            const secretsContainer = document.getElementById('dynamic-secrets');
+            
+            if (!templateFiles || !templateFiles['.agent/llm_config.yaml']) return;
+
+            try {
+                const llmConfig = jsyaml.load(templateFiles['.agent/llm_config.yaml']);
+                const providers = Object.keys(llmConfig.providers || {});
+                
+                secretsContainer.innerHTML = '';
+                
+                providers.forEach(provider => {
+                    const label = document.createElement('label');
+                    label.textContent = provider.charAt(0).toUpperCase() + provider.slice(1) + " API Key";
+                    label.htmlFor = provider + '-key';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'password';
+                    input.id = provider + '-key';
+                    input.placeholder = `Enter key for ${provider}...`;
+                    
+                    secretsContainer.appendChild(label);
+                    secretsContainer.appendChild(input);
+                });
+            } catch (e) {
+                console.error("Error parsing llm_config.yaml for secrets", e);
+            }
+        }
+        
+        // Initialize secrets inputs
+        if (TEMPLATES) {
+             updateSecretsInputs();
+        }
+
+        function processProjectYaml(content, projectId, deployTarget, gitRepoUrl) {
+            try {
+                const data = jsyaml.load(content);
+                data.id = projectId;
+                data.name = projectId;
+                if (gitRepoUrl) {
+                    data.git_repo = gitRepoUrl;
+                }
+                
+                data.commands = data.commands || {};
+                data.deploy = data.deploy || {};
+
+                if (deployTarget === 'vercel') {
+                    data.commands.deploy = "vercel --prod --token {{secret:cloud.vercel.token}}";
+                } else if (deployTarget === 'netlify') {
+                    data.commands.deploy = "netlify deploy --prod --dir=dist --auth={{secret:cloud.netlify.token}}";
+                } else if (deployTarget === 'docker') {
+                    data.deploy.docker = `docker build -t ${projectId}:latest .`;
+                    data.commands.deploy = "echo 'Deploy via Docker'";
+                } else {
+                    data.commands.deploy = 'echo "Deploy command not configured"';
+                }
+                return jsyaml.dump(data);
+            } catch (e) {
+                console.error("Error parsing project.yaml", e);
+                return content;
+            }
+        }
+
+        function processSpec(content, goal) {
+            let fileContent = content.replace(/^Goal:.*$/m, `Goal: ${goal}`);
+            if (fileContent === content && !content.includes(goal)) {
+                    fileContent += `\nGoal: ${goal}`;
+            }
+            return fileContent;
+        }
+
+        function processTasks(content, initialTasks) {
+            const todoHeader = "## Todo";
+            const parts = content.split(todoHeader);
+            if (parts.length > 1) {
+                let newTasks = "\n";
+                initialTasks.split('\n').filter(t => t.trim()).forEach((task, idx) => {
+                    const id = String(idx + 1).padStart(3, '0');
+                    newTasks += `- [ ] ${id} | P1 | ${task.trim()} |\n`;
+                });
+                return parts[0] + todoHeader + newTasks;
+            }
+            return content;
+        }
+
+        async function generateConfig() {
+            if (!TEMPLATES) {
+                alert("Error: Templates not loaded. Please use the built blondie.html file.");
+                return;
+            }
+            
+            const templateName = document.getElementById('template-select').value;
+            const templateFiles = TEMPLATES[templateName];
+            
+            if (!templateFiles) {
+                alert("Error: Selected template '" + templateName + "' not found.");
+                return;
+            }
+            
+            // Get dynamic providers from current template
+            const llmConfig = jsyaml.load(templateFiles['.agent/llm_config.yaml'] || "{}");
+            const providers = Object.keys(llmConfig.providers || {});
+
+            const projectId = document.getElementById('project-id').value || 'my-project';
+            const gitRepoUrl = document.getElementById('git-repo-url').value;
+            const goal = document.getElementById('project-goal').value;
+            const initialTasks = document.getElementById('initial-tasks').value;
+            const deployTarget = document.getElementById('deployment-target').value;
+            
+            const zip = new JSZip();
+
+            // 1. Process Template Files
+            for (const [filepath, content] of Object.entries(templateFiles)) {
+                let fileContent = content;
+
+                // A. Modify project.yaml
+                if (filepath === '.agent/project.yaml') {
+                    fileContent = processProjectYaml(content, projectId, deployTarget, gitRepoUrl);
+                }
+                // B. Modify SPEC.md
+                else if (filepath === '.agent/SPEC.md' && goal.trim()) {
+                    fileContent = processSpec(content, goal);
+                }
+                // C. Modify TASKS.md
+                else if (filepath === '.agent/TASKS.md' && initialTasks.trim()) {
+                    fileContent = processTasks(content, initialTasks);
+                }
+
+                zip.file(filepath, fileContent);
+            }
+
+            // Handle Git Auth
+            const gitAuth = document.querySelector('input[name="git-auth"]:checked').value;
+            let gitToken = "";
+
+            if (gitAuth === 'token') {
+                gitToken = document.getElementById('github-token').value || "";
+            } else {
+                // SSH Logic - bundle key
+                const sshFileInput = document.getElementById('ssh-key-file');
+                if (sshFileInput.files.length > 0) {
+                    const file = sshFileInput.files[0];
+                    const content = await file.text();
+                    zip.file(".agent/ssh/id_rsa", content);
+                }
+            }
+
+            // 2. Create secrets.env.yaml (Always dynamic)
+            const secrets = {
+                llm: {},
+                git: {
+                    github_token: gitToken
+                }
+            };
+            
+            providers.forEach(p => {
+                const val = document.getElementById(p + '-key')?.value || "";
+                secrets.llm[p] = { api_key: val };
+            });
+
+            const secretsYaml = jsyaml.dump(secrets);
+            zip.file(".agent/secrets.env.yaml", secretsYaml);
+
+            // 3. Trigger the download
+            const content = await zip.generateAsync({ type: "blob" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(content);
+            link.download = "blondie_config.zip";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            // 7. Show next steps
+            showNextSteps();
+        }
+
+        async function loadZip(input) {
+            const file = input.files[0];
+            if(!file) return;
+            
+            try {
+                const zip = await JSZip.loadAsync(file);
+                
+                // 1. Secrets
+                const secretsFile = zip.file(".agent/secrets.env.yaml");
+                if(secretsFile) {
+                    const txt = await secretsFile.async("string");
+                    const data = jsyaml.load(txt);
+                    // We can only populate keys for inputs that exist. 
+                    // Ideally we should switch template if the zip implies a specific one, but that metadata isn't strictly tracked.
+                    // For now, we populate what matches the current UI.
+                    document.getElementById('github-token').value = data?.git?.github_token || "";
+                    
+                    // Populate dynamic keys
+                    if (data?.llm) {
+                        Object.keys(data.llm).forEach(p => {
+                            const el = document.getElementById(p + '-key');
+                            if (el) el.value = data.llm[p].api_key || "";
+                        });
+                    }
+                }
+                
+                // 2. Project
+                const projectFile = zip.file(".agent/project.yaml");
+                if(projectFile) {
+                    const txt = await projectFile.async("string");
+                    const data = jsyaml.load(txt);
+                    document.getElementById('project-id').value = data?.id || "";
+                    document.getElementById('git-repo-url').value = data?.git_repo || "";
+                    
+                    // Infer deployment
+                    const commands = data?.commands || {};
+                    const deploy = data?.deploy || {};
+                    
+                    if (deploy.docker) {
+                        document.getElementById('deployment-target').value = 'docker';
+                    } else if (commands.deploy && commands.deploy.includes('vercel')) {
+                        document.getElementById('deployment-target').value = 'vercel';
+                    } else if (commands.deploy && commands.deploy.includes('netlify')) {
+                        document.getElementById('deployment-target').value = 'netlify';
+                    } else {
+                        document.getElementById('deployment-target').value = 'custom';
+                    }
+                }
+                
+                // 3. Spec
+                const specFile = zip.file(".agent/SPEC.md");
+                if(specFile) {
+                    const txt = await specFile.async("string");
+                    const match = txt.match(/Goal:\s*(.*)/);
+                    if(match) document.getElementById('project-goal').value = match[1].trim();
+                }
+                
+                alert("Configuration loaded!");
+                input.value = ""; // Reset to allow reloading same file
+                
+            } catch(e) {
+                console.error(e);
+                alert("Error loading zip: " + e);
+            }
+        }
+
+        function showNextSteps() {
+            document.getElementById('wizard-steps').classList.add('hidden');
+            const nextStepsDiv = document.getElementById('next-steps');
+            nextStepsDiv.classList.remove('hidden');
+
+            const projectId = document.getElementById('project-id').value || 'my-project';
+            const mkdirStep = document.getElementById('next-step-mkdir');
+            if (mkdirStep) {
+                mkdirStep.innerHTML = `Create a new folder for your project: <code>mkdir ${projectId} && cd ${projectId}</code>`;
+            }
+
+            const gitAuth = document.querySelector('input[name="git-auth"]:checked').value;
+            const sshVol = (gitAuth === 'ssh') ? '  -v $(pwd)/.agent/ssh/id_rsa:/root/.ssh/id_rsa:ro \\\n' : '';
+
+            const command = `
+docker run -d \\
+  --name blondie \\
+  --restart always \\
+  -v $(pwd):/workspace \\
+${sshVol}  -v $(pwd)/.agent/secrets.env.yaml:/workspace/.agent/secrets.env.yaml \\
+  blondie:latest run
+            `.trim();
+
+            document.getElementById('final-command').textContent = command;
+        }
+    </script>
+</body>
+</html>
