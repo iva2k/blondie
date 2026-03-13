@@ -22,13 +22,14 @@ def test_setup_secrets_new_file(mock_home):
     """Test creating a new secrets file with interactive input."""
     # Simulate user inputs:
     # 1. Storage? 1 (Global)
-    # 2. OpenAI? Yes
-    # 3. Key: sk-test
-    # 4. Anthropic? No
-    # 5. Groq? No
-    # 6. Vercel? No
-    # 7. GitHub? No
-    inputs = "1\ny\nsk-test\nn\nn\nn\nn\n"
+    # 2. Git Auth? 1 (HTTPS)
+    # 3. Update Token? Yes -> gh-token (Wait, has_token is False, so it asks for token directly)
+    # 4. OpenAI? Yes -> sk-test
+    # 5. Anthropic? No
+    # 6. Groq? No
+    # 7. Vercel? No
+    # (Git token is asked first now)
+    inputs = "1\n1\ngh-token\ny\nsk-test\nn\nn\nn\n"
 
     runner = CliRunner()
     # We invoke a dummy command to run the function in a click context,
@@ -55,7 +56,7 @@ def test_setup_secrets_new_file(mock_home):
     assert data["llm"]["openai"]["api_key"] == "sk-test"
     assert "anthropic" not in data["llm"]
     assert "vercel" not in data["cloud"]
-    assert "github_token" not in data.get("git", {})
+    assert data["git"]["github_token"] == "gh-token"
 
 
 def test_setup_secrets_existing_file(mock_home):
@@ -70,12 +71,12 @@ def test_setup_secrets_existing_file(mock_home):
 
     # Inputs:
     # Storage? 1 (Global)
+    # Git Auth? 1 (HTTPS) (Token exists? No, so prompt) -> gh-token
     # OpenAI check (skipped because exists)
     # Anthropic? Yes -> sk-ant
     # Groq? No
     # Vercel? No
-    # GitHub? Yes -> gh-token
-    inputs = "1\ny\nsk-ant\nn\nn\ny\ngh-token\n"
+    inputs = "1\n1\ngh-token\ny\nsk-ant\nn\nn\n"
 
     @click.command()
     def cmd():
@@ -118,10 +119,10 @@ providers:
 
         # Inputs:
         # 1. Storage? 2 (Project - inside isolated fs)
-        # 2. Setup custom_prov? Yes -> key
-        # 3. Vercel? No
-        # 4. GitHub? No
-        inputs = "2\ny\nsk-custom\nn\nn\n"
+        # 2. Git Auth? 1 (HTTPS) -> gh-token
+        # 3. Setup custom_prov? Yes -> key
+        # 4. Vercel? No
+        inputs = "2\n1\ngh-token\ny\nsk-custom\nn\n"
 
         @click.command()
         def cmd():
@@ -189,7 +190,7 @@ def test_setup_secrets_errors(mock_home):
     def cmd_load():
         setup_secrets()
 
-    result = runner.invoke(cmd_load, input="1\nn\nn\nn\nn\nn\n")
+    result = runner.invoke(cmd_load, input="1\n1\ngh-token\nn\nn\nn\n")
     assert "Error loading secrets" in result.output
 
 

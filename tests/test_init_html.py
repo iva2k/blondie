@@ -88,7 +88,12 @@ def test_init_html_wizard_flow(tmp_path):
             page.select_option("#deployment-target", "docker")
 
             # Toggle SSH
-            page.check("#use-ssh")
+            page.check('input[name="git-auth"][value="ssh"]')
+
+            # Upload dummy key
+            dummy_key = tmp_path / "id_rsa_dummy"
+            dummy_key.write_text("OPENSSH PRIVATE KEY", encoding="utf-8")
+            page.set_input_files("#ssh-key-file", str(dummy_key))
 
             # --- Action: Generate ---
             # Set up download listener before clicking
@@ -116,9 +121,14 @@ def test_init_html_wizard_flow(tmp_path):
                 # Check Content: Secrets
                 secrets_content = z.read(".agent/secrets.env.yaml").decode("utf-8")
                 assert "sk-mock-openai-key" in secrets_content
-                assert "ghp_mock_token" in secrets_content
+                # Token should be empty because we switched to SSH
+                assert "ghp_mock_token" not in secrets_content
                 if has_groq:
                     assert "gsk_mock_groq_key" in secrets_content
+
+                # Check SSH Key
+                ssh_key_content = z.read(".agent/ssh/id_rsa").decode("utf-8")
+                assert "OPENSSH PRIVATE KEY" in ssh_key_content
 
                 # Check Content: Project
                 project_content = z.read(".agent/project.yaml").decode("utf-8")
@@ -137,7 +147,7 @@ def test_init_html_wizard_flow(tmp_path):
             cmd_text = page.locator("#final-command").inner_text()
             assert "docker run" in cmd_text
             assert "blondie:latest run" in cmd_text
-            assert "-v ~/.ssh:/root/.ssh:ro" in cmd_text
+            assert "/root/.ssh/id_rsa:ro" in cmd_text
 
         finally:
             browser.close()
@@ -209,6 +219,7 @@ Goal: Loaded Goal
             # Verify fields
             assert page.input_value("#openai-key") == "sk-loaded-openai"
             assert page.input_value("#anthropic-key") == "sk-loaded-anthropic"
+            # HTTPS is default, so token input should be visible and populated
             assert page.input_value("#github-token") == "ghp_loaded_token"
             assert page.input_value("#project-id") == "loaded-project-id"
             assert page.input_value("#project-goal") == "Loaded Goal"

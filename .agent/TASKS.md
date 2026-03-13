@@ -117,7 +117,7 @@ Status: id | priority | title | depends_on
 ### [Sprint6 2026-0312] Wizard and Actual Deployment
 
 - [x] 120 | P1 | [HTML Wizard] "Use SSH for Git (mounts ~/.ssh)" should be grouped with GIT token field (the group should precede API keys group) - if SSH is selected, we should have a file selector / dropbox for cert file, if not selected, token field entry. The file should be copied into the zip folder under `./home/$USER/.ssh/id_rsa`. |
-- [ ] 121 | P1 | [CLI Wizard] Similar to HTML, add "Use SSH for Git (mounts ~/.ssh)" which should choose either a file name to copy, or GIT token prompt (the group should precede API keys group) - if SSH is selected, the file should be copied into the zip folder under `./home/$USER/.ssh/id_rsa`. |
+- [x] 121 | P1 | [CLI Wizard] Similar to HTML, add "Use SSH for Git (mounts ~/.ssh)" which should choose either a file name to copy, or GIT token prompt (the group should precede API keys group) - if SSH is selected, the file should be copied into the zip folder under `./home/$USER/.ssh/id_rsa`. |
 - [ ] 122 | P1 | [Agent Startup] The agent should detect running the first time (marked "unconfigured"). We need a mechanism to receive the configuration zip file from the wizard. Upon receipt of the file, it should install the content, including the cert file for GIT, and configure GIT to use the cert file, and mark itself as "configured", so upon consequent starts it will go into runnning state. |
 
 ### [GOAL]

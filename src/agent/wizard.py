@@ -7,7 +7,9 @@ from __future__ import annotations
 import asyncio
 import os
 import shutil
+import stat
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -68,8 +70,58 @@ def setup_secrets() -> dict[str, Any]:
     secrets.setdefault("cloud", {})
     secrets.setdefault("git", {})
 
-    # Determine providers to prompt for (based on template config if available)
     workspace = _get_workspace()
+
+    # 1. Git Authentication (Precedes LLM keys)
+    click.echo("\n--- Git Authentication ---")
+
+    # Check if we already have a token
+    has_token = bool(secrets["git"].get("github_token"))
+    auth_choice = "1" if has_token else "2"
+
+    auth_method = click.prompt(
+        "Method",
+        default=auth_choice,
+        type=click.Choice(["1", "2"]),
+        show_choices=False,
+        prompt_suffix=" ([1] HTTPS Token, [2] SSH Key): ",
+    )
+
+    if auth_method == "1":
+        # HTTPS
+        if not has_token or click.confirm("Update GitHub Token?", default=False):
+            token = click.prompt("GitHub Token", hide_input=True)
+            secrets["git"]["github_token"] = token
+    else:
+        # SSH
+        # Ensure destination exists
+        ssh_dir = workspace / ".agent" / "ssh"
+        ssh_dir.mkdir(parents=True, exist_ok=True)
+        id_rsa_dest = ssh_dir / "id_rsa"
+
+        click.echo(f"SSH Key will be bundled to: {id_rsa_dest}")
+        default_key_path = Path.home() / ".ssh" / "id_rsa"
+        key_path_str = click.prompt("Path to private key", default=str(default_key_path))
+        key_path = Path(key_path_str)
+
+        content = ""
+        if key_path.exists() and key_path.is_file():
+            content = key_path.read_text(encoding="utf-8")
+        else:
+            click.echo("⚠️  File not found (or not accessible).")
+            if click.confirm("Paste private key content instead?", default=True):
+                click.echo("Paste key below (Press Ctrl+D/Ctrl+Z when done):")
+                content = sys.stdin.read()
+
+        if content:
+            id_rsa_dest.write_text(content, encoding="utf-8")
+            id_rsa_dest.chmod(stat.S_IRUSR | stat.S_IWUSR)  # 600
+            click.echo("✅ SSH Key bundled.")
+            # Clear token if switching to SSH
+            if "github_token" in secrets["git"]:
+                del secrets["git"]["github_token"]
+
+    # Determine providers to prompt for (based on template config if available)
     llm_config_file = workspace / ".agent" / "llm_config.yaml"
     providers = ["openai", "anthropic", "groq"]  # Defaults if no config found
 
@@ -98,12 +150,6 @@ def setup_secrets() -> dict[str, Any]:
         if click.confirm("Do you want to set up Vercel Token?", default=False):
             token = click.prompt("Vercel Token", hide_input=True)
             secrets["cloud"]["vercel"] = {"token": token}
-
-    # Git
-    if not secrets["git"].get("github_token"):
-        if click.confirm("Do you want to set up GitHub Token (for Push/PR)?", default=False):
-            token = click.prompt("GitHub Token", hide_input=True)
-            secrets["git"]["github_token"] = token
 
     # Save
     try:
@@ -487,9 +533,16 @@ def interview(target_dir: Path | None = None) -> None:
         click.echo("Run the following command to start the agent:")
         secrets_mount = "-v ~/.blondie/secrets.env.yaml:/workspace/.agent/secrets.env.yaml"
 
-    ssh_vol = ""
-    if click.confirm("Do you use SSH for Git?", default=False):
+    # Detect bundled SSH key
+    ssh_key_bundled = (agent_dir / "ssh" / "id_rsa").exists()
+
+    if ssh_key_bundled:
+        click.echo("ℹ️  Using bundled SSH key.")
+        ssh_vol = "  -v $(pwd)/.agent/ssh/id_rsa:/root/.ssh/id_rsa:ro \\\n"
+    elif click.confirm("Do you use SSH for Git (mount host keys)?", default=False):
         ssh_vol = "  -v ~/.ssh:/root/.ssh:ro \\\n"
+    else:
+        ssh_vol = ""
 
     cmd = f"""
 docker run -d \\
