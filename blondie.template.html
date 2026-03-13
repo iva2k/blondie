@@ -34,10 +34,7 @@
         <div class="step">
             <h2>Step 1: Secrets</h2>
             <p>Enter your API keys. These will be saved locally in <code>.agent/secrets.env.yaml</code>.</p>
-            <label for="openai-key">OpenAI API Key</label>
-            <input type="password" id="openai-key" placeholder="sk-...">
-            <label for="anthropic-key">Anthropic API Key</label>
-            <input type="password" id="anthropic-key" placeholder="sk-ant-...">
+            <div id="dynamic-secrets"></div>
             <label for="github-token">GitHub Token (for private repos/PRs)</label>
             <input type="password" id="github-token" placeholder="ghp_...">
         </div>
@@ -47,7 +44,7 @@
             <h2>Step 2: Template</h2>
             <p>Select a starting template for your project configuration.</p>
             <label for="template-select">Template</label>
-            <select id="template-select">
+            <select id="template-select" onchange="updateSecretsInputs()">
                 <option value="basic">Basic</option>
             </select>
         </div>
@@ -116,6 +113,44 @@
             }
         })();
 
+        function updateSecretsInputs() {
+            if (!TEMPLATES) return;
+            
+            const templateName = document.getElementById('template-select').value;
+            const templateFiles = TEMPLATES[templateName];
+            const secretsContainer = document.getElementById('dynamic-secrets');
+            
+            if (!templateFiles || !templateFiles['.agent/llm_config.yaml']) return;
+
+            try {
+                const llmConfig = jsyaml.load(templateFiles['.agent/llm_config.yaml']);
+                const providers = Object.keys(llmConfig.providers || {});
+                
+                secretsContainer.innerHTML = '';
+                
+                providers.forEach(provider => {
+                    const label = document.createElement('label');
+                    label.textContent = provider.charAt(0).toUpperCase() + provider.slice(1) + " API Key";
+                    label.htmlFor = provider + '-key';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'password';
+                    input.id = provider + '-key';
+                    input.placeholder = `Enter key for ${provider}...`;
+                    
+                    secretsContainer.appendChild(label);
+                    secretsContainer.appendChild(input);
+                });
+            } catch (e) {
+                console.error("Error parsing llm_config.yaml for secrets", e);
+            }
+        }
+        
+        // Initialize secrets inputs
+        if (TEMPLATES) {
+             updateSecretsInputs();
+        }
+
         function processProjectYaml(content, projectId, deployTarget) {
             try {
                 const data = jsyaml.load(content);
@@ -169,6 +204,10 @@
                 alert("Error: Templates not loaded. Please use the built blondie.html file.");
                 return;
             }
+            
+            // Get dynamic providers from current template
+            const llmConfig = jsyaml.load(templateFiles['.agent/llm_config.yaml'] || "{}");
+            const providers = Object.keys(llmConfig.providers || {});
 
             const templateName = document.getElementById('template-select').value;
             const templateFiles = TEMPLATES[templateName];
@@ -207,14 +246,17 @@
 
             // 2. Create secrets.env.yaml (Always dynamic)
             const secrets = {
-                llm: {
-                    openai: { api_key: document.getElementById('openai-key').value || "" },
-                    anthropic: { api_key: document.getElementById('anthropic-key').value || "" }
-                },
+                llm: {},
                 git: {
                     github_token: document.getElementById('github-token').value || ""
                 }
             };
+            
+            providers.forEach(p => {
+                const val = document.getElementById(p + '-key')?.value || "";
+                secrets.llm[p] = { api_key: val };
+            });
+
             const secretsYaml = jsyaml.dump(secrets);
             zip.file(".agent/secrets.env.yaml", secretsYaml);
 
@@ -243,9 +285,18 @@
                 if(secretsFile) {
                     const txt = await secretsFile.async("string");
                     const data = jsyaml.load(txt);
-                    document.getElementById('openai-key').value = data?.llm?.openai?.api_key || "";
-                    document.getElementById('anthropic-key').value = data?.llm?.anthropic?.api_key || "";
+                    // We can only populate keys for inputs that exist. 
+                    // Ideally we should switch template if the zip implies a specific one, but that metadata isn't strictly tracked.
+                    // For now, we populate what matches the current UI.
                     document.getElementById('github-token').value = data?.git?.github_token || "";
+                    
+                    // Populate dynamic keys
+                    if (data?.llm) {
+                        Object.keys(data.llm).forEach(p => {
+                            const el = document.getElementById(p + '-key');
+                            if (el) el.value = data.llm[p].api_key || "";
+                        });
+                    }
                 }
                 
                 // 2. Project

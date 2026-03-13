@@ -68,17 +68,30 @@ def setup_secrets() -> dict[str, Any]:
     secrets.setdefault("cloud", {})
     secrets.setdefault("git", {})
 
-    # OpenAI
-    if not secrets["llm"].get("openai", {}).get("api_key"):
-        if click.confirm("Do you want to set up OpenAI API Key?", default=True):
-            key = click.prompt("OpenAI API Key", hide_input=True)
-            secrets["llm"]["openai"] = {"api_key": key}
+    # Determine providers to prompt for (based on template config if available)
+    workspace = _get_workspace()
+    llm_config_file = workspace / ".agent" / "llm_config.yaml"
+    providers = ["openai", "anthropic", "groq"]  # Defaults if no config found
 
-    # Anthropic
-    if not secrets["llm"].get("anthropic", {}).get("api_key"):
-        if click.confirm("Do you want to set up Anthropic API Key?", default=False):
-            key = click.prompt("Anthropic API Key", hide_input=True)
-            secrets["llm"]["anthropic"] = {"api_key": key}
+    if llm_config_file.exists():
+        try:
+            llm_config = yaml.safe_load(llm_config_file.read_text(encoding="utf-8")) or {}
+            if "providers" in llm_config:
+                providers = list(llm_config["providers"].keys())
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            click.echo(f"Warning: Could not read llm_config.yaml: {e}")
+
+    display_names = {"openai": "OpenAI", "anthropic": "Anthropic", "groq": "Groq"}
+
+    for provider in providers:
+        if not secrets["llm"].get(provider, {}).get("api_key"):
+            label = f"{display_names.get(provider, provider.capitalize())} API Key"
+            # Default to yes for OpenAI (usually primary), no for others
+            default_confirm = provider == "openai"
+
+            if click.confirm(f"Do you want to set up {label}?", default=default_confirm):
+                key = click.prompt(label, hide_input=True)
+                secrets["llm"][provider] = {"api_key": key}
 
     # Cloud (Vercel)
     if not secrets["cloud"].get("vercel", {}).get("token"):
@@ -356,6 +369,8 @@ def interview(target_dir: Path | None = None) -> None:
     # 2. Project Config
     project_file = agent_dir / "project.yaml"
     project_data: dict[str, Any] = {}
+
+    # Load existing project data to preserve fields not prompted for
     if project_file.exists():
         project_data = yaml.safe_load(project_file.read_text(encoding="utf-8")) or {}
 
@@ -410,19 +425,20 @@ def interview(target_dir: Path | None = None) -> None:
     llm_file = agent_dir / "llm_config.yaml"
     if llm_file.exists():
         llm_data = yaml.safe_load(llm_file.read_text(encoding="utf-8")) or {}
+        available_providers = list(llm_data.get("providers", {}).keys())
+        if not available_providers:
+            available_providers = ["openai", "anthropic", "groq"]
+
         provider = click.prompt(
-            "Primary AI Provider", default="openai", type=click.Choice(["openai", "anthropic", "groq"])
+            "Primary AI Provider", default=available_providers[0], type=click.Choice(available_providers)
         )
 
         if "operations" not in llm_data:
             llm_data["operations"] = {}
 
-        model_map = {
-            "openai": "gpt-4o",
-            "anthropic": "claude-3-5-sonnet-20240620",
-            "groq": "llama-3.3-70b-versatile",
-        }
-        selected_model = model_map.get(provider, "gpt-4o")
+        # Get default model from config or fallback
+        provider_config = llm_data.get("providers", {}).get(provider, {})
+        selected_model = provider_config.get("default_model", "gpt-4o")
 
         for op in ["planning", "coding", "debugging", "review", "execution"]:
             if op not in llm_data["operations"]:
@@ -488,8 +504,9 @@ docker run -d \\
 
 def run_init_wizard() -> None:
     """Run the full initialization wizard."""
-    secrets = setup_secrets()
-    validate_secrets(secrets)
     setup_workspace()
     stack_detection()
+    # Run secrets setup after workspace so we can detect template providers
+    secrets = setup_secrets()
+    validate_secrets(secrets)
     interview()
