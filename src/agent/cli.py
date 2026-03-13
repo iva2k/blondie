@@ -11,6 +11,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import click
+import httpx
 
 from agent.loop import BlondieAgent
 from agent.loop2 import BlondieOrchestrator
@@ -124,6 +125,26 @@ def init() -> None:
     """Initialize a new Blondie agent workspace."""
     click.echo("🧙 Blondie Agent Initialization Wizard")
     run_init_wizard()
+
+
+@entry_point.command()
+@click.argument("config_zip", type=click.Path(exists=True, dir_okay=False))
+@click.option("--host", default="localhost", help="Agent host address")
+@click.option("--port", default=8000, type=int, help="Agent setup port")
+def upload(config_zip: str, host: str, port: int) -> None:
+    """Upload configuration zip to an unconfigured agent."""
+    url = f"http://{host}:{port}/configure"
+    click.echo(f"Uploading {config_zip} to {url}...")
+
+    try:
+        with open(config_zip, "rb") as f:
+            content = f.read()
+
+        response = httpx.post(url, content=content, timeout=30.0)
+        response.raise_for_status()
+        click.echo(f"✅ Success: {response.text}")
+    except Exception as e:
+        raise click.ClickException(f"Upload failed: {e}") from e
 
 
 if __name__ == "__main__":

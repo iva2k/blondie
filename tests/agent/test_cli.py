@@ -4,6 +4,7 @@ import io
 import zipfile
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from click.testing import CliRunner
 
@@ -19,6 +20,7 @@ def test_cli_help():
     assert "Blondie Agent CLI" in result.output
     assert "run" in result.output
     assert "init" in result.output
+    assert "upload" in result.output
 
 
 @patch("agent.cli.main")
@@ -117,35 +119,24 @@ def test_setup_handler_post(tmp_path):
     # Alternatively, construct the handler with mocks.
 
     class MockServer:
+        """Mock HTTP server."""
+
         repo_path = tmp_path
 
         def shutdown(self):
-            pass
+            """Mock shutdown."""
 
     # Mock input stream for rfile
     rfile = io.BytesIO(zip_content)
     wfile = io.BytesIO()
 
-    handler = SetupRequestHandler(request, ("0.0.0.0", 8000), MockServer())
-    handler.rfile = rfile
-    handler.wfile = wfile
-    handler.path = "/configure"
-    handler.headers = {"content-length": str(len(zip_content))}
-    handler.command = "POST"
-
-    # We need to prevent handle() from running automatically or mock it?
-    # BaseHTTPRequestHandler __init__ calls handle() which calls handle_one_request().
-    # But we can instantiate it and then call do_POST if we mock correctly.
-    # Actually, instantiating it triggers the whole request cycle if request is passed.
-    # A common way to test is to override setup() or handle().
-
     # Let's just call do_POST on an instance initialized with dummy request?
     # It's tricky because __init__ runs everything.
     # Let's bypass __init__ and setup manually
     handler = SetupRequestHandler.__new__(SetupRequestHandler)
-    handler.server = MockServer()
+    handler.server = MockServer()  # type: ignore
     handler.path = "/configure"
-    handler.headers = {"content-length": str(len(zip_content))}
+    handler.headers = {"content-length": str(len(zip_content))}  # type: ignore
     handler.rfile = rfile
     handler.wfile = wfile
 
@@ -171,3 +162,33 @@ def test_setup_handler_post(tmp_path):
             # Check response
             # The response is complex, let's just check for the body
             assert b"Configuration received" in wfile.getvalue()
+
+
+@patch("httpx.post")
+def test_upload_command(mock_post, tmp_path):
+    """Test upload command."""
+    zip_file = tmp_path / "config.zip"
+    zip_file.write_bytes(b"dummy zip content")
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.text = "OK"
+    mock_post.return_value = mock_response
+
+    runner = CliRunner()
+    result = runner.invoke(entry_point, ["upload", str(zip_file), "--port", "9000"])
+
+    assert result.exit_code == 0
+    assert "Uploading" in result.output
+    assert "Success: OK" in result.output
+
+    mock_post.assert_called_once()
+    args, kwargs = mock_post.call_args
+    assert args[0] == "http://localhost:9000/configure"
+    assert kwargs["content"] == b"dummy zip content"
+
+    # Test failure
+    mock_post.side_effect = httpx.RequestError("Connection failed")
+    result = runner.invoke(entry_point, ["upload", str(zip_file)])
+    assert result.exit_code != 0
+    assert "Upload failed" in result.output
