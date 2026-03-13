@@ -1,5 +1,6 @@
 """Tests for the initialization wizard."""
 
+from pathlib import Path
 from unittest.mock import patch
 
 import click
@@ -92,6 +93,49 @@ def test_setup_secrets_existing_file(mock_home):
     assert data["llm"]["openai"]["api_key"] == "sk-existing"
     assert data["llm"]["anthropic"]["api_key"] == "sk-ant"
     assert data["git"]["github_token"] == "gh-token"
+
+
+def test_setup_secrets_with_config(mock_home):
+    """Test secrets setup picking up providers from llm_config.yaml."""
+    runner = CliRunner()
+
+    # Create a workspace with .agent/llm_config.yaml
+    # We need to run in isolated filesystem so _get_workspace() picks it up
+    with runner.isolated_filesystem() as td:
+        ws = Path(td)
+        agent_dir = ws / ".agent"
+        agent_dir.mkdir()
+
+        # Define custom providers
+        (agent_dir / "llm_config.yaml").write_text(
+            """
+providers:
+  custom_prov:
+    default_model: model-x
+""",
+            encoding="utf-8",
+        )
+
+        # Inputs:
+        # 1. Storage? 2 (Project - inside isolated fs)
+        # 2. Setup custom_prov? Yes -> key
+        # 3. Vercel? No
+        # 4. GitHub? No
+        inputs = "2\ny\nsk-custom\nn\nn\n"
+
+        @click.command()
+        def cmd():
+            setup_secrets()
+
+        result = runner.invoke(cmd, input=inputs)
+
+        assert "Do you want to set up Custom_prov API Key?" in result.output
+        assert "✅ Secrets saved" in result.output
+
+        secrets_file = agent_dir / "secrets.env.yaml"
+        assert secrets_file.exists()
+        data = yaml.safe_load(secrets_file.read_text(encoding="utf-8"))
+        assert data["llm"]["custom_prov"]["api_key"] == "sk-custom"
 
 
 @patch("agent.wizard.fetch_and_save_models")

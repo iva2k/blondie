@@ -1,10 +1,22 @@
 """End-to-end test for the blondie.html wizard using Playwright."""
 
+import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
 import pytest
 from playwright.sync_api import sync_playwright
+
+
+@pytest.fixture(scope="module", autouse=True)
+def build_wizard():
+    """Ensure blondie.html is built before running tests."""
+    root_dir = Path(__file__).parents[1]
+    script_path = root_dir / "scripts" / "build_wizard.py"
+
+    # Run the build script
+    subprocess.run([sys.executable, str(script_path)], check=True, cwd=root_dir)
 
 
 def test_init_html_wizard_flow(tmp_path):
@@ -31,23 +43,52 @@ def test_init_html_wizard_flow(tmp_path):
             context = browser.new_context(accept_downloads=True)
             page = context.new_page()
 
+            # Attach console listeners for debugging
+            page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
+            page.on("pageerror", lambda exc: print(f"BROWSER ERROR: {exc}"))
+
+            # Handle dialogs (alerts) automatically but log them
+            page.on("dialog", lambda dialog: print(f"BROWSER DIALOG: {dialog.message}") or dialog.accept())
+
             # Load the file via file:// protocol
             page.goto(init_html_path.as_uri())
+
+            # Verify libraries loaded
+            if not page.evaluate("typeof JSZip !== 'undefined'"):
+                pytest.fail("JSZip library not loaded in browser. Check network/CDN access.")
 
             # Verify Title
             assert "Blondie Agent" in page.title()
 
+            # --- Step 2: Template Selection ---
+            # Wait for templates to load and dropdown to populate
+            page.wait_for_selector("#template-select option[value='basic']", state="attached")
+            # Explicitly select 'basic' to trigger any change handlers
+            page.select_option("#template-select", "basic")
+
             # --- Step 1: Secrets ---
+            # These are now dynamic. Wait for them to appear.
+            page.wait_for_selector("#openai-key")
+
             page.fill("#openai-key", "sk-mock-openai-key")
             page.fill("#anthropic-key", "sk-mock-anthropic-key")
+            # Groq is in basic template
+            has_groq = page.locator("#groq-key").is_visible()
+            if has_groq:
+                page.fill("#groq-key", "gsk_mock_groq_key")
+
             page.fill("#github-token", "ghp_mock_token")
 
-            # --- Step 2: Project Details ---
+            # --- Step 3: Project Details ---
             page.fill("#project-id", "my-awesome-agent")
             page.fill("#project-goal", "World domination via autonomous coding")
+            page.fill("#initial-tasks", "Task A\nTask B")
 
-            # --- Step 3: Config ---
+            # --- Step 4: Config ---
             page.select_option("#deployment-target", "docker")
+
+            # Toggle SSH
+            page.check("#use-ssh")
 
             # --- Action: Generate ---
             # Set up download listener before clicking
@@ -70,15 +111,23 @@ def test_init_html_wizard_flow(tmp_path):
                 assert ".agent/secrets.env.yaml" in files
                 assert ".agent/project.yaml" in files
                 assert ".agent/SPEC.md" in files
+                assert ".agent/TASKS.md" in files
 
                 # Check Content: Secrets
                 secrets_content = z.read(".agent/secrets.env.yaml").decode("utf-8")
                 assert "sk-mock-openai-key" in secrets_content
                 assert "ghp_mock_token" in secrets_content
+                if has_groq:
+                    assert "gsk_mock_groq_key" in secrets_content
 
                 # Check Content: Project
                 project_content = z.read(".agent/project.yaml").decode("utf-8")
                 assert "id: my-awesome-agent" in project_content
+
+                # Check Content: Tasks
+                tasks_content = z.read(".agent/TASKS.md").decode("utf-8")
+                assert "Task A" in tasks_content
+                assert "Task B" in tasks_content
 
             # --- Verification: UI Update ---
             # The 'next-steps' div should be visible
@@ -88,6 +137,7 @@ def test_init_html_wizard_flow(tmp_path):
             cmd_text = page.locator("#final-command").inner_text()
             assert "docker run" in cmd_text
             assert "blondie:latest run" in cmd_text
+            assert "-v ~/.ssh:/root/.ssh:ro" in cmd_text
 
         finally:
             browser.close()

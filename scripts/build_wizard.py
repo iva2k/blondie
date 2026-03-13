@@ -15,14 +15,14 @@ def main() -> None:
     output_html_path = root_dir / "blondie.html"
 
     if not templates_dir.exists():
-        print(f"❌ Templates directory not found: {templates_dir}")
+        print(f"Error: Templates directory not found: {templates_dir}")
         return
 
     if not template_html_path.exists():
-        print(f"❌ HTML template not found: {template_html_path}")
+        print(f"Error: HTML template not found: {template_html_path}")
         return
 
-    print(f"📦 Reading templates from {templates_dir}...")
+    print(f"Reading templates from {templates_dir}...")
     templates_data: dict[str, dict[str, str]] = {}
 
     # Iterate over subdirectories in templates/ (e.g., basic, python, node)
@@ -43,7 +43,7 @@ def main() -> None:
                     content = file_path.read_text(encoding="utf-8")
                     templates_data[template_name][rel_path] = content
                 except Exception as e:  # pylint: disable=broad-exception-caught
-                    print(f"    ⚠️ Skipping {rel_path}: {e}")
+                    print(f"    Warning: Skipping {rel_path}: {e}")
 
     # Serialize to JSON
     json_data = json.dumps(templates_data, indent=None)  # Minified JSON
@@ -56,12 +56,12 @@ def main() -> None:
     injection = f"TEMPLATES = {json_data};"
 
     if placeholder not in html_content:
-        print("❌ Placeholder '// __TEMPLATES_JSON_PLACEHOLDER__' not found in HTML template.")
+        print("Error: Placeholder '// __TEMPLATES_JSON_PLACEHOLDER__' not found in HTML template.")
         return
 
     final_html = html_content.replace(placeholder, injection)
     output_html_path.write_text(final_html, encoding="utf-8")
-    print(f"✅ Generated {output_html_path} ({len(final_html)} bytes)")
+    print(f"Generated {output_html_path} ({len(final_html)} bytes)")
 
 
 if __name__ == "__main__":

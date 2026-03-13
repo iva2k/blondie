@@ -205,10 +205,6 @@
                 return;
             }
             
-            // Get dynamic providers from current template
-            const llmConfig = jsyaml.load(templateFiles['.agent/llm_config.yaml'] || "{}");
-            const providers = Object.keys(llmConfig.providers || {});
-
             const templateName = document.getElementById('template-select').value;
             const templateFiles = TEMPLATES[templateName];
             
@@ -216,6 +212,10 @@
                 alert("Error: Selected template '" + templateName + "' not found.");
                 return;
             }
+            
+            // Get dynamic providers from current template
+            const llmConfig = jsyaml.load(templateFiles['.agent/llm_config.yaml'] || "{}");
+            const providers = Object.keys(llmConfig.providers || {});
 
             const projectId = document.getElementById('project-id').value || 'my-project';
             const goal = document.getElementById('project-goal').value;
