@@ -95,6 +95,8 @@ This is the advanced onboarding method for users who prefer a terminal-based wor
 
 #### Wizard Logic (`src/agent/wizard.py`)
 
+This is the advanced onboarding method for users who prefer a terminal-based workflow.
+
 The `init` command executes the following sequence of functions:
 
 #### 1. Secrets Setup (`setup_secrets`)
@@ -174,6 +176,15 @@ templates/
     (more files are allowed, e.g. dev tool config, to get a quick start environment)
 ```
 
+### D. Upload Client (`blondie upload`)
+
+- **Purpose**: To send a configuration zip file to an unconfigured agent running the remote setup server.
+- **Command**: `blondie upload <path_to_zip> [--host <host>] [--port <port>]`
+- **Action**:
+  - Reads the zip file from the local filesystem.
+  - Sends the file content in a `POST` request to `http://<host>:<port>/configure`.
+  - Reports success or failure based on the HTTP response.
+
 ## 3. Runtime Specification
 
 ### A. Docker Image
@@ -181,6 +192,7 @@ templates/
 - **Tag**: `blondie:latest`
 - **Base**: Python 3.12-slim (as per `Dockerfile`).
 - **Entrypoint**: `blondie run` (via `docker-entrypoint.sh` or CMD).
+- **Behavior**: If `/workspace/.agent/project.yaml` exists, starts the agent loop. If not, starts the remote configuration server.
 
 ### B. Volume Mounts
 
@@ -200,3 +212,16 @@ The agent container requires specific mounts to function:
 
 - **Logs**: Container logs (`docker logs blondie`) and Internal Journal (`.agent/logs/`).
 - **Updates**: Re-build `blondie:latest` and restart container.
+
+### D. Remote Configuration Server
+
+- **Trigger**: `blondie run` is executed in a workspace where `.agent/project.yaml` is not found.
+- **Mechanism**: A temporary `http.server.HTTPServer` is started on port 8000 (configurable).
+- **Endpoint**: Listens for `POST /configure`.
+- **Payload**: Expects a `zip` file (as `application/zip` or `application/octet-stream`) in the request body.
+- **Action on Receive**:
+  1. Validates the zip contains `.agent/project.yaml`.
+  2. Extracts the zip's contents to the workspace root (`/workspace`).
+  3. If `.agent/ssh/id_rsa` was extracted, it is copied to `/root/.ssh/id_rsa` and permissions are set to `600`.
+  4. The HTTP server is shut down.
+  5. The agent proceeds to the main execution loop.

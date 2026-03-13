@@ -30,9 +30,19 @@
     </div>
 
     <div id="wizard-steps">
-        <!-- Step 1: Secrets -->
+        <!-- Step 1: Project Definition -->
         <div class="step">
-            <h2>Step 1: Secrets</h2>
+            <h2>Step 1: Project Definition</h2>
+            <p>Define the core identity of your project. The Project ID will be used for directory names and configuration.</p>
+            <label for="project-id">Project ID (e.g., my-app)</label>
+            <input type="text" id="project-id" placeholder="my-app">
+            <label for="git-repo-url">Git Repository URL (Optional)</label>
+            <input type="text" id="git-repo-url" placeholder="https://github.com/user/repo.git">
+        </div>
+
+        <!-- Step 2: Secrets -->
+        <div class="step">
+            <h2>Step 2: Secrets</h2>
             <p>Enter your credentials. These will be saved inside the downloaded <code>.zip</code> file.</p>
 
             <h3>Git Authentication</h3>
@@ -62,9 +72,9 @@
             <div id="dynamic-secrets"></div>
         </div>
 
-        <!-- Step 2: Template Selection -->
+        <!-- Step 3: Template Selection -->
         <div class="step">
-            <h2>Step 2: Template</h2>
+            <h2>Step 3: Template</h2>
             <p>Select a starting template for your project configuration.</p>
             <label for="template-select">Template</label>
             <select id="template-select" onchange="updateSecretsInputs()">
@@ -72,20 +82,18 @@
             </select>
         </div>
 
-        <!-- Step 3: Project Details -->
+        <!-- Step 4: Project Details -->
         <div class="step">
-            <h2>Step 3: Project Details</h2>
-            <label for="project-id">Project ID (e.g., my-app)</label>
-            <input type="text" id="project-id" placeholder="my-app">
+            <h2>Step 4: Project Details</h2>
             <label for="project-goal">What are you building? (High-level goal)</label>
             <textarea id="project-goal" rows="3" placeholder="A web app that helps users track their reading habits."></textarea>
             <label for="initial-tasks">Initial Tasks (One per line)</label>
             <textarea id="initial-tasks" rows="5" placeholder="Setup project structure&#10;Implement user login"></textarea>
         </div>
 
-        <!-- Step 4: Configuration -->
+        <!-- Step 5: Configuration -->
         <div class="step">
-            <h2>Step 4: Configuration</h2>
+            <h2>Step 5: Configuration</h2>
             <label for="deployment-target">Primary Deployment Target</label>
             <select id="deployment-target">
                 <option value="docker" selected>Docker</option>
@@ -103,7 +111,7 @@
         <p>Your <code>blondie_config.zip</code> file has been downloaded.</p>
         <h3>Next Steps:</h3>
         <ol>
-            <li>Create a new folder for your project: <code>mkdir my-project && cd my-project</code></li>
+            <li id="next-step-mkdir">Create a new folder for your project: <code>mkdir my-project && cd my-project</code></li>
             <li>Unzip the downloaded file here. You should now have a <code>.agent</code> directory.</li>
             <li>Initialize a git repository: <code>git init</code></li>
             <li>Run the agent using Docker with the command below.</li>
@@ -184,11 +192,14 @@
              updateSecretsInputs();
         }
 
-        function processProjectYaml(content, projectId, deployTarget) {
+        function processProjectYaml(content, projectId, deployTarget, gitRepoUrl) {
             try {
                 const data = jsyaml.load(content);
                 data.id = projectId;
                 data.name = projectId;
+                if (gitRepoUrl) {
+                    data.git_repo = gitRepoUrl;
+                }
                 
                 data.commands = data.commands || {};
                 data.deploy = data.deploy || {};
@@ -251,6 +262,7 @@
             const providers = Object.keys(llmConfig.providers || {});
 
             const projectId = document.getElementById('project-id').value || 'my-project';
+            const gitRepoUrl = document.getElementById('git-repo-url').value;
             const goal = document.getElementById('project-goal').value;
             const initialTasks = document.getElementById('initial-tasks').value;
             const deployTarget = document.getElementById('deployment-target').value;
@@ -263,7 +275,7 @@
 
                 // A. Modify project.yaml
                 if (filepath === '.agent/project.yaml') {
-                    fileContent = processProjectYaml(content, projectId, deployTarget);
+                    fileContent = processProjectYaml(content, projectId, deployTarget, gitRepoUrl);
                 }
                 // B. Modify SPEC.md
                 else if (filepath === '.agent/SPEC.md' && goal.trim()) {
@@ -354,6 +366,7 @@
                     const txt = await projectFile.async("string");
                     const data = jsyaml.load(txt);
                     document.getElementById('project-id').value = data?.id || "";
+                    document.getElementById('git-repo-url').value = data?.git_repo || "";
                     
                     // Infer deployment
                     const commands = data?.commands || {};
@@ -391,6 +404,12 @@
             document.getElementById('wizard-steps').classList.add('hidden');
             const nextStepsDiv = document.getElementById('next-steps');
             nextStepsDiv.classList.remove('hidden');
+
+            const projectId = document.getElementById('project-id').value || 'my-project';
+            const mkdirStep = document.getElementById('next-step-mkdir');
+            if (mkdirStep) {
+                mkdirStep.innerHTML = `Create a new folder for your project: <code>mkdir ${projectId} && cd ${projectId}</code>`;
+            }
 
             const gitAuth = document.querySelector('input[name="git-auth"]:checked').value;
             const sshVol = (gitAuth === 'ssh') ? '  -v $(pwd)/.agent/ssh/id_rsa:/root/.ssh/id_rsa:ro \\\n' : '';

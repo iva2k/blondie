@@ -186,9 +186,13 @@ The CLI wizard will guide you through similar steps as the HTML version:
 
 ## 5. Running the Agent
 
-Once your project is initialized, run Blondie in the background (daemon mode).
+You can run the agent in two ways:
 
-### Standard Run (HTTPS Git)
+### Method A: Pre-configured Workspace (Standard)
+
+This is the most common method. You initialize your project on your local machine using one of the wizards, then copy the entire project folder to your server and run the agent inside it.
+
+#### Standard Run (HTTPS Git)
 
 Use this if you provided a GitHub token in the secrets file.
 

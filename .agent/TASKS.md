@@ -120,7 +120,19 @@ Status: id | priority | title | depends_on
 - [x] 121 | P1 | [CLI Wizard] Similar to HTML, add "Use SSH for Git (mounts ~/.ssh)" which should choose either a file name to copy, or GIT token prompt (the group should precede API keys group) - if SSH is selected, the file should be copied into the zip folder under `./home/$USER/.ssh/id_rsa`. |
 - [x] 122 | P1 | [Agent Startup] The agent should detect running the first time (marked "unconfigured"). We need a mechanism to receive the configuration zip file from the wizard. Upon receipt of the file, it should install the content, including the cert file for GIT, and configure GIT to use the cert file, and mark itself as "configured", so upon consequent starts it will go into runnning state. |
 - [x] 123 | P1 | [Upload] zip file upload from local system to agent system's config upload server. |
-- [ ] 124 | P1 | [Upload] Add documentation about agent configuration upload server and local system upload client in DEPLOY.md and DEPLOY-SPEC.md. |
+- [x] 124 | P1 | [Upload] Add documentation about agent configuration upload server and local system upload client in DEPLOY.md and DEPLOY-SPEC.md. |
+
+### [Sprint7 2026-0313] Agent Deployment Architecture
+
+- [x] 125 | P1 | [HTML wizard] Specify git repo and working folder in the top of wizard process, before API keys. |
+- [ ] 133 | P1 | [CLI wizard] Specify git repo and working folder in the top of wizard process, before API keys. |
+- [ ] 126 | P1 | Make agent server continuously running, separate to a module, establish different messages for: 1. git SSH cert and secrets.env.yaml, 2. add/remove repo URL + working dir location, 3. status and stats. |
+- [ ] 127 | P1 | Define extensible messaging architecture in the agent - support multiple channels: HTTP server, Slack, EMail, maybe others later. | 126
+- [ ] 128 | P1 | Re-write docs/DEPLOY.md to prominently establish 1. Agent Instance Setup (1-time) - git ssh/token, all API keys, 2. Project Setup (can be repeated for multi-repo/multi-project agent) - repo URL. 3. Messaging options - ALWAYS running server, Slack, EMail. 4. Change both wizards to produce AND push `.agent/*` to git, and git ssh, secrets.env.yaml AND repo URL to instance. | 127
+- [ ] 129 | P1 | Re-write docs/DEPLOY-SPEC.md to prominently establish 1. Agent Instance Setup (1-time) - git ssh/token, all API keys, 2. Project Setup (can be repeated for multi-repo/multi-project agent) - repo URL. 3. Messaging options - ALWAYS running server, Slack, EMail. 4. Change both wizards to produce AND push `.agent/*` to git, and git ssh, secrets.env.yaml AND repo URL to instance. | 128
+- [ ] 130 | P1 | Re-write HTML wizard to prominently establish 1. Agent Instance Setup (1-time) - git ssh/token, all API keys, 2. Project Setup (can be repeated for multi-repo/multi-project agent) - repo URL. 3. Messaging options - ALWAYS running server, Slack, EMail. 4. Change both wizards to produce AND push `.agent/*` to git, and git ssh, secrets.env.yaml AND repo URL to instance. | 129
+- [ ] 131 | P1 | Re-write CLI wizard to prominently establish 1. Agent Instance Setup (1-time) - git ssh/token, all API keys, 2. Project Setup (can be repeated for multi-repo/multi-project agent) - repo URL. 3. Messaging options - ALWAYS running server, Slack, EMail. 4. Change both wizards to produce AND push `.agent/*` to git, and git ssh, secrets.env.yaml AND repo URL to instance. | 130
+- [ ] 132 | P1 | [ARCHITECTURE] For multi-repo support and for long term agent life, we need a message channel to deliver the configuration - git creds and repo url, the rest of setup is in `.agent/`. In this scheme API keys are global, and should not really reside in `.agent/` and be in agent's global config. The messaging channel becomes central for 1st deployment (agent instance setup) and logically separate from project setup. | 130
 
 ### [GOAL]
 

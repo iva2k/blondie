@@ -60,31 +60,33 @@ def test_init_html_wizard_flow(tmp_path):
             # Verify Title
             assert "Blondie Agent" in page.title()
 
-            # --- Step 2: Template Selection ---
+            # --- Step 1: Project Definition ---
+            page.fill("#project-id", "my-awesome-agent")
+            page.fill("#git-repo-url", "https://github.com/test/repo.git")
+
+            # --- Step 3: Template Selection (triggers secrets population) ---
             # Wait for templates to load and dropdown to populate
             page.wait_for_selector("#template-select option[value='basic']", state="attached")
             # Explicitly select 'basic' to trigger any change handlers
             page.select_option("#template-select", "basic")
 
-            # --- Step 1: Secrets ---
+            # --- Step 2: Secrets ---
             # These are now dynamic. Wait for them to appear.
             page.wait_for_selector("#openai-key")
 
             page.fill("#openai-key", "sk-mock-openai-key")
             page.fill("#anthropic-key", "sk-mock-anthropic-key")
             # Groq is in basic template
-            has_groq = page.locator("#groq-key").is_visible()
-            if has_groq:
+            if page.locator("#groq-key").is_visible():
                 page.fill("#groq-key", "gsk_mock_groq_key")
 
             page.fill("#github-token", "ghp_mock_token")
 
-            # --- Step 3: Project Details ---
-            page.fill("#project-id", "my-awesome-agent")
+            # --- Step 4: Project Details ---
             page.fill("#project-goal", "World domination via autonomous coding")
             page.fill("#initial-tasks", "Task A\nTask B")
 
-            # --- Step 4: Config ---
+            # --- Step 5: Configuration ---
             page.select_option("#deployment-target", "docker")
 
             # Toggle SSH
@@ -122,9 +124,8 @@ def test_init_html_wizard_flow(tmp_path):
                 secrets_content = z.read(".agent/secrets.env.yaml").decode("utf-8")
                 assert "sk-mock-openai-key" in secrets_content
                 # Token should be empty because we switched to SSH
-                assert "ghp_mock_token" not in secrets_content
-                if has_groq:
-                    assert "gsk_mock_groq_key" in secrets_content
+                assert "ghp_mock_token" not in secrets_content  # noqa: S105
+                assert "gsk_mock_groq_key" in secrets_content
 
                 # Check SSH Key
                 ssh_key_content = z.read(".agent/ssh/id_rsa").decode("utf-8")
@@ -133,6 +134,7 @@ def test_init_html_wizard_flow(tmp_path):
                 # Check Content: Project
                 project_content = z.read(".agent/project.yaml").decode("utf-8")
                 assert "id: my-awesome-agent" in project_content
+                assert "git_repo: https://github.com/test/repo.git" in project_content
 
                 # Check Content: Tasks
                 tasks_content = z.read(".agent/TASKS.md").decode("utf-8")
@@ -142,6 +144,10 @@ def test_init_html_wizard_flow(tmp_path):
             # --- Verification: UI Update ---
             # The 'next-steps' div should be visible
             assert page.locator("#next-steps").is_visible()
+
+            # The mkdir command should be correct
+            mkdir_text = page.locator("#next-step-mkdir").inner_text()
+            assert "mkdir my-awesome-agent && cd my-awesome-agent" in mkdir_text
 
             # The final command should be populated
             cmd_text = page.locator("#final-command").inner_text()
@@ -184,6 +190,7 @@ git:
             ".agent/project.yaml",
             """
 id: loaded-project-id
+git_repo: https://github.com/loaded/project.git
 commands:
   deploy: "vercel --prod --token {{secret:cloud.vercel.token}}"
 """,
@@ -217,11 +224,12 @@ Goal: Loaded Goal
             page.wait_for_function("document.getElementById('project-id').value === 'loaded-project-id'")
 
             # Verify fields
+            assert page.input_value("#project-id") == "loaded-project-id"
+            assert page.input_value("#git-repo-url") == "https://github.com/loaded/project.git"
             assert page.input_value("#openai-key") == "sk-loaded-openai"
             assert page.input_value("#anthropic-key") == "sk-loaded-anthropic"
             # HTTPS is default, so token input should be visible and populated
             assert page.input_value("#github-token") == "ghp_loaded_token"
-            assert page.input_value("#project-id") == "loaded-project-id"
             assert page.input_value("#project-goal") == "Loaded Goal"
             assert page.input_value("#deployment-target") == "vercel"
 
